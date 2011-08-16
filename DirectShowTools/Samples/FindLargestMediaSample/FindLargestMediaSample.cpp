@@ -150,6 +150,7 @@ private:
 	BOOL m_bSuppressCompressorPropertyPages;
 	CComPtr<IFilterGraph2> m_pFilterGraph;
 	CComObject<CInspectionFilterSite>* m_pInspectionFilterSite;
+	CComPtr<IUnknown> m_pInspectionFilterSiteUnknown;
 	CComPtr<IMediaEventEx> m_pMediaEventEx;
 	CComPtr<IMediaControl> m_pMediaControl;
 
@@ -215,6 +216,7 @@ public:
 			ATLENSURE_SUCCEEDED(CComObject<CInspectionFilterSite>::CreateInstance(&pInspectionFilterSite));
 			pInspectionFilterSite->Initialize(this);
 			ATLENSURE_SUCCEEDED(pInspectionFilter->SetSite(pInspectionFilterSite));
+			m_pInspectionFilterSiteUnknown = pInspectionFilterSite;
 			m_pInspectionFilterSite = pInspectionFilterSite;
 			#pragma endregion
 			ATLENSURE_SUCCEEDED(m_pFilterGraph->Connect(pCurrentOutputPin, GetFilterPin(pInspectionBaseFilter, PINDIR_INPUT)));
@@ -240,9 +242,11 @@ public:
 			_ATLRETHROW;
 		}
 		#pragma region Remove Reference Clock
-		CComQIPtr<IMediaFilter> pMediaFilter = m_pFilterGraph;
-		ATLENSURE_THROW(pMediaFilter, E_NOINTERFACE);
-		ATLENSURE_SUCCEEDED(pMediaFilter->SetSyncSource(NULL));
+		{
+			const CComQIPtr<IMediaFilter> pMediaFilter = m_pFilterGraph;
+			ATLENSURE_THROW(pMediaFilter, E_NOINTERFACE);
+			ATLENSURE_SUCCEEDED(pMediaFilter->SetSyncSource(NULL));
+		}
 		#pragma endregion
 		_tprintf(_T("Running Filter Graph\n"));
 		ATLENSURE_SUCCEEDED(m_pMediaControl->Run());
@@ -254,9 +258,10 @@ public:
 		ATLVERIFY(SUCCEEDED(m_pMediaControl->Stop()));
 		m_pMediaEventEx = NULL;
 		m_pMediaControl = NULL;
+		m_pFilterGraph = NULL;
 		m_pInspectionFilterSite->Terminate();
 		m_pInspectionFilterSite = NULL;
-		m_pFilterGraph = NULL;
+		m_pInspectionFilterSiteUnknown = NULL;
 		#pragma endregion
 		return S_OK;
 	}
