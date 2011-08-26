@@ -112,12 +112,14 @@ public:
 		public:
 			CEvent m_MediaSampleTimeEvent;
 			REFERENCE_TIME m_nMediaSampleTime;
+			SIZE_T m_nCurrentSampleIndex;
 
 		public:
 		// CThreadContext
 			CThreadContext(CEvent& TerminationEvent) throw() :
 				CPushSourceFilter::CThreadContext(TerminationEvent),
-				m_nMediaSampleTime(0)
+				m_nMediaSampleTime(0),
+				m_nCurrentSampleIndex(0)
 			{
 			}
 		};
@@ -143,11 +145,15 @@ public:
 		public:
 			CMediaType m_pDataMediaType;
 			REFERENCE_TIME m_nDataLength;
+			DOUBLE m_fSignalPeriod;
+			DOUBLE m_fSignalAmplitude;
 
 		public:
 		// COutputPin
 			COutputPin() throw() :
-				m_nDataLength(0)
+				m_nDataLength(0),
+				m_fSignalPeriod(0),
+				m_fSignalAmplitude(0)
 			{
 				_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
 			}
@@ -194,6 +200,16 @@ public:
 				SetLatency(nBufferTime);
 				return TRUE;
 			}
+			VOID InitializeThread(CThreadContext& ThreadContext) throw()
+			{
+				CRoCriticalSectionLock DataLock(GetDataCriticalSection());
+				__super::InitializeThread(ThreadContext);
+				if(m_fSignalPeriod > 0)
+				{
+					__D(m_pDataMediaType.GetWaveFormatEx()->wBitsPerSample == 16, E_NOTIMPL);
+					ThreadContext.m_nCurrentSampleIndex = 0;
+				}
+			}
 			BOOL ComposeMediaSample(CThreadContext& ThreadContext, IMediaSample* pMediaSample)
 			{
 				CMediaSampleProperties Properties(pMediaSample);
@@ -209,10 +225,32 @@ public:
 					nDataSize = nRemainedDataSize;
 				nDataSize = (nDataSize / pWaveFormatEx->nBlockAlign) * pWaveFormatEx->nBlockAlign;
 				if(pWaveFormatEx->wBitsPerSample == 8)
+				{
 					FillMemory(Properties.pbBuffer, nDataSize, 0x80);
-				else
+				} else
+				{
 					ZeroMemory(Properties.pbBuffer, nDataSize);
+					#pragma region Size Wave Data
+					if(m_fSignalPeriod > 0)
+					{
+#if _DEVELOPMENT 
+						const SIZE_T nAnchorCurrentSampleIndex = ThreadContext.m_nCurrentSampleIndex;
+#endif // _DEVELOPMENT 
+						for(SIZE_T nIndex = 0; nIndex < nDataSize; nIndex += pWaveFormatEx->nBlockAlign)
+						{
+							const SHORT nValue = (SHORT) (m_fSignalAmplitude * sin(2 * M_PI * ThreadContext.m_nCurrentSampleIndex++ / m_fSignalPeriod));
+							SHORT* pnSampleData = (SHORT*) (Properties.pbBuffer + nIndex);
+							for(WORD nChannelIndex = 0; nChannelIndex < pWaveFormatEx->nChannels; nChannelIndex++)
+								pnSampleData[nChannelIndex] = nValue;
+						}
+#if _DEVELOPMENT 
+						_A(ThreadContext.m_nCurrentSampleIndex == nAnchorCurrentSampleIndex + nDataSize / pWaveFormatEx->nBlockAlign);
+#endif // _DEVELOPMENT 
+					}
+					#pragma endregion
+				}
 				ThreadContext.m_nMediaSampleTime += nDataSize * (1000 * 10000i64) / pWaveFormatEx->nAvgBytesPerSec;
+				//ThreadContext.m_nCurrentSampleIndex += nDataSize / pWaveFormatEx->nBlockAlign;
 				Properties.lActual = (LONG) nDataSize;
 				Properties.Set();
 				return TRUE;
@@ -224,6 +262,12 @@ public:
 				__D(!m_pDataMediaType, E_UNNAMED);
 				m_pDataMediaType.AllocateWaveFormatEx(pWaveFormatEx);
 				m_nDataLength = nLength;
+			}
+			VOID InitializeSignal(DOUBLE fSignalPeriod, DOUBLE fSignalAmplitude)
+			{
+				__D(fSignalPeriod > 0 && fSignalAmplitude >= 0, E_INVALIDARG);
+				m_fSignalPeriod = fSignalPeriod;
+				m_fSignalAmplitude = fSignalAmplitude;
 			}
 		};
 
@@ -298,11 +342,17 @@ public:
 		{
 			m_pOutputPin->InitializeData(pWaveFormatEx, nLength);
 		}
+		VOID InitializeSignal(DOUBLE fSignalAmplitude, DOUBLE fSignalPeriod)
+		{
+			m_pOutputPin->InitializeSignal(fSignalAmplitude, fSignalPeriod);
+		}
 	};
 
 private:
 	CWaveFormatEx m_WaveFormatEx;
 	REFERENCE_TIME m_nLength;
+	UINT m_nSignalFrequency;
+	UINT m_nSignalLoudness;
 	CPath m_sPath;
 
 public:
@@ -315,6 +365,8 @@ public:
 		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
 		ZeroMemory(&m_WaveFormatEx, sizeof m_WaveFormatEx);
 		m_nLength = 0;
+		m_nSignalFrequency = 0;
+		m_nSignalLoudness = 0;
 	}
 	~CModule() throw()
 	{
@@ -340,6 +392,16 @@ public:
 		__D(nLength > 0, E_INVALIDARG);
 		m_nLength = nLength;
 	}
+	VOID SetSignalFrequency(UINT nSignalFrequency)
+	{
+		__D(nSignalFrequency > 0, E_INVALIDARG);
+		m_nSignalFrequency = nSignalFrequency;
+	}
+	VOID SetSignalLoudness(UINT nSignalLoudness)
+	{
+		__D(nSignalLoudness >= 0, E_INVALIDARG);
+		m_nSignalLoudness = nSignalLoudness;
+	}
 	VOID SetPath(LPCTSTR pszPath)
 	{
 		__D(_tcslen(pszPath), E_INVALIDARG);
@@ -361,6 +423,8 @@ public:
 			_tprintf(_T("  /c:N: Channel Count N\n"));
 			_tprintf(_T("  /b:N: Sample Bit Count N, 8 or 16\n"));
 			_tprintf(_T("  /t:N: Length N, seconds\n"));
+			_tprintf(_T("  /f:N: Sine Signal Frequency N, Hz\n"));
+			_tprintf(_T("  /l:N: Sine Signal Loudness N, dB below full scale\n"));
 			__C(S_FALSE);
 		}
 		#pragma endregion 
@@ -376,6 +440,13 @@ public:
 		GenericFilterGraph.CoCreateInstance();
 		CObjectPtr<CSourceFilter> pSourceFilter;
 		pSourceFilter.Construct()->Initialize(pWaveFormatEx, m_nLength);
+		if(m_nSignalFrequency)
+		{
+			__D(m_WaveFormatEx.wBitsPerSample == 16, E_NOTIMPL);
+			const DOUBLE fSignalPeriod = (DOUBLE) pWaveFormatEx->nSamplesPerSec / m_nSignalFrequency;
+			const DOUBLE fSignalAmplitude = 32767.0 / pow(10.0, m_nSignalLoudness / 20.0);
+			pSourceFilter->InitializeSignal(fSignalPeriod, fSignalAmplitude);
+		}
 		__C(GenericFilterGraph->AddFilter(pSourceFilter, CT2CW(_T("Source"))));
 		CComPtr<IPin> pCurrentOutputPin = pSourceFilter->GetOutputPin();
 		#pragma region WAV Dest
@@ -473,6 +544,18 @@ int _tmain(int argc, _TCHAR* argv[])
 					__D(bIntegerArgumentValueValid, E_INVALIDARG);
 					//_tprintf(_T("Option: Length, %d\n"), nIntegerArgumentValue);
 					Module.SetLength(nIntegerArgumentValue * 1000 * 10000i64);
+				} else
+				if(_tcschr(_T("Ff"), sArgument[0])) // Sine Signal Frequency, Hz
+				{
+					__D(bIntegerArgumentValueValid, E_INVALIDARG);
+					//_tprintf(_T("Option: Sine Signal Frequency, %d\n"), nIntegerArgumentValue);
+					Module.SetSignalFrequency(nIntegerArgumentValue);
+				} else
+				if(_tcschr(_T("Ll"), sArgument[0])) // Sine Signal Loudness, dB below FS
+				{
+					__D(bIntegerArgumentValueValid, E_INVALIDARG);
+					//_tprintf(_T("Option: Sine Signal Loudness, %d\n"), nIntegerArgumentValue);
+					Module.SetSignalLoudness(nIntegerArgumentValue);
 				}
 				continue;
 			}
