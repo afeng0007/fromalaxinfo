@@ -251,7 +251,7 @@ public:
 						{
 							SHORT* pnSampleData = (SHORT*) (Properties.pbBuffer + nIndex);
 							for(WORD nChannelIndex = 0; nChannelIndex < pWaveFormatEx->nChannels; nChannelIndex++)
-								pnSampleData[nChannelIndex] += (SHORT) (m_fSignalAmplitude * (DOUBLE) (rand() - RAND_MAX / 2) / (RAND_MAX / 2));
+								pnSampleData[nChannelIndex] += (SHORT) (m_fNoiseAmplitude * (DOUBLE) (rand() - RAND_MAX / 2) / (RAND_MAX / 2));
 						}
 					}
 					#pragma endregion
@@ -272,7 +272,7 @@ public:
 			}
 			VOID InitializeSignal(DOUBLE fSignalPeriod, DOUBLE fSignalAmplitude, DOUBLE fNoiseAmplitude)
 			{
-				__D(fSignalPeriod > 0 && fSignalAmplitude >= 0, E_INVALIDARG);
+				__D(fSignalPeriod >= 0 && fSignalAmplitude >= 0 && fNoiseAmplitude >= 0, E_INVALIDARG);
 				m_fSignalPeriod = fSignalPeriod;
 				m_fSignalAmplitude = fSignalAmplitude;
 				m_fNoiseAmplitude = fNoiseAmplitude;
@@ -459,9 +459,17 @@ public:
 		if(m_nSignalFrequency && m_nSignalLoudness || m_nNoiseLoudness)
 		{
 			__D(m_WaveFormatEx.wBitsPerSample == 16, E_NOTIMPL);
-			const DOUBLE fSignalPeriod = (DOUBLE) pWaveFormatEx->nSamplesPerSec / m_nSignalFrequency;
-			const DOUBLE fSignalAmplitude = 32767.0 / pow(10.0, m_nSignalLoudness / 20.0);
-			const DOUBLE fNoiseAmplitude = 32767.0 / pow(10.0, m_nNoiseLoudness / 20.0);
+			DOUBLE fSignalPeriod = 0, fSignalAmplitude = 0;
+			if(m_nSignalFrequency && m_nSignalLoudness)
+			{
+				fSignalPeriod = (DOUBLE) pWaveFormatEx->nSamplesPerSec / m_nSignalFrequency;
+				fSignalAmplitude = 32767.0 / pow(10.0, m_nSignalLoudness / 20.0);
+			}
+			DOUBLE fNoiseAmplitude = 0;
+			if(m_nNoiseLoudness)
+			{
+				fNoiseAmplitude = 32767.0 / pow(10.0, m_nNoiseLoudness / 20.0);
+			}
 			pSourceFilter->InitializeSignal(fSignalPeriod, fSignalAmplitude, fNoiseAmplitude);
 		}
 		__C(GenericFilterGraph->AddFilter(pSourceFilter, CT2CW(_T("Source"))));
