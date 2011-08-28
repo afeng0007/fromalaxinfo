@@ -235,9 +235,10 @@ public:
 					#pragma region Sine Wave Data
 					if(m_fSignalPeriod > 0)
 					{
-						for(SIZE_T nIndex = 0; nIndex < nDataSize; nIndex += pWaveFormatEx->nBlockAlign)
+						SIZE_T nSampleIndex = 0;
+						for(SIZE_T nIndex = 0; nIndex < nDataSize; nIndex += pWaveFormatEx->nBlockAlign, nSampleIndex++)
 						{
-							const SHORT nValue = (SHORT) (m_fSignalAmplitude * sin(2 * M_PI * (ThreadContext.m_nCurrentSampleIndex + nIndex) / m_fSignalPeriod));
+							const SHORT nValue = (SHORT) (m_fSignalAmplitude * sin(2 * M_PI * (ThreadContext.m_nCurrentSampleIndex + nSampleIndex) / m_fSignalPeriod));
 							SHORT* pnSampleData = (SHORT*) (Properties.pbBuffer + nIndex);
 							for(WORD nChannelIndex = 0; nChannelIndex < pWaveFormatEx->nChannels; nChannelIndex++)
 								pnSampleData[nChannelIndex] = nValue;
