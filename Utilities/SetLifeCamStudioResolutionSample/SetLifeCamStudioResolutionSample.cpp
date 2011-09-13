@@ -122,12 +122,12 @@ int _tmain(int argc, _TCHAR* argv[])
 				1000 * 10000i64 / 30, // 30 fps
 				{
 					sizeof BITMAPINFOHEADER,
-					176,
-					144,
+					1280,
+					720,
 					1,
-					16,
-					MEDIASUBTYPE_YUY2.Data1,
-					144 * 176 * 16 / 8,
+					24,
+					MEDIASUBTYPE_MJPG.Data1,
+					720 * 1280 * 24 / 8,
 					0,
 					0,
 					0,
@@ -137,7 +137,7 @@ int _tmain(int argc, _TCHAR* argv[])
 			AM_MEDIA_TYPE MediaType = 
 			{ 
 				MEDIATYPE_Video, 
-				MEDIASUBTYPE_YUY2, 
+				MEDIASUBTYPE_MJPG, 
 				TRUE, 
 				FALSE, 
 				VideoInfoHeader.bmiHeader.biSizeImage,
