@@ -122,12 +122,12 @@ int _tmain(int argc, _TCHAR* argv[])
 				1000 * 10000i64 / 30, // 30 fps
 				{
 					sizeof BITMAPINFOHEADER,
-					512,
-					384,
+					176,
+					144,
 					1,
 					16,
 					MEDIASUBTYPE_YUY2.Data1,
-					384 * 512 * 12 / 8,
+					144 * 176 * 16 / 8,
 					0,
 					0,
 					0,
