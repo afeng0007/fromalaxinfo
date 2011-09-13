@@ -92,7 +92,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		CComPtr<IEnumMoniker> pEnumMoniker;
 		ATLENSURE_SUCCEEDED(pCreateDevEnum->CreateClassEnumerator(CLSID_VideoInputDeviceCategory, &pEnumMoniker, 0));
 		CComPtr<IMoniker> pMoniker;
-		for(LONG nSkipCount = 2; ; nSkipCount--) // Adjust to skip certain number of devices until you reach the one you need
+		for(LONG nSkipCount = 0; ; nSkipCount--) // Adjust to skip certain number of devices until you reach the one you need
 		{
 			ATLENSURE_THROW(pEnumMoniker->Next(1, &pMoniker, NULL) == S_OK, E_FAIL);
 			ATLASSERT(pMoniker);
