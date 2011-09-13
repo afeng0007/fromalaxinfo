@@ -146,7 +146,7 @@ int _tmain(int argc, _TCHAR* argv[])
 				sizeof VideoInfoHeader,
 				(BYTE*) &VideoInfoHeader
 			};
-			//ATLENSURE_SUCCEEDED(pAmStreamConfig->SetFormat(&MediaType));
+			ATLENSURE_SUCCEEDED(pAmStreamConfig->SetFormat(&MediaType));
 			MessageBox(GetActiveWindow(), _T("After IAMStreamConfig::SetFormat Set"), _T("Debug"), MB_OK);
 			pCurrentOutputPin = pPin;
 		}
