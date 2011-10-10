@@ -442,7 +442,7 @@ public:
 			_tprintf(_T("  /f:N: Sine Signal Frequency N, Hz\n"));
 			_tprintf(_T("  /l:N: Sine Signal Loudness N, dB below full scale\n"));
 			_tprintf(_T("  /n:N: Noise Signal Loudness N, dB below full scale\n"));
-			__C(S_FALSE);
+			AtlThrow(S_FALSE);
 		}
 		#pragma endregion 
 		#pragma region Complete Audio Format
@@ -457,11 +457,11 @@ public:
 		GenericFilterGraph.CoCreateInstance();
 		CObjectPtr<CSourceFilter> pSourceFilter;
 		pSourceFilter.Construct()->Initialize(pWaveFormatEx, m_nLength);
-		if(m_nSignalFrequency && m_nSignalLoudness || m_nNoiseLoudness)
+		if(m_nSignalFrequency && m_nSignalLoudness >= 0 || m_nNoiseLoudness)
 		{
 			__D(m_WaveFormatEx.wBitsPerSample == 16, E_NOTIMPL);
 			DOUBLE fSignalPeriod = 0, fSignalAmplitude = 0;
-			if(m_nSignalFrequency && m_nSignalLoudness)
+			if(m_nSignalFrequency && m_nSignalLoudness >= 0)
 			{
 				fSignalPeriod = (DOUBLE) pWaveFormatEx->nSamplesPerSec / m_nSignalFrequency;
 				fSignalAmplitude = 32767.0 / pow(10.0, m_nSignalLoudness / 20.0);
