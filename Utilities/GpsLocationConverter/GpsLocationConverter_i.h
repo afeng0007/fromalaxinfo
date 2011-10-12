@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0555 */
-/* at Wed Oct 12 20:55:44 2011
+/* at Wed Oct 12 21:18:26 2011
  */
 /* Compiler settings for GpsLocationConverter.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
