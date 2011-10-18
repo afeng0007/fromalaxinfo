@@ -102,7 +102,7 @@ public:
 			const DOUBLE fPartialLatitudeSecond = (fPartialLatitudeMinute - nPartialLatitudeMinute) * 60;
 			const INT nPartialLatitudeSecond = (INT) fPartialLatitudeSecond;
 			sLatitude.AppendFormat(_T("%02d"), nPartialLatitudeSecond);
-			sLatitude.AppendFormat(_T(".%02d "), (INT) ((fPartialLatitudeSecond - nPartialLatitudeSecond) * 100 + 0.5 - 1E-6));
+			sLatitude.AppendFormat(_T(".%02d"), (INT) ((fPartialLatitudeSecond - nPartialLatitudeSecond) * 100 + 0.5 - 1E-6));
 			#pragma endregion 
 			#pragma region Latitude
 			sLongitude.Append((fLongitude >= 0) ? _T("E ") : _T("W "));
@@ -115,7 +115,7 @@ public:
 			const DOUBLE fPartialLongitudeSecond = (fPartialLongitudeMinute - nPartialLongitudeMinute) * 60;
 			const INT nPartialLongitudeSecond = (INT) fPartialLongitudeSecond;
 			sLongitude.AppendFormat(_T("%02d"), nPartialLongitudeSecond);
-			sLongitude.AppendFormat(_T(".%02d "), (INT) ((fPartialLongitudeSecond - nPartialLongitudeSecond) * 100 + 0.5 - 1E-6));
+			sLongitude.AppendFormat(_T(".%02d"), (INT) ((fPartialLongitudeSecond - nPartialLongitudeSecond) * 100 + 0.5 - 1E-6));
 			#pragma endregion 
 			psTexts[ 8] = sLatitude;
 			psTexts[ 9] = sLongitude;
@@ -215,26 +215,20 @@ public:
 		}
 		#pragma endregion 
 		#pragma region Degrees, Minutes and Seconds
-		static CAtlStaticRegExp<> g_ExpressionE0(_T("^[\t ]*") 
-			_T("{[NSCÞ]}") _T("[\t ]*") _T("{[0-9]+}[^0-9]+?{[0-9]+}[^0-9\\.]+?{[0-9]+}") 
-			_T("[^0-9\\.]+?") 
-			_T("{[EWÂÇ]}") _T("[\t ]*") _T("{[0-9]+}[^0-9]+?{[0-9]+}[^0-9\\.]+?{[0-9]+}")
-			_T(""), FALSE);
-		static CAtlStaticRegExp<> g_ExpressionE1(_T("^[\t ]*") 
-			_T("{[EWÂÇ]}") _T("[\t ]*") _T("{[0-9]+}[^0-9]+?{[0-9]+}[^0-9\\.]+?{[0-9]+}")
-			_T("[^0-9\\.]+?") 
-			_T("{[NSCÞ]}") _T("[\t ]*") _T("{[0-9]+}[^0-9]+?{[0-9]+}[^0-9\\.]+?{[0-9]+}") 
-			_T(""), FALSE);
-		static CAtlStaticRegExp<> g_ExpressionE2(_T("^[\t ]*") 
-			_T("{[0-9]+}[^0-9]+?{[0-9]+}[^0-9\\.]+?{[0-9]+}") _T("[\t ]*") _T("{[NSCÞ]}")
-			_T("[^0-9\\.]+?") 
-			_T("{[0-9]+}[^0-9]+?{[0-9]+}[^0-9\\.]+?{[0-9]+}") _T("[\t ]*") _T("{[EWÂÇ]}")
-			_T(""), FALSE);
-		static CAtlStaticRegExp<> g_ExpressionE3(_T("^[\t ]*") 
-			_T("{[0-9]+}[^0-9]+?{[0-9]+}[^0-9\\.]+?{[0-9]+}") _T("[\t ]*") _T("{[EWÂÇ]}")
-			_T("[^0-9\\.]+?") 
-			_T("{[0-9]+}[^0-9]+?{[0-9]+}[^0-9\\.]+?{[0-9]+}") _T("[\t ]*") _T("{[NSCÞ]}")
-			_T(""), FALSE);
+#define LATITUDE_SYMBOL		_T("{[NSCÞ]}")
+#define LONGITUDE_SYMBOL	_T("{[EWÂÇ]}")
+#define VALUE				_T("{[0-9]+}[^0-9]+?{[0-9]+}[^0-9\\.]+?{[0-9]+(\\.([0-9]+)?)?}")
+#define OPTIONAL_WHITESPACE	_T("[\t ]*")
+#define SEPARATOR			_T("[^0-9\\.]+?")
+		static CAtlStaticRegExp<> g_ExpressionE0(_T("^") OPTIONAL_WHITESPACE LATITUDE_SYMBOL OPTIONAL_WHITESPACE VALUE SEPARATOR LONGITUDE_SYMBOL OPTIONAL_WHITESPACE VALUE _T(""), FALSE);
+		static CAtlStaticRegExp<> g_ExpressionE1(_T("^") OPTIONAL_WHITESPACE LONGITUDE_SYMBOL OPTIONAL_WHITESPACE VALUE SEPARATOR LATITUDE_SYMBOL OPTIONAL_WHITESPACE VALUE  _T(""), FALSE);
+		static CAtlStaticRegExp<> g_ExpressionE2(_T("^") OPTIONAL_WHITESPACE VALUE OPTIONAL_WHITESPACE LATITUDE_SYMBOL SEPARATOR VALUE OPTIONAL_WHITESPACE LONGITUDE_SYMBOL _T(""), FALSE);
+		static CAtlStaticRegExp<> g_ExpressionE3(_T("^") OPTIONAL_WHITESPACE VALUE OPTIONAL_WHITESPACE LONGITUDE_SYMBOL SEPARATOR VALUE OPTIONAL_WHITESPACE LATITUDE_SYMBOL _T(""), FALSE);
+#undef LATITUDE_SYMBOL
+#undef LONGITUDE_SYMBOL
+#undef VALUE
+#undef OPTIONAL_WHITESPACE
+#undef SEPARATOR
 		INT nLayoutE = -1;
 		if(g_ExpressionE0.Match(sText, &MatchContext))
 			nLayoutE = 0;
@@ -257,24 +251,24 @@ public:
 			const INT nLongitudeSign = (MatchContext.GetMatchString(g_pnMap[nLayoutE][4]).FindOneOf(_T("WwÇç")) >= 0) ? -1 : 1;
 			INT nLatitudeDegrees, nLongitudeDegrees;
 			INT nLatitudeMinutes, nLongitudeMinutes;
-			INT nLatitudeSeconds, nLongitudeSeconds;
+			DOUBLE fLatitudeSeconds, fLongitudeSeconds;
 			if(FALSE ||
 				!AtlStringToInteger(MatchContext.GetMatchString(g_pnMap[nLayoutE][1]), nLatitudeDegrees) || 
 				!AtlStringToInteger(MatchContext.GetMatchString(g_pnMap[nLayoutE][2]), nLatitudeMinutes) || 
-				!AtlStringToInteger(MatchContext.GetMatchString(g_pnMap[nLayoutE][3]), nLatitudeSeconds) || 
+				!AtlStringToDouble(MatchContext.GetMatchString(g_pnMap[nLayoutE][3]), fLatitudeSeconds) || 
 				!AtlStringToInteger(MatchContext.GetMatchString(g_pnMap[nLayoutE][5]), nLongitudeDegrees) ||
 				!AtlStringToInteger(MatchContext.GetMatchString(g_pnMap[nLayoutE][6]), nLongitudeMinutes) ||
-				!AtlStringToInteger(MatchContext.GetMatchString(g_pnMap[nLayoutE][7]), nLongitudeSeconds) ||
+				!AtlStringToDouble(MatchContext.GetMatchString(g_pnMap[nLayoutE][7]), fLongitudeSeconds) ||
 				FALSE)
 				return FALSE;
 			_A(nLatitudeMinutes >= 0 && nLongitudeMinutes >= 0);
 			if(nLatitudeMinutes >= 60 || nLongitudeMinutes >= 60)
 				return FALSE;
-			_A(nLatitudeSeconds >= 0 && nLongitudeSeconds >= 0);
-			if(nLatitudeSeconds >= 60 || nLongitudeSeconds >= 60)
+			_A(fLatitudeSeconds >= 0 && fLongitudeSeconds >= 0);
+			if(fLatitudeSeconds >= 60 || fLongitudeSeconds >= 60)
 				return FALSE;
-			const DOUBLE fLatitude = nLatitudeSign * (nLatitudeDegrees + (nLatitudeMinutes + nLatitudeSeconds / 60.0) / 60.0);
-			const DOUBLE fLongitude = nLongitudeSign * (nLongitudeDegrees + (nLongitudeMinutes + nLongitudeSeconds / 60.0) / 60.0);
+			const DOUBLE fLatitude = nLatitudeSign * (nLatitudeDegrees + (nLatitudeMinutes + fLatitudeSeconds / 60.0) / 60.0);
+			const DOUBLE fLongitude = nLongitudeSign * (nLongitudeDegrees + (nLongitudeMinutes + fLongitudeSeconds / 60.0) / 60.0);
 			SetLocation(fLatitude, fLongitude);
 			return TRUE;
 		}
