@@ -62,16 +62,26 @@ public:
 		#pragma region Degrees, Minutes
 		{
 			CString sLatitude, sLongitude;
+			#pragma region Latitude
 			sLatitude.Append((fLatitude >= 0) ? _T("N ") : _T("S "));
 			DOUBLE fPartialLatitude = abs(fLatitude);
-			INT nPartialLatitude = (INT) fPartialLatitude;
+			const INT nPartialLatitude = (INT) fPartialLatitude;
 			sLatitude.AppendFormat(_T("%02d "), nPartialLatitude);
-			sLatitude.Append(_StringHelper::FormatNumber((fPartialLatitude - nPartialLatitude) * 60, 3, FALSE));
+			const DOUBLE fPartialLatitudeMinute = (fPartialLatitude - nPartialLatitude) * 60;
+			const INT nPartialLatitudeMinute = (INT) fPartialLatitudeMinute;
+			sLatitude.AppendFormat(_T("%02d"), nPartialLatitudeMinute);
+			sLatitude.AppendFormat(_T(".%03d "), (INT) ((fPartialLatitudeMinute - nPartialLatitudeMinute) * 1000 + 0.5 - 1E-6));
+			#pragma endregion 
+			#pragma region Latitude
 			sLongitude.Append((fLongitude >= 0) ? _T("E ") : _T("W "));
 			DOUBLE fPartialLongitude = abs(fLongitude);
-			INT nPartialLongitude = (INT) fPartialLongitude;
+			const INT nPartialLongitude = (INT) fPartialLongitude;
 			sLongitude.AppendFormat(_T("%03d "), nPartialLongitude);
-			sLongitude.Append(_StringHelper::FormatNumber((fPartialLongitude - nPartialLongitude) * 60, 3, FALSE));
+			const DOUBLE fPartialLongitudeMinute = (fPartialLongitude - nPartialLongitude) * 60;
+			const INT nPartialLongitudeMinute = (INT) fPartialLongitudeMinute;
+			sLongitude.AppendFormat(_T("%02d"), nPartialLongitudeMinute);
+			sLongitude.AppendFormat(_T(".%03d "), (INT) ((fPartialLongitudeMinute - nPartialLongitudeMinute) * 1000 + 0.5 - 1E-6));
+			#pragma endregion 
 			psTexts[4] = sLatitude;
 			psTexts[5] = sLongitude;
 			psTexts[6] = AtlFormatString(_T("%s, %s"), sLatitude, sLongitude);
@@ -81,14 +91,20 @@ public:
 		#pragma region Degrees, Minutes, Seconds
 		{
 			CString sLatitude, sLongitude;
+			#pragma region Latitude
 			sLatitude.Append((fLatitude >= 0) ? _T("N ") : _T("S "));
 			DOUBLE fPartialLatitude = abs(fLatitude);
-			INT nPartialLatitude = (INT) fPartialLatitude;
+			const INT nPartialLatitude = (INT) fPartialLatitude;
 			sLatitude.AppendFormat(_T("%02d "), nPartialLatitude);
-			DOUBLE fPartialLatitudeMinute = (fPartialLatitude - nPartialLatitude) * 60;
-			INT nPartialLatitudeMinute = (INT) fPartialLatitudeMinute;
+			const DOUBLE fPartialLatitudeMinute = (fPartialLatitude - nPartialLatitude) * 60;
+			const INT nPartialLatitudeMinute = (INT) fPartialLatitudeMinute;
 			sLatitude.AppendFormat(_T("%02d "), nPartialLatitudeMinute);
-			sLatitude.AppendFormat(_T("%02d"), (INT) ((fPartialLatitudeMinute - nPartialLatitudeMinute) * 60 + 0.5 - 1E-6));
+			const DOUBLE fPartialLatitudeSecond = (fPartialLatitudeMinute - nPartialLatitudeMinute) * 60;
+			const INT nPartialLatitudeSecond = (INT) fPartialLatitudeSecond;
+			sLatitude.AppendFormat(_T("%02d"), nPartialLatitudeSecond);
+			sLatitude.AppendFormat(_T(".%02d "), (INT) ((fPartialLatitudeSecond - nPartialLatitudeSecond) * 100 + 0.5 - 1E-6));
+			#pragma endregion 
+			#pragma region Latitude
 			sLongitude.Append((fLongitude >= 0) ? _T("E ") : _T("W "));
 			DOUBLE fPartialLongitude = abs(fLongitude);
 			INT nPartialLongitude = (INT) fPartialLongitude;
@@ -96,7 +112,11 @@ public:
 			DOUBLE fPartialLongitudeMinute = (fPartialLongitude - nPartialLongitude) * 60;
 			INT nPartialLongitudeMinute = (INT) fPartialLongitudeMinute;
 			sLongitude.AppendFormat(_T("%02d "), nPartialLongitudeMinute);
-			sLongitude.AppendFormat(_T("%02d"), (INT) ((fPartialLongitudeMinute - nPartialLongitudeMinute) * 60 + 0.5 - 1E-6));
+			const DOUBLE fPartialLongitudeSecond = (fPartialLongitudeMinute - nPartialLongitudeMinute) * 60;
+			const INT nPartialLongitudeSecond = (INT) fPartialLongitudeSecond;
+			sLongitude.AppendFormat(_T("%02d"), nPartialLongitudeSecond);
+			sLongitude.AppendFormat(_T(".%02d "), (INT) ((fPartialLongitudeSecond - nPartialLongitudeSecond) * 100 + 0.5 - 1E-6));
+			#pragma endregion 
 			psTexts[ 8] = sLatitude;
 			psTexts[ 9] = sLongitude;
 			psTexts[10] = AtlFormatString(_T("%s, %s"), sLatitude, sLongitude);
@@ -372,6 +392,7 @@ public:
 		m_bSetClipboardTextActive = TRUE;
 		SetClipboardText(m_hWnd, pHeaderEx->pszLocation);
 		m_bSetClipboardTextActive = FALSE;
+		pHeaderEx->bShellExecuteLocation = FALSE;
 		MessageBeep(MB_OK);
 		return 0;
 	}
