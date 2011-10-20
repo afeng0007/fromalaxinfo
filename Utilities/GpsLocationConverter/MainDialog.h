@@ -35,6 +35,10 @@ private:
 	CRoHyperStatic m_pStatics[12];
 	CRoHyperStatic m_GoogleMapsStatic;
 	CRoHyperStatic m_YandexMapsStatic;
+	CRoHyperStatic m_BingMapsStatic;
+	CRoHyperStatic m_YahooMapsStatic;
+	CRoHyperStatic m_OpenStreetMapStatic;
+	CRoHyperStatic m_WikiMapiaStatic;
 	BOOL m_bSetClipboardTextActive;
 	CWindow m_NextClipboardViewerWindow;
 
@@ -46,7 +50,7 @@ public:
 	VOID SetLocation(DOUBLE fLatitude, DOUBLE fLongitude)
 	{
 		CString psTexts[12];
-		CString sGoogleMapsLocation, sYandexMapsLocation;
+		CString sGoogleMapsLocation, sYandexMapsLocation, sBingMapsLocation, sYahooMapsLocation, sOpenStreetMapLocation, sWikiMapiaLocation;
 		#pragma region Degrees
 		{
 			const CString sLatitude = _StringHelper::FormatNumber(fLatitude, 6, FALSE);
@@ -56,7 +60,11 @@ public:
 			psTexts[2] = AtlFormatString(_T("%s, %s"), sLatitude, sLongitude);
 			psTexts[3] = AtlFormatString(_T("%s, %s"), sLongitude, sLatitude);
 			sGoogleMapsLocation = AtlFormatString(_T("http://maps.google.com/maps/?ll=%s,%s"), sLatitude, sLongitude);
-			sYandexMapsLocation = AtlFormatString(_T("http://maps.yandex.ru/?ll=%s,%s"), sLongitude, sLatitude);
+			sYandexMapsLocation = AtlFormatString(_T("http://maps.yandex.ru/?ll=%s,%s&z=%d"), sLongitude, sLatitude, 19);
+			sBingMapsLocation = AtlFormatString(_T("http://www.bing.com/maps/?v=2&cp=%s~%s&lvl=%d"), sLatitude, sLongitude, 17);
+			sYahooMapsLocation = AtlFormatString(_T("http://maps.yahoo.com/#lat=%s&lon=%s&zoom=%d"), sLatitude, sLongitude, 17);
+			sOpenStreetMapLocation = AtlFormatString(_T("http://www.openstreetmap.org/?lat=%s&lon=%s&zoom=%d"), sLatitude, sLongitude, 17);
+			sWikiMapiaLocation = AtlFormatString(_T("http://wikimapia.org/#lat=%s&lon=%s&z=%d"), sLatitude, sLongitude, 17);
 		}
 		#pragma endregion 
 		#pragma region Degrees, Minutes
@@ -127,6 +135,10 @@ public:
 			m_pStatics[nIndex].SetWindowText(AtlFormatString(_T("<A HREF=\"%s\">%s</A> (F%d)"), psTexts[nIndex], psTexts[nIndex], nIndex + 1));
 		m_GoogleMapsStatic.SetWindowText(AtlFormatString(_T("<A TITLE=\"Open in Google Maps\" HREF=\"%s\">%s</A>"), sGoogleMapsLocation, sGoogleMapsLocation));
 		m_YandexMapsStatic.SetWindowText(AtlFormatString(_T("<A TITLE=\"Open in Yandex Maps\" HREF=\"%s\">%s</A>"), sYandexMapsLocation, sYandexMapsLocation));
+		m_BingMapsStatic.SetWindowText(AtlFormatString(_T("<A TITLE=\"Open in Bing Maps\" HREF=\"%s\">%s</A>"), sBingMapsLocation, sBingMapsLocation));
+		m_YahooMapsStatic.SetWindowText(AtlFormatString(_T("<A TITLE=\"Open in Yahoo Maps\" HREF=\"%s\">%s</A>"), sYahooMapsLocation, sYahooMapsLocation));
+		m_OpenStreetMapStatic.SetWindowText(AtlFormatString(_T("<A TITLE=\"Open in Open Street Map\" HREF=\"%s\">%s</A>"), sOpenStreetMapLocation, sOpenStreetMapLocation));
+		m_WikiMapiaStatic.SetWindowText(AtlFormatString(_T("<A TITLE=\"Open in WikiMapia\" HREF=\"%s\">%s</A>"), sWikiMapiaLocation, sWikiMapiaLocation));
 	}
 	BOOL SetText(const CString& sText)
 	{
@@ -155,6 +167,7 @@ public:
 			return TRUE;
 		}
 		#pragma endregion 
+		// TODO: Recognize Bing, Yahoo, OpenStreetMap and WikiMapia URLs
 		#pragma region Degrees and Minutes
 		static CAtlStaticRegExp<> g_ExpressionD0(_T("^[\t ]*") 
 			_T("{[NSCÞ]}") _T("[\t ]*") _T("{[0-9]+}[^0-9]+?{[0-9]+\\.[0-9]+}") 
@@ -304,6 +317,10 @@ public:
 			_W(m_pStatics[nIndex].SubclassWindow(GetDlgItem(IDC_MAIN_DEGREES_LATITUDE + nIndex)));
 		_W(m_GoogleMapsStatic.SubclassWindow(GetDlgItem(IDC_MAIN_GOOGLEMAPS)));
 		_W(m_YandexMapsStatic.SubclassWindow(GetDlgItem(IDC_MAIN_YANDEXMAPS)));
+		_W(m_BingMapsStatic.SubclassWindow(GetDlgItem(IDC_MAIN_BINGMAPS)));
+		_W(m_YahooMapsStatic.SubclassWindow(GetDlgItem(IDC_MAIN_YAHOOMAPS)));
+		_W(m_OpenStreetMapStatic.SubclassWindow(GetDlgItem(IDC_MAIN_OPENSTREETMAP)));
+		_W(m_WikiMapiaStatic.SubclassWindow(GetDlgItem(IDC_MAIN_WIKIMAPIA)));
 		_W(CenterWindow());
 		m_bSetClipboardTextActive = FALSE;
 		m_NextClipboardViewerWindow = SetClipboardViewer();
