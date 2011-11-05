@@ -6,10 +6,6 @@
 
 #pragma once
 
-#include <psapi.h>
-
-#pragma comment(lib, "psapi.lib")
-
 ////////////////////////////////////////////////////////////
 // CGlobalVirtualAllocator
 
@@ -23,10 +19,9 @@ public:
 	CGlobalVirtualAllocator() throw() :
 		m_nPageSize(4 << 10) // 4L
 	{
-		PERFORMANCE_INFORMATION Information;
-		ZeroMemory(&Information, sizeof Information);
-		ATLVERIFY(GetPerformanceInfo(&Information, sizeof Information));
-		m_nPageSize = Information.PageSize;
+		SYSTEM_INFO Information;
+		GetSystemInfo(&Information);
+		m_nPageSize = Information.dwPageSize;
 		ATLASSERT(m_nPageSize);
 		ATLASSERT(!(m_nPageSize & (m_nPageSize - 1)));
 	}
@@ -170,6 +165,8 @@ public:
 		SIZE_T m_nAllocationSize;
 		VOID* m_pvData;
 		SIZE_T m_nDataSize;
+		VOID* m_pvPaddingData;
+		SIZE_T m_nPaddingDataSize;
 
 	public:
 	// CDescriptor
@@ -177,10 +174,11 @@ public:
 		{
 			ATLASSERT(nDataSize > 0);
 			const SIZE_T nPageSize = g_GlobalVirtualAllocator.GetPageSize();
+			const SIZE_T nAlignedDataSize = g_GlobalVirtualAllocator.Align(nDataSize);
 			const SIZE_T nAllocationSize = 
 				g_GlobalVirtualAllocator.Align(sizeof (CDescriptor)) +
 				CTraits::g_nHeadSanityPageCount * nPageSize +
-				g_GlobalVirtualAllocator.Align(nDataSize) +
+				nAlignedDataSize +
 				CTraits::g_nTailSanityPageCount * nPageSize +
 				0;
 			VOID* pvData = VirtualAlloc(NULL, nAllocationSize, MEM_COMMIT | MEM_RESERVE, PAGE_NOACCESS);
@@ -188,7 +186,14 @@ public:
 			CDescriptor* pDescriptor = (CDescriptor*) pvData;
 			DWORD nCurrentProtection;
 			ATLVERIFY(VirtualProtect(pDescriptor, sizeof *pDescriptor, PAGE_READWRITE, &nCurrentProtection));
-			pDescriptor->Initialize(nAllocationSize, nDataSize);
+			pDescriptor->m_nAllocationSize = nAllocationSize;
+			pDescriptor->m_pvData = (BYTE*) pDescriptor + g_GlobalVirtualAllocator.Align(sizeof *pDescriptor) + CTraits::g_nHeadSanityPageCount * nPageSize;
+			pDescriptor->m_nDataSize = nDataSize;
+			pDescriptor->m_nPaddingDataSize = nAlignedDataSize - nDataSize;
+			pDescriptor->m_pvPaddingData = (BYTE*) pDescriptor->m_pvData + nAlignedDataSize - pDescriptor->m_nPaddingDataSize;
+			ATLVERIFY(VirtualProtect(pDescriptor->m_pvData, pDescriptor->m_nDataSize, PAGE_READWRITE, &nCurrentProtection));
+			memset(pDescriptor->m_pvPaddingData, 0x77, pDescriptor->m_nPaddingDataSize);
+			ATLVERIFY(VirtualProtect(pDescriptor, sizeof *pDescriptor, PAGE_READONLY, &nCurrentProtection));
 			return pDescriptor;
 		}
 		static CDescriptor* FromData(VOID* pvData)
@@ -197,19 +202,16 @@ public:
 			CDescriptor* pDescriptor = (CDescriptor*) ((BYTE*) pvData - CTraits::g_nHeadSanityPageCount * g_GlobalVirtualAllocator.GetPageSize() - g_GlobalVirtualAllocator.Align(sizeof (CDescriptor)));
 			return pDescriptor;
 		}
-		VOID Initialize(SIZE_T nAllocationSize, SIZE_T nDataSize)
-		{
-			const SIZE_T nPageSize = g_GlobalVirtualAllocator.GetPageSize();
-			m_nAllocationSize = nAllocationSize;
-			m_pvData = (BYTE*) this + g_GlobalVirtualAllocator.Align(sizeof *this) + CTraits::g_nHeadSanityPageCount * nPageSize;
-			m_nDataSize = nDataSize;
-			DWORD nCurrentProtection;
-			ATLVERIFY(VirtualProtect(m_pvData, m_nDataSize, PAGE_READWRITE, &nCurrentProtection));
-			//ATLASSERT(!IsBadWritePtr(m_pvData, m_nDataSize));
-			ATLVERIFY(VirtualProtect(this, sizeof *this, PAGE_READONLY, &nCurrentProtection));
-		}
+		//VOID Initialize()
 		VOID Terminate()
 		{
+			_ATLTRY
+			{
+				ATLENSURE_THROW(IsPaddingValid(), HRESULT_FROM_WIN32(ERROR_INVALID_DATA));
+			}
+			_ATLCATCHALL()
+			{
+			}
 			ATLVERIFY(VirtualFree(this, 0, MEM_RELEASE));
 		}
 		VOID* GetData() const throw()
@@ -219,6 +221,14 @@ public:
 		SIZE_T GetDataSize() const throw()
 		{
 			return m_nDataSize;
+		}
+		BOOL IsPaddingValid() const throw()
+		{
+			BYTE* pnPaddingData = (BYTE*) m_pvPaddingData;
+			for(SIZE_T nIndex = m_nPaddingDataSize; nIndex > 0; nIndex--, pnPaddingData++)
+				if(*pnPaddingData != 0x77)
+					return FALSE;
+			return TRUE;
 		}
 	};
 
