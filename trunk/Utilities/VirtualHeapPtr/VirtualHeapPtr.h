@@ -300,10 +300,10 @@ public:
 	{
 		if(!m_pData)
 			return;
-		MEMORY_BASIC_INFORMATION DataInformation;
-		ATLENSURE_THROW(VirtualQuery(m_pData, &DataInformation, sizeof DataInformation), AtlHresultFromLastError());
+		CDebugAllocator::CDescriptor* pDescriptor = CDebugAllocator::CDescriptor::FromData(m_pData);
+		ATLASSERT(pDescriptor);
 		DWORD nCurrentProtection;
-		ATLENSURE_THROW(VirtualProtect(m_pData, DataInformation.RegionSize, nProtection, &nCurrentProtection), AtlHresultFromLastError());
+		ATLENSURE_THROW(VirtualProtect(pDescriptor->GetData(), pDescriptor->GetDataSize(), nProtection, &nCurrentProtection), AtlHresultFromLastError());
 	}
 };
 
