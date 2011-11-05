@@ -71,7 +71,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 	_ATLTRY
 	{
-		p[-1] = n;
+		p[-1] = n + 1;
 	}
 	_ATLCATCHALL()
 	{
@@ -87,7 +87,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 	_ATLTRY
 	{
-		p[2] = n;
+		p[2] = n + 1;
 	}
 	_ATLCATCHALL()
 	{
