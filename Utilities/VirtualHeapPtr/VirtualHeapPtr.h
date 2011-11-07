@@ -137,15 +137,20 @@ public:
 class CDebugAllocatorTraits
 {
 public:
-	static SIZE_T g_nHeadSanityPageCount;
-	static SIZE_T g_nTailSanityPageCount;
-
-public:
 // CDebugAllocatorTraits
+	static SIZE_T GetHeadSanityPageCount() throw()
+	{
+		return 1;
+	}
+	static SIZE_T GetTailSanityPageCount() throw()
+	{
+		return 1;
+	}
+	static BOOL IsHeadPadding() throw()
+	{
+		return TRUE;
+	}
 };
-
-__declspec(selectany) SIZE_T CDebugAllocatorTraits::g_nHeadSanityPageCount = 1;
-__declspec(selectany) SIZE_T CDebugAllocatorTraits::g_nTailSanityPageCount = 1;
 
 ////////////////////////////////////////////////////////////
 // CDebugAllocatorT, CDebugAllocator
@@ -177,9 +182,9 @@ public:
 			const SIZE_T nAlignedDataSize = g_GlobalVirtualAllocator.Align(nDataSize);
 			const SIZE_T nAllocationSize = 
 				g_GlobalVirtualAllocator.Align(sizeof (CDescriptor)) +
-				CTraits::g_nHeadSanityPageCount * nPageSize +
+				CTraits::GetHeadSanityPageCount() * nPageSize +
 				nAlignedDataSize +
-				CTraits::g_nTailSanityPageCount * nPageSize +
+				CTraits::GetTailSanityPageCount() * nPageSize +
 				0;
 			VOID* pvData = VirtualAlloc(NULL, nAllocationSize, MEM_COMMIT | MEM_RESERVE, PAGE_NOACCESS);
 			ATLENSURE_THROW(pvData, AtlHresultFromLastError());
@@ -187,10 +192,16 @@ public:
 			DWORD nCurrentProtection;
 			ATLVERIFY(VirtualProtect(pDescriptor, sizeof *pDescriptor, PAGE_READWRITE, &nCurrentProtection));
 			pDescriptor->m_nAllocationSize = nAllocationSize;
-			pDescriptor->m_pvData = (BYTE*) pDescriptor + g_GlobalVirtualAllocator.Align(sizeof *pDescriptor) + CTraits::g_nHeadSanityPageCount * nPageSize;
+			pDescriptor->m_pvData = (BYTE*) pDescriptor + g_GlobalVirtualAllocator.Align(sizeof *pDescriptor) + CTraits::GetHeadSanityPageCount() * nPageSize;
 			pDescriptor->m_nDataSize = nDataSize;
-			pDescriptor->m_nPaddingDataSize = nAlignedDataSize - nDataSize;
-			pDescriptor->m_pvPaddingData = (BYTE*) pDescriptor->m_pvData + nAlignedDataSize - pDescriptor->m_nPaddingDataSize;
+			const SIZE_T nPaddingDataSize = nAlignedDataSize - nDataSize;
+			if(CTraits::IsHeadPadding() && nPaddingDataSize)
+			{
+				pDescriptor->m_pvPaddingData = pDescriptor->m_pvData;
+				reinterpret_cast<BYTE*&>(pDescriptor->m_pvData) += nPaddingDataSize;
+			} else
+				pDescriptor->m_pvPaddingData = (BYTE*) pDescriptor->m_pvData + nAlignedDataSize - nPaddingDataSize;
+			pDescriptor->m_nPaddingDataSize = nPaddingDataSize;
 			ATLVERIFY(VirtualProtect(pDescriptor->m_pvData, pDescriptor->m_nDataSize, PAGE_READWRITE, &nCurrentProtection));
 			memset(pDescriptor->m_pvPaddingData, 0x77, pDescriptor->m_nPaddingDataSize);
 			ATLVERIFY(VirtualProtect(pDescriptor, sizeof *pDescriptor, PAGE_READONLY, &nCurrentProtection));
@@ -199,7 +210,9 @@ public:
 		static CDescriptor* FromData(VOID* pvData)
 		{
 			ATLASSERT(pvData);
-			CDescriptor* pDescriptor = (CDescriptor*) ((BYTE*) pvData - CTraits::g_nHeadSanityPageCount * g_GlobalVirtualAllocator.GetPageSize() - g_GlobalVirtualAllocator.Align(sizeof (CDescriptor)));
+			ATLASSERT(!(g_GlobalVirtualAllocator.GetPageSize() & (g_GlobalVirtualAllocator.GetPageSize() - 1)));
+			BYTE* pnData = (BYTE*) ((UINT_PTR) pvData & ~(g_GlobalVirtualAllocator.GetPageSize() - 1));
+			CDescriptor* pDescriptor = (CDescriptor*) (pnData - CTraits::GetHeadSanityPageCount() * g_GlobalVirtualAllocator.GetPageSize() - g_GlobalVirtualAllocator.Align(sizeof (CDescriptor)));
 			return pDescriptor;
 		}
 		//VOID Initialize()
