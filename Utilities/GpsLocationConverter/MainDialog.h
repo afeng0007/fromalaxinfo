@@ -78,7 +78,7 @@ public:
 			const DOUBLE fPartialLatitudeMinute = (fPartialLatitude - nPartialLatitude) * 60;
 			const INT nPartialLatitudeMinute = (INT) fPartialLatitudeMinute;
 			sLatitude.AppendFormat(_T("%02d"), nPartialLatitudeMinute);
-			sLatitude.AppendFormat(_T(".%03d "), (INT) ((fPartialLatitudeMinute - nPartialLatitudeMinute) * 1000 + 0.5 - 1E-6));
+			sLatitude.AppendFormat(_T(".%03d"), (INT) ((fPartialLatitudeMinute - nPartialLatitudeMinute) * 1000 + 0.5 - 1E-6));
 			#pragma endregion 
 			#pragma region Latitude
 			sLongitude.Append((fLongitude >= 0) ? _T("E ") : _T("W "));
@@ -88,7 +88,7 @@ public:
 			const DOUBLE fPartialLongitudeMinute = (fPartialLongitude - nPartialLongitude) * 60;
 			const INT nPartialLongitudeMinute = (INT) fPartialLongitudeMinute;
 			sLongitude.AppendFormat(_T("%02d"), nPartialLongitudeMinute);
-			sLongitude.AppendFormat(_T(".%03d "), (INT) ((fPartialLongitudeMinute - nPartialLongitudeMinute) * 1000 + 0.5 - 1E-6));
+			sLongitude.AppendFormat(_T(".%03d"), (INT) ((fPartialLongitudeMinute - nPartialLongitudeMinute) * 1000 + 0.5 - 1E-6));
 			#pragma endregion 
 			psTexts[4] = sLatitude;
 			psTexts[5] = sLongitude;
@@ -168,27 +168,22 @@ public:
 		}
 		#pragma endregion 
 		// TODO: Recognize Bing, Yahoo, OpenStreetMap and WikiMapia URLs
+		// NOTE: Russian Å is often confused with English E, so we take both
 		#pragma region Degrees and Minutes
-		static CAtlStaticRegExp<> g_ExpressionD0(_T("^[\t ]*") 
-			_T("{[NSCÞ]}") _T("[\t ]*") _T("{[0-9]+}[^0-9]+?{[0-9]+\\.[0-9]+}") 
-			_T("[^0-9\\.]+?") 
-			_T("{[EWÂÇ]}") _T("[\t ]*") _T("{[0-9]+}[^0-9]+?{[0-9]+\\.[0-9]+}")
-			_T(""), FALSE);
-		static CAtlStaticRegExp<> g_ExpressionD1(_T("^[\t ]*") 
-			_T("{[EWÂÇ]}") _T("[\t ]*") _T("{[0-9]+}[^0-9]+?{[0-9]+\\.[0-9]+}")
-			_T("[^0-9\\.]+?") 
-			_T("{[NSCÞ]}") _T("[\t ]*") _T("{[0-9]+}[^0-9]+?{[0-9]+\\.[0-9]+}") 
-			_T(""), FALSE);
-		static CAtlStaticRegExp<> g_ExpressionD2(_T("^[\t ]*") 
-			_T("{[0-9]+}[^0-9]+?{[0-9]+\\.[0-9]+}") _T("[\t ]*") _T("{[NSCÞ]}")
-			_T("[^0-9\\.]+?") 
-			_T("{[0-9]+}[^0-9]+?{[0-9]+\\.[0-9]+}") _T("[\t ]*") _T("{[EWÂÇ]}")
-			_T(""), FALSE);
-		static CAtlStaticRegExp<> g_ExpressionD3(_T("^[\t ]*") 
-			_T("{[0-9]+}[^0-9]+?{[0-9]+\\.[0-9]+}") _T("[\t ]*") _T("{[EWÂÇ]}")
-			_T("[^0-9\\.]+?") 
-			_T("{[0-9]+}[^0-9]+?{[0-9]+\\.[0-9]+}") _T("[\t ]*") _T("{[NSCÞ]}")
-			_T(""), FALSE);
+#define LATITUDE_SYMBOL		_T("{[NSCÞ]}")
+#define LONGITUDE_SYMBOL	_T("{[EWÂÇÅ]}")
+#define VALUE				_T("{[0-9]+}[^0-9]+?{[0-9]+\\.[0-9]+}") 
+#define OPTIONAL_WHITESPACE	_T("[\t ]*")
+#define SEPARATOR			_T("[^0-9\\.]+?")
+		static CAtlStaticRegExp<> g_ExpressionD0(_T("^") OPTIONAL_WHITESPACE LATITUDE_SYMBOL OPTIONAL_WHITESPACE VALUE SEPARATOR LONGITUDE_SYMBOL OPTIONAL_WHITESPACE VALUE _T(""), FALSE);
+		static CAtlStaticRegExp<> g_ExpressionD1(_T("^") OPTIONAL_WHITESPACE LONGITUDE_SYMBOL OPTIONAL_WHITESPACE VALUE SEPARATOR LATITUDE_SYMBOL OPTIONAL_WHITESPACE VALUE _T(""), FALSE);
+		static CAtlStaticRegExp<> g_ExpressionD2(_T("^") OPTIONAL_WHITESPACE VALUE OPTIONAL_WHITESPACE LATITUDE_SYMBOL SEPARATOR VALUE OPTIONAL_WHITESPACE LONGITUDE_SYMBOL _T(""), FALSE);
+		static CAtlStaticRegExp<> g_ExpressionD3(_T("^") OPTIONAL_WHITESPACE VALUE OPTIONAL_WHITESPACE LATITUDE_SYMBOL SEPARATOR VALUE OPTIONAL_WHITESPACE LONGITUDE_SYMBOL _T(""), FALSE);
+#undef LATITUDE_SYMBOL
+#undef LONGITUDE_SYMBOL
+#undef VALUE
+#undef OPTIONAL_WHITESPACE
+#undef SEPARATOR
 		INT nLayoutD = -1;
 		if(g_ExpressionD0.Match(sText, &MatchContext))
 			nLayoutD = 0;
@@ -229,7 +224,7 @@ public:
 		#pragma endregion 
 		#pragma region Degrees, Minutes and Seconds
 #define LATITUDE_SYMBOL		_T("{[NSCÞ]}")
-#define LONGITUDE_SYMBOL	_T("{[EWÂÇ]}")
+#define LONGITUDE_SYMBOL	_T("{[EWÂÇÅ]}")
 #define VALUE				_T("{[0-9]+}[^0-9]+?{[0-9]+}[^0-9\\.]+?{[0-9]+(\\.([0-9]+)?)?}")
 #define OPTIONAL_WHITESPACE	_T("[\t ]*")
 #define SEPARATOR			_T("[^0-9\\.]+?")
