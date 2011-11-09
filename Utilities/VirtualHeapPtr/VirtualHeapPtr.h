@@ -220,7 +220,9 @@ public:
 		{
 			_ATLTRY
 			{
-				ATLENSURE_THROW(IsPaddingValid(), HRESULT_FROM_WIN32(ERROR_INVALID_DATA));
+				if(!IsPaddingValid())
+					*((INT_PTR*) 0) = 'EPAD';
+				//ATLENSURE_THROW(, HRESULT_FROM_WIN32(ERROR_INVALID_DATA));
 			}
 			_ATLCATCHALL()
 			{
