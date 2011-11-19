@@ -41,23 +41,26 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 	#pragma endregion 
 	volatile BYTE n;
-	p.SetProtection(PAGE_READWRITE | PAGE_GUARD);
-	#pragma region PAGE_GUARD
-	_ATLTRY
+	//if(FALSE)
 	{
-		n = p[0];
-	}
-	_ATLCATCHALL()
-	{
-		_tprintf(_T("Oopsie in line %d (First PAGE_GUARD access)\n"), __LINE__);
-	}
-	_ATLTRY
-	{
-		n = p[1];
-	}
-	_ATLCATCHALL()
-	{
-		_tprintf(_T("Oopsie in line %d (Second PAGE_GUARD access)\n"), __LINE__);
+		p.SetProtection(PAGE_READWRITE | PAGE_GUARD);
+		#pragma region PAGE_GUARD
+		_ATLTRY
+		{
+			n = p[0];
+		}
+		_ATLCATCHALL()
+		{
+			_tprintf(_T("Oopsie in line %d (First PAGE_GUARD access)\n"), __LINE__);
+		}
+		_ATLTRY
+		{
+			n = p[1];
+		}
+		_ATLCATCHALL()
+		{
+			_tprintf(_T("Oopsie in line %d (Second PAGE_GUARD access)\n"), __LINE__);
+		}
 	}
 	#pragma endregion 
 	#pragma region Invalid Index
