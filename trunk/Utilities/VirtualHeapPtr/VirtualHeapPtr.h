@@ -148,7 +148,7 @@ public:
 	}
 	static BOOL IsHeadPadding() throw()
 	{
-		return TRUE;
+		return FALSE;
 	}
 };
 
