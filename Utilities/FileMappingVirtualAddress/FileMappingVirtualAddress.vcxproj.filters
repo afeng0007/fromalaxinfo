@@ -1,0 +1,103 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{c6bf94b6-2e32-450b-9a56-150093a2a211}</UniqueIdentifier>
+      <Extensions>cpp;c;cxx;def;odl;idl;hpj;bat;asm</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{67a0a406-363c-4a4b-a60e-5fd8c3d4fd07}</UniqueIdentifier>
+      <Extensions>h;hpp;hxx;hm;inl;inc</Extensions>
+    </Filter>
+    <Filter Include="Header Files\Alax.Info">
+      <UniqueIdentifier>{d5ab678f-f4ab-4558-a476-5bfae88b74cd}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{ff822602-3159-458e-9b07-00ede1d1c45d}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;jpg;jpeg;jpe;manifest</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="FileMappingVirtualAddress.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="MainDialog.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\alax.info\roatlbase.h">
+      <Filter>Header Files\Alax.Info</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\alax.info\roatlcom.h">
+      <Filter>Header Files\Alax.Info</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\alax.info\roatldebugtrace.h">
+      <Filter>Header Files\Alax.Info</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\alax.info\roatldefinitions.h">
+      <Filter>Header Files\Alax.Info</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\alax.info\roatlexceptionfilter.h">
+      <Filter>Header Files\Alax.Info</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\alax.info\roatlexceptions.h">
+      <Filter>Header Files\Alax.Info</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\alax.info\roatlmisc.h">
+      <Filter>Header Files\Alax.Info</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\alax.info\roatlpersist.h">
+      <Filter>Header Files\Alax.Info</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\alax.info\roatlstreams.h">
+      <Filter>Header Files\Alax.Info</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\alax.info\roatlstrings.h">
+      <Filter>Header Files\Alax.Info</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\alax.info\roatltrace.h">
+      <Filter>Header Files\Alax.Info</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\alax.info\roatlvariants.h">
+      <Filter>Header Files\Alax.Info</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\alax.info\rocontrols.h">
+      <Filter>Header Files\Alax.Info</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\alax.info\rodialogs.h">
+      <Filter>Header Files\Alax.Info</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\alax.info\rores.h">
+      <Filter>Header Files\Alax.Info</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\alax.info\rowindows.h">
+      <Filter>Header Files\Alax.Info</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\alax.info\rowtlapp.h">
+      <Filter>Header Files\Alax.Info</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\alax.info\rowtlcrack.h">
+      <Filter>Header Files\Alax.Info</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="FileMappingVirtualAddress.ico">
+      <Filter>Resource Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="FileMappingVirtualAddress.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>
