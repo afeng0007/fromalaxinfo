@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0555 */
-/* at Sat Feb 11 15:33:50 2012
+/* at Sun Feb 12 00:21:00 2012
  */
 /* Compiler settings for MaxMindGeoLite.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
@@ -49,8 +49,8 @@
 
 #include "MaxMindGeoLite_i.h"
 
-#define TYPE_FORMAT_STRING_SIZE   1079                              
-#define PROC_FORMAT_STRING_SIZE   331                               
+#define TYPE_FORMAT_STRING_SIZE   1083                              
+#define PROC_FORMAT_STRING_SIZE   367                               
 #define EXPR_FORMAT_STRING_SIZE   1                                 
 #define TRANSMIT_AS_TABLE_SIZE    0            
 #define WIRE_MARSHAL_TABLE_SIZE   2            
@@ -95,6 +95,13 @@ extern const MIDL_STUB_DESC Object_StubDesc;
 
 extern const MIDL_SERVER_INFO ILocations_ServerInfo;
 extern const MIDL_STUBLESS_PROXY_INFO ILocations_ProxyInfo;
+
+
+extern const MIDL_STUB_DESC Object_StubDesc;
+
+
+extern const MIDL_SERVER_INFO ILazyLocations_ServerInfo;
+extern const MIDL_STUBLESS_PROXY_INFO ILazyLocations_ProxyInfo;
 
 
 extern const USER_MARSHAL_ROUTINE_QUADRUPLE UserMarshalRoutines[ WIRE_MARSHAL_TABLE_SIZE ];
@@ -392,6 +399,37 @@ static const MaxMindGeoLite_MIDL_PROC_FORMAT_STRING MaxMindGeoLite__MIDL_ProcFor
 /* 324 */	NdrFcShort( 0x70 ),	/* Flags:  out, return, base type, */
 /* 326 */	NdrFcShort( 0x18 ),	/* x86 Stack size/offset = 24 */
 /* 328 */	0x8,		/* FC_LONG */
+			0x0,		/* 0 */
+
+	/* Procedure get_Initialized */
+
+/* 330 */	0x33,		/* FC_AUTO_HANDLE */
+			0x6c,		/* Old Flags:  object, Oi2 */
+/* 332 */	NdrFcLong( 0x0 ),	/* 0 */
+/* 336 */	NdrFcShort( 0x8 ),	/* 8 */
+/* 338 */	NdrFcShort( 0xc ),	/* x86 Stack size/offset = 12 */
+/* 340 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 342 */	NdrFcShort( 0x22 ),	/* 34 */
+/* 344 */	0x44,		/* Oi2 Flags:  has return, has ext, */
+			0x2,		/* 2 */
+/* 346 */	0x8,		/* 8 */
+			0x1,		/* Ext Flags:  new corr desc, */
+/* 348 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 350 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 352 */	NdrFcShort( 0x0 ),	/* 0 */
+
+	/* Parameter pbInitialized */
+
+/* 354 */	NdrFcShort( 0x2150 ),	/* Flags:  out, base type, simple ref, srv alloc size=8 */
+/* 356 */	NdrFcShort( 0x4 ),	/* x86 Stack size/offset = 4 */
+/* 358 */	0x6,		/* FC_SHORT */
+			0x0,		/* 0 */
+
+	/* Return value */
+
+/* 360 */	NdrFcShort( 0x70 ),	/* Flags:  out, return, base type, */
+/* 362 */	NdrFcShort( 0x8 ),	/* x86 Stack size/offset = 8 */
+/* 364 */	0x8,		/* FC_LONG */
 			0x0,		/* 0 */
 
 			0x0
@@ -1132,6 +1170,10 @@ static const MaxMindGeoLite_MIDL_TYPE_FORMAT_STRING MaxMindGeoLite__MIDL_TypeFor
 			0xea,		/* 234 */
 /* 1076 */	0x2f,		/* 47 */
 			0x5,		/* 5 */
+/* 1078 */	
+			0x11, 0xc,	/* FC_RP [alloced_on_stack] [simple_pointer] */
+/* 1080 */	0x6,		/* FC_SHORT */
+			0x5c,		/* FC_PAD */
 
 			0x0
         }
@@ -1321,6 +1363,77 @@ CInterfaceStubVtbl _ILocationsStubVtbl =
     CStdStubBuffer_DELEGATING_METHODS
 };
 
+
+/* Object interface: ILazyLocations, ver. 0.0,
+   GUID={0x34BF53BB,0xD4C8,0x4002,{0xA0,0xEC,0x5B,0xA7,0x0F,0xE7,0xAC,0xA3}} */
+
+#pragma code_seg(".orpc")
+static const unsigned short ILazyLocations_FormatStringOffsetTable[] =
+    {
+    (unsigned short) -1,
+    (unsigned short) -1,
+    (unsigned short) -1,
+    (unsigned short) -1,
+    288,
+    330
+    };
+
+static const MIDL_STUBLESS_PROXY_INFO ILazyLocations_ProxyInfo =
+    {
+    &Object_StubDesc,
+    MaxMindGeoLite__MIDL_ProcFormatString.Format,
+    &ILazyLocations_FormatStringOffsetTable[-3],
+    0,
+    0,
+    0
+    };
+
+
+static const MIDL_SERVER_INFO ILazyLocations_ServerInfo = 
+    {
+    &Object_StubDesc,
+    0,
+    MaxMindGeoLite__MIDL_ProcFormatString.Format,
+    &ILazyLocations_FormatStringOffsetTable[-3],
+    0,
+    0,
+    0,
+    0};
+CINTERFACE_PROXY_VTABLE(9) _ILazyLocationsProxyVtbl = 
+{
+    &ILazyLocations_ProxyInfo,
+    &IID_ILazyLocations,
+    IUnknown_QueryInterface_Proxy,
+    IUnknown_AddRef_Proxy,
+    IUnknown_Release_Proxy ,
+    0 /* IDispatch::GetTypeInfoCount */ ,
+    0 /* IDispatch::GetTypeInfo */ ,
+    0 /* IDispatch::GetIDsOfNames */ ,
+    0 /* IDispatch_Invoke_Proxy */ ,
+    (void *) (INT_PTR) -1 /* ILocations::get_Item */ ,
+    (void *) (INT_PTR) -1 /* ILazyLocations::get_Initialized */
+};
+
+
+static const PRPC_STUB_FUNCTION ILazyLocations_table[] =
+{
+    STUB_FORWARDING_FUNCTION,
+    STUB_FORWARDING_FUNCTION,
+    STUB_FORWARDING_FUNCTION,
+    STUB_FORWARDING_FUNCTION,
+    NdrStubCall2,
+    NdrStubCall2
+};
+
+CInterfaceStubVtbl _ILazyLocationsStubVtbl =
+{
+    &IID_ILazyLocations,
+    &ILazyLocations_ServerInfo,
+    9,
+    &ILazyLocations_table[-3],
+    CStdStubBuffer_DELEGATING_METHODS
+};
+
 static const MIDL_STUB_DESC Object_StubDesc = 
     {
     0,
@@ -1347,6 +1460,7 @@ static const MIDL_STUB_DESC Object_StubDesc =
 
 const CInterfaceProxyVtbl * const _MaxMindGeoLite_ProxyVtblList[] = 
 {
+    ( CInterfaceProxyVtbl *) &_ILazyLocationsProxyVtbl,
     ( CInterfaceProxyVtbl *) &_ILocationProxyVtbl,
     ( CInterfaceProxyVtbl *) &_ILocationsProxyVtbl,
     0
@@ -1354,6 +1468,7 @@ const CInterfaceProxyVtbl * const _MaxMindGeoLite_ProxyVtblList[] =
 
 const CInterfaceStubVtbl * const _MaxMindGeoLite_StubVtblList[] = 
 {
+    ( CInterfaceStubVtbl *) &_ILazyLocationsStubVtbl,
     ( CInterfaceStubVtbl *) &_ILocationStubVtbl,
     ( CInterfaceStubVtbl *) &_ILocationsStubVtbl,
     0
@@ -1361,6 +1476,7 @@ const CInterfaceStubVtbl * const _MaxMindGeoLite_StubVtblList[] =
 
 PCInterfaceName const _MaxMindGeoLite_InterfaceNamesList[] = 
 {
+    "ILazyLocations",
     "ILocation",
     "ILocations",
     0
@@ -1368,6 +1484,7 @@ PCInterfaceName const _MaxMindGeoLite_InterfaceNamesList[] =
 
 const IID *  const _MaxMindGeoLite_BaseIIDList[] = 
 {
+    &IID_IDispatch,
     &IID_IDispatch,
     &IID_IDispatch,
     0
@@ -1380,8 +1497,9 @@ int __stdcall _MaxMindGeoLite_IID_Lookup( const IID * pIID, int * pIndex )
 {
     IID_BS_LOOKUP_SETUP
 
-    IID_BS_LOOKUP_INITIAL_TEST( _MaxMindGeoLite, 2, 1 )
-    IID_BS_LOOKUP_RETURN_RESULT( _MaxMindGeoLite, 2, *pIndex )
+    IID_BS_LOOKUP_INITIAL_TEST( _MaxMindGeoLite, 3, 2 )
+    IID_BS_LOOKUP_NEXT_TEST( _MaxMindGeoLite, 1 )
+    IID_BS_LOOKUP_RETURN_RESULT( _MaxMindGeoLite, 3, *pIndex )
     
 }
 
@@ -1392,7 +1510,7 @@ const ExtendedProxyFileInfo MaxMindGeoLite_ProxyFileInfo =
     (const PCInterfaceName * ) & _MaxMindGeoLite_InterfaceNamesList,
     (const IID ** ) & _MaxMindGeoLite_BaseIIDList,
     & _MaxMindGeoLite_IID_Lookup, 
-    2,
+    3,
     2,
     0, /* table of [async_uuid] interfaces */
     0, /* Filler1 */

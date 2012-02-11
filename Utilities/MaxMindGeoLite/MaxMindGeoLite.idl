@@ -39,6 +39,18 @@ interface ILocations : IDispatch
 	[propget, id(DISPID_VALUE)] HRESULT Item([in] VARIANT vIndex, [out, retval] ILocation** ppLocation);
 };
 [
+	object,
+	uuid(34BF53BB-D4C8-4002-A0EC-5BA70FE7ACA3),
+	dual,
+	oleautomation,
+	helpstring("ILazyLocations Interface"),
+	pointer_default(unique)
+]
+interface ILazyLocations : ILocations
+{
+	[propget, id(1)] HRESULT Initialized([out, retval] VARIANT_BOOL* pbInitialized);
+};
+[
 	uuid(F80BC862-E43E-4809-ACFC-1A608209C860),
 	version(1.0),
 	helpstring("Alax.Info Geolocation Tools (using MaxMind GeoLite) 1.0 Type Library")
@@ -63,6 +75,16 @@ library AlaxInfoMaxMindGeoLite
 	coclass Locations
 	{
 		[default] interface ILocations;
+		//interface ISupportErrorInfo;
+	};
+	[
+		uuid(29752330-E1FB-43D0-ADBF-21AF77633259),
+		helpstring("LazyLocations Class")
+	]
+	coclass LazyLocations
+	{
+		[default] interface ILocations;
+		interface ILazyLocations;
 		//interface ISupportErrorInfo;
 	};
 };
