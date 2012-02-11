@@ -229,16 +229,44 @@ namespace GeoLiteCity
 }
 
 ////////////////////////////////////////////////////////////
+// CFreeThreadedMarshaler
+
+class CFreeThreadedMarshaler
+{
+private:
+	CComPtr<IUnknown> m_pMarshalerUnknown;
+	CComPtr<IMarshal> m_pMarshalerMarshal;
+
+public:
+// CFreeThreadedMarshaler
+	const CComPtr<IMarshal>& operator -> () const throw()
+	{
+		return GetMarshal();
+	}
+	VOID Initialize()
+	{
+		_A(!m_pMarshalerUnknown && !m_pMarshalerMarshal);
+		__C(CoCreateFreeThreadedMarshaler(NULL, &m_pMarshalerUnknown));
+		m_pMarshalerMarshal = m_pMarshalerUnknown;
+		__D(m_pMarshalerMarshal, E_NOINTERFACE);
+	}
+	VOID Terminate() throw()
+	{
+		m_pMarshalerMarshal = NULL;
+		m_pMarshalerUnknown = NULL;
+	}
+	const CComPtr<IMarshal>& GetMarshal() const throw()
+	{
+		return m_pMarshalerMarshal;
+	}
+};
+
+////////////////////////////////////////////////////////////
 // CLocations
 
 class ATL_NO_VTABLE CLocations : 
 	public CComObjectRootEx<CComMultiThreadModelNoCS>,
 	public CComCoClass<CLocations, &__uuidof(Locations)>,
-	public CBasePersistT<CLocations>,
-	//public IRoPersistStreamInitT<CLocations>,
-	//public IRoPersistStorageT<CLocations>,
-	//public IRoPersistPropertyBagT<CLocations>,
-	//public IRoSpecifyPropertyPagesT<CLocations>,
 	public IDispatchImpl<ILocations>
 {
 public:
@@ -246,21 +274,15 @@ public:
 
 //DECLARE_REGISTRY_RESOURCEID(IDR)
 
+DECLARE_CLASSFACTORY_SINGLETON(CLocations)
+
 DECLARE_PROTECT_FINAL_CONSTRUCT()
 
 BEGIN_COM_MAP(CLocations)
-	//COM_INTERFACE_ENTRY_IID(__uuidof(IPersist), IPersistStreamInit)
-	//COM_INTERFACE_ENTRY_IID(__uuidof(IPersistStream), IPersistStreamInit)
-	//COM_INTERFACE_ENTRY(IPersistStreamInit)
-	//COM_INTERFACE_ENTRY(IPersistStorage)
-	//COM_INTERFACE_ENTRY(IPersistPropertyBag)
-	//COM_INTERFACE_ENTRY(ISpecifyPropertyPages)
 	COM_INTERFACE_ENTRY(ILocations)
 	COM_INTERFACE_ENTRY(IDispatch)
+	COM_INTERFACE_ENTRY_AGGREGATE(__uuidof(IMarshal), m_FreeThreadedMarshaler)
 END_COM_MAP()
-
-BEGIN_PROP_MAP(CLocations)
-END_PROP_MAP()
 
 public:
 
@@ -426,8 +448,8 @@ public:
 
 private:
 	CWindowsSockets2 m_Sockets;
-	CRequiresSave m_bRequiresSave;
-	mutable CRoCriticalSection m_DataCriticalSection;
+	CFreeThreadedMarshaler m_FreeThreadedMarshaler;
+	//mutable CRoCriticalSection m_DataCriticalSection;
 	GeoLiteCity::CLocationArray m_LocationArray;
 	GeoLiteCity::CBlockArray m_BlockArray;
 
@@ -450,9 +472,7 @@ public:
 		}
 		return S_OK;
 	}
-	CLocations() throw() :
-		CBasePersistT<CLocations>(m_DataCriticalSection),
-		m_bRequiresSave(m_DataCriticalSection)
+	CLocations() throw()
 	{
 		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
 	}
@@ -465,6 +485,7 @@ public:
 		_ATLTRY
 		{
 			__C(m_Sockets.GetStartupResult());
+			m_FreeThreadedMarshaler.Initialize();
 			Initialize();
 		}
 		_ATLCATCH(Exception)
@@ -475,6 +496,7 @@ public:
 	}
 	VOID FinalRelease() throw()
 	{
+		m_FreeThreadedMarshaler.Terminate();
 	}
 	VOID Initialize()
 	{
@@ -489,7 +511,7 @@ public:
 		m_BlockArray.Initialize(sBlockPath);
 	}
 
-// ILocation
+// ILocations
 	STDMETHOD(get_Item)(VARIANT vIndex, ILocation** ppLocation) throw()
 	{
 		_Z4(atlTraceCOM, 4, _T("vIndex.vt 0x%x\n"), vIndex.vt);
@@ -528,3 +550,156 @@ public:
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(Locations), CLocations)
+
+////////////////////////////////////////////////////////////
+// CLazyLocations
+
+class ATL_NO_VTABLE CLazyLocations : 
+	public CComObjectRootEx<CComMultiThreadModelNoCS>,
+	public CComCoClass<CLazyLocations, &__uuidof(LazyLocations)>,
+	public IDispatchImpl<ILazyLocations>
+{
+	typedef CThreadT<CLazyLocations> CThread;
+
+public:
+	enum { IDR = IDR_LAZYLOCATIONS };
+
+//DECLARE_REGISTRY_RESOURCEID(IDR)
+
+DECLARE_CLASSFACTORY_SINGLETON(CLazyLocations)
+
+DECLARE_PROTECT_FINAL_CONSTRUCT()
+
+BEGIN_COM_MAP(CLazyLocations)
+	COM_INTERFACE_ENTRY(ILazyLocations)
+	COM_INTERFACE_ENTRY_IID(__uuidof(IDispatch), ILazyLocations)
+	COM_INTERFACE_ENTRY(ILocations)
+	COM_INTERFACE_ENTRY_AGGREGATE(__uuidof(IMarshal), m_FreeThreadedMarshaler)
+END_COM_MAP()
+
+private:
+	CFreeThreadedMarshaler m_FreeThreadedMarshaler;
+	mutable CRoCriticalSection m_ThreadCriticalSection;
+	CObjectPtr<CThread> m_pThread;
+	mutable CRoCriticalSection m_DataCriticalSection;
+	CObjectPtr<CLocations> m_pLocations;
+
+	DWORD ThreadProc(CThread* pThread, CEvent& InitializationEvent, CEvent& TerminationEvent)
+	{
+		CMultiThreadedApartment MultiThreadedApartment;
+		_W(InitializationEvent.Set());
+		CComPtr<ILocations> pLocations;
+		__C(pLocations.CoCreateInstance(__uuidof(Locations)));
+		const CObjectPtr<CLocations> pNativeLocations = static_cast<CLocations*>((ILocations*) pLocations);
+		_A(pNativeLocations);
+		{
+			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+			_A(!m_pLocations);
+			m_pLocations = pNativeLocations;
+		}
+		TerminationEvent;
+		CRoCriticalSectionLock ThreadLock(m_ThreadCriticalSection);
+		_A(m_pThread == pThread || !m_pThread && WaitForSingleObject(TerminationEvent, 0) == WAIT_OBJECT_0);
+		m_pThread.Release();
+		return 0;
+	}
+
+public:
+// CLazyLocations
+	static CString GetObjectFriendlyName()
+	{
+		return _StringHelper::GetLine(IDR, 2);
+	}
+	static HRESULT WINAPI UpdateRegistry(BOOL bRegister) throw()
+	{
+		_Z2(atlTraceRegistrar, 2, _T("bRegister %d\n"), bRegister);
+		_ATLTRY
+		{
+			UpdateRegistryFromResource<CLazyLocations>(bRegister);
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return S_OK;
+	}
+	CLazyLocations() throw()
+	{
+		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+	}
+	~CLazyLocations() throw()
+	{
+		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+	}
+	HRESULT FinalConstruct() throw()
+	{
+		_ATLTRY
+		{
+			CRoCriticalSectionLock ThreadLock(m_ThreadCriticalSection);
+			CObjectPtr<CThread> pThread;
+			__E(pThread.Construct()->Initialize(this, &CLazyLocations::ThreadProc));
+			m_pThread = pThread;
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return S_OK;
+	}
+	VOID FinalRelease() throw()
+	{
+		CObjectPtr<CThread> pThread;
+		{
+			CRoCriticalSectionLock ThreadLock(m_ThreadCriticalSection);
+			m_pThread.Swap(pThread);
+		}
+	}
+	CObjectPtr<CLocations> GetLocations() const throw()
+	{
+		CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+		return m_pLocations;
+	}
+
+// ILazyLocations
+	STDMETHOD(get_Initialized)(VARIANT_BOOL* pbInitialized) throw()
+	{
+		_Z4(atlTraceCOM, 4, _T("...\n"));
+		_ATLTRY
+		{
+			__D(pbInitialized, E_POINTER);
+			//ObjectLock Lock(this);
+			//CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+			*pbInitialized = GetLocations() ? ATL_VARIANT_TRUE : ATL_VARIANT_FALSE;
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return S_OK;
+	}
+
+// ILocations
+	STDMETHOD(get_Item)(VARIANT vIndex, ILocation** ppLocation) throw()
+	{
+		_Z4(atlTraceCOM, 4, _T("vIndex.vt 0x%x\n"), vIndex.vt);
+		_ATLTRY
+		{
+			__D(ppLocation, E_POINTER);
+			__D(vIndex.vt == VT_BSTR, E_INVALIDARG);
+			//ObjectLock Lock(this);
+			//CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+			CComPtr<ILocation> pLocation;
+			const CObjectPtr<CLocations> pLocations = GetLocations();
+			if(pLocations)
+				__C(pLocations->get_Item(vIndex, &pLocation));
+			*ppLocation = pLocation.Detach();
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return S_OK;
+	}
+};
+
+OBJECT_ENTRY_AUTO(__uuidof(LazyLocations), CLazyLocations)

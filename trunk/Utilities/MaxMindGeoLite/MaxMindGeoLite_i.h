@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0555 */
-/* at Sat Feb 11 15:33:50 2012
+/* at Sun Feb 12 00:21:00 2012
  */
 /* Compiler settings for MaxMindGeoLite.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
@@ -57,6 +57,12 @@ typedef interface ILocations ILocations;
 #endif 	/* __ILocations_FWD_DEFINED__ */
 
 
+#ifndef __ILazyLocations_FWD_DEFINED__
+#define __ILazyLocations_FWD_DEFINED__
+typedef interface ILazyLocations ILazyLocations;
+#endif 	/* __ILazyLocations_FWD_DEFINED__ */
+
+
 #ifndef __Location_FWD_DEFINED__
 #define __Location_FWD_DEFINED__
 
@@ -79,6 +85,18 @@ typedef struct Locations Locations;
 #endif /* __cplusplus */
 
 #endif 	/* __Locations_FWD_DEFINED__ */
+
+
+#ifndef __LazyLocations_FWD_DEFINED__
+#define __LazyLocations_FWD_DEFINED__
+
+#ifdef __cplusplus
+typedef class LazyLocations LazyLocations;
+#else
+typedef struct LazyLocations LazyLocations;
+#endif /* __cplusplus */
+
+#endif 	/* __LazyLocations_FWD_DEFINED__ */
 
 
 /* header files for imported files */
@@ -404,6 +422,136 @@ EXTERN_C const IID IID_ILocations;
 #endif 	/* __ILocations_INTERFACE_DEFINED__ */
 
 
+#ifndef __ILazyLocations_INTERFACE_DEFINED__
+#define __ILazyLocations_INTERFACE_DEFINED__
+
+/* interface ILazyLocations */
+/* [unique][helpstring][oleautomation][dual][uuid][object] */ 
+
+
+EXTERN_C const IID IID_ILazyLocations;
+
+#if defined(__cplusplus) && !defined(CINTERFACE)
+    
+    MIDL_INTERFACE("34BF53BB-D4C8-4002-A0EC-5BA70FE7ACA3")
+    ILazyLocations : public ILocations
+    {
+    public:
+        virtual /* [id][propget] */ HRESULT STDMETHODCALLTYPE get_Initialized( 
+            /* [retval][out] */ VARIANT_BOOL *pbInitialized) = 0;
+        
+    };
+    
+#else 	/* C style interface */
+
+    typedef struct ILazyLocationsVtbl
+    {
+        BEGIN_INTERFACE
+        
+        HRESULT ( STDMETHODCALLTYPE *QueryInterface )( 
+            ILazyLocations * This,
+            /* [in] */ REFIID riid,
+            /* [annotation][iid_is][out] */ 
+            __RPC__deref_out  void **ppvObject);
+        
+        ULONG ( STDMETHODCALLTYPE *AddRef )( 
+            ILazyLocations * This);
+        
+        ULONG ( STDMETHODCALLTYPE *Release )( 
+            ILazyLocations * This);
+        
+        HRESULT ( STDMETHODCALLTYPE *GetTypeInfoCount )( 
+            ILazyLocations * This,
+            /* [out] */ UINT *pctinfo);
+        
+        HRESULT ( STDMETHODCALLTYPE *GetTypeInfo )( 
+            ILazyLocations * This,
+            /* [in] */ UINT iTInfo,
+            /* [in] */ LCID lcid,
+            /* [out] */ ITypeInfo **ppTInfo);
+        
+        HRESULT ( STDMETHODCALLTYPE *GetIDsOfNames )( 
+            ILazyLocations * This,
+            /* [in] */ REFIID riid,
+            /* [size_is][in] */ LPOLESTR *rgszNames,
+            /* [range][in] */ UINT cNames,
+            /* [in] */ LCID lcid,
+            /* [size_is][out] */ DISPID *rgDispId);
+        
+        /* [local] */ HRESULT ( STDMETHODCALLTYPE *Invoke )( 
+            ILazyLocations * This,
+            /* [in] */ DISPID dispIdMember,
+            /* [in] */ REFIID riid,
+            /* [in] */ LCID lcid,
+            /* [in] */ WORD wFlags,
+            /* [out][in] */ DISPPARAMS *pDispParams,
+            /* [out] */ VARIANT *pVarResult,
+            /* [out] */ EXCEPINFO *pExcepInfo,
+            /* [out] */ UINT *puArgErr);
+        
+        /* [id][propget] */ HRESULT ( STDMETHODCALLTYPE *get_Item )( 
+            ILazyLocations * This,
+            /* [in] */ VARIANT vIndex,
+            /* [retval][out] */ ILocation **ppLocation);
+        
+        /* [id][propget] */ HRESULT ( STDMETHODCALLTYPE *get_Initialized )( 
+            ILazyLocations * This,
+            /* [retval][out] */ VARIANT_BOOL *pbInitialized);
+        
+        END_INTERFACE
+    } ILazyLocationsVtbl;
+
+    interface ILazyLocations
+    {
+        CONST_VTBL struct ILazyLocationsVtbl *lpVtbl;
+    };
+
+    
+
+#ifdef COBJMACROS
+
+
+#define ILazyLocations_QueryInterface(This,riid,ppvObject)	\
+    ( (This)->lpVtbl -> QueryInterface(This,riid,ppvObject) ) 
+
+#define ILazyLocations_AddRef(This)	\
+    ( (This)->lpVtbl -> AddRef(This) ) 
+
+#define ILazyLocations_Release(This)	\
+    ( (This)->lpVtbl -> Release(This) ) 
+
+
+#define ILazyLocations_GetTypeInfoCount(This,pctinfo)	\
+    ( (This)->lpVtbl -> GetTypeInfoCount(This,pctinfo) ) 
+
+#define ILazyLocations_GetTypeInfo(This,iTInfo,lcid,ppTInfo)	\
+    ( (This)->lpVtbl -> GetTypeInfo(This,iTInfo,lcid,ppTInfo) ) 
+
+#define ILazyLocations_GetIDsOfNames(This,riid,rgszNames,cNames,lcid,rgDispId)	\
+    ( (This)->lpVtbl -> GetIDsOfNames(This,riid,rgszNames,cNames,lcid,rgDispId) ) 
+
+#define ILazyLocations_Invoke(This,dispIdMember,riid,lcid,wFlags,pDispParams,pVarResult,pExcepInfo,puArgErr)	\
+    ( (This)->lpVtbl -> Invoke(This,dispIdMember,riid,lcid,wFlags,pDispParams,pVarResult,pExcepInfo,puArgErr) ) 
+
+
+#define ILazyLocations_get_Item(This,vIndex,ppLocation)	\
+    ( (This)->lpVtbl -> get_Item(This,vIndex,ppLocation) ) 
+
+
+#define ILazyLocations_get_Initialized(This,pbInitialized)	\
+    ( (This)->lpVtbl -> get_Initialized(This,pbInitialized) ) 
+
+#endif /* COBJMACROS */
+
+
+#endif 	/* C style interface */
+
+
+
+
+#endif 	/* __ILazyLocations_INTERFACE_DEFINED__ */
+
+
 
 #ifndef __AlaxInfoMaxMindGeoLite_LIBRARY_DEFINED__
 #define __AlaxInfoMaxMindGeoLite_LIBRARY_DEFINED__
@@ -428,6 +576,14 @@ EXTERN_C const CLSID CLSID_Locations;
 
 class DECLSPEC_UUID("350EBCB9-942A-4D11-9192-54AA6230F7BF")
 Locations;
+#endif
+
+EXTERN_C const CLSID CLSID_LazyLocations;
+
+#ifdef __cplusplus
+
+class DECLSPEC_UUID("29752330-E1FB-43D0-ADBF-21AF77633259")
+LazyLocations;
 #endif
 #endif /* __AlaxInfoMaxMindGeoLite_LIBRARY_DEFINED__ */
 
