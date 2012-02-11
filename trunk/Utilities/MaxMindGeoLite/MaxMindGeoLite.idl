@@ -1,0 +1,68 @@
+////////////////////////////////////////////////////////////
+// Copyright (C) Roman Ryltsov, 2008-2012
+// Created by Roman Ryltsov roman@alax.info
+// 
+// $Id$
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	object,
+	uuid(3C3125E8-60D6-4703-B7B4-7A024CEA2F05),
+	dual,
+	oleautomation,
+	helpstring("ILocation Interface"),
+	pointer_default(unique)
+]
+interface ILocation : IDispatch
+{
+	[propget, id(1)] HRESULT Country([out, retval] BSTR* psCountry);
+	[propget, id(2)] HRESULT Region([out, retval] BSTR* psRegion);
+	[propget, id(3)] HRESULT City([out, retval] BSTR* psCity);
+	[propget, id(4)] HRESULT PostalCode([out, retval] BSTR* psPostalCode);
+	[propget, id(5)] HRESULT Latitude([out, retval] DOUBLE* pfLatitude);
+	[propget, id(6)] HRESULT Longitude([out, retval] DOUBLE* pfLongitude);
+	[propget, id(7)] HRESULT MetroCode([out, retval] BSTR* psMetroCode);
+	[propget, id(8)] HRESULT AreaCode([out, retval] BSTR* psAreaCode);
+};
+[
+	object,
+	uuid(B6E2FBEB-1AC2-424B-B2DA-FF6398ADCF0C),
+	dual,
+	oleautomation,
+	helpstring("ILocations Interface"),
+	pointer_default(unique)
+]
+interface ILocations : IDispatch
+{
+	[propget, id(DISPID_VALUE)] HRESULT Item([in] VARIANT vIndex, [out, retval] ILocation** ppLocation);
+};
+[
+	uuid(F80BC862-E43E-4809-ACFC-1A608209C860),
+	version(1.0),
+	helpstring("Alax.Info Geolocation Tools (using MaxMind GeoLite) 1.0 Type Library")
+]
+library AlaxInfoMaxMindGeoLite
+{
+	importlib("stdole2.tlb");
+	[
+		uuid(E4758497-363F-467D-BE04-C2222748C7E6),
+		noncreatable,
+		helpstring("Location Class")
+	]
+	coclass Location
+	{
+		[default] interface ILocation;
+		//interface ISupportErrorInfo;
+	};
+	[
+		uuid(350EBCB9-942A-4D11-9192-54AA6230F7BF),
+		helpstring("Locations Class")
+	]
+	coclass Locations
+	{
+		[default] interface ILocations;
+		//interface ISupportErrorInfo;
+	};
+};
