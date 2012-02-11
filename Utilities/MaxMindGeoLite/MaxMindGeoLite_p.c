@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0555 */
-/* at Sun Feb 12 00:21:00 2012
+/* at Sun Feb 12 00:46:15 2012
  */
 /* Compiler settings for MaxMindGeoLite.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
@@ -406,7 +406,7 @@ static const MaxMindGeoLite_MIDL_PROC_FORMAT_STRING MaxMindGeoLite__MIDL_ProcFor
 /* 330 */	0x33,		/* FC_AUTO_HANDLE */
 			0x6c,		/* Old Flags:  object, Oi2 */
 /* 332 */	NdrFcLong( 0x0 ),	/* 0 */
-/* 336 */	NdrFcShort( 0x8 ),	/* 8 */
+/* 336 */	NdrFcShort( 0x7 ),	/* 7 */
 /* 338 */	NdrFcShort( 0xc ),	/* x86 Stack size/offset = 12 */
 /* 340 */	NdrFcShort( 0x0 ),	/* 0 */
 /* 342 */	NdrFcShort( 0x22 ),	/* 34 */
@@ -1374,7 +1374,6 @@ static const unsigned short ILazyLocations_FormatStringOffsetTable[] =
     (unsigned short) -1,
     (unsigned short) -1,
     (unsigned short) -1,
-    288,
     330
     };
 
@@ -1399,7 +1398,7 @@ static const MIDL_SERVER_INFO ILazyLocations_ServerInfo =
     0,
     0,
     0};
-CINTERFACE_PROXY_VTABLE(9) _ILazyLocationsProxyVtbl = 
+CINTERFACE_PROXY_VTABLE(8) _ILazyLocationsProxyVtbl = 
 {
     &ILazyLocations_ProxyInfo,
     &IID_ILazyLocations,
@@ -1410,7 +1409,6 @@ CINTERFACE_PROXY_VTABLE(9) _ILazyLocationsProxyVtbl =
     0 /* IDispatch::GetTypeInfo */ ,
     0 /* IDispatch::GetIDsOfNames */ ,
     0 /* IDispatch_Invoke_Proxy */ ,
-    (void *) (INT_PTR) -1 /* ILocations::get_Item */ ,
     (void *) (INT_PTR) -1 /* ILazyLocations::get_Initialized */
 };
 
@@ -1421,7 +1419,6 @@ static const PRPC_STUB_FUNCTION ILazyLocations_table[] =
     STUB_FORWARDING_FUNCTION,
     STUB_FORWARDING_FUNCTION,
     STUB_FORWARDING_FUNCTION,
-    NdrStubCall2,
     NdrStubCall2
 };
 
@@ -1429,7 +1426,7 @@ CInterfaceStubVtbl _ILazyLocationsStubVtbl =
 {
     &IID_ILazyLocations,
     &ILazyLocations_ServerInfo,
-    9,
+    8,
     &ILazyLocations_table[-3],
     CStdStubBuffer_DELEGATING_METHODS
 };

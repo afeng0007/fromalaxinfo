@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0555 */
-/* at Sun Feb 12 00:21:00 2012
+/* at Sun Feb 12 00:46:15 2012
  */
 /* Compiler settings for MaxMindGeoLite.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
@@ -434,7 +434,7 @@ EXTERN_C const IID IID_ILazyLocations;
 #if defined(__cplusplus) && !defined(CINTERFACE)
     
     MIDL_INTERFACE("34BF53BB-D4C8-4002-A0EC-5BA70FE7ACA3")
-    ILazyLocations : public ILocations
+    ILazyLocations : public IDispatch
     {
     public:
         virtual /* [id][propget] */ HRESULT STDMETHODCALLTYPE get_Initialized( 
@@ -489,11 +489,6 @@ EXTERN_C const IID IID_ILazyLocations;
             /* [out] */ EXCEPINFO *pExcepInfo,
             /* [out] */ UINT *puArgErr);
         
-        /* [id][propget] */ HRESULT ( STDMETHODCALLTYPE *get_Item )( 
-            ILazyLocations * This,
-            /* [in] */ VARIANT vIndex,
-            /* [retval][out] */ ILocation **ppLocation);
-        
         /* [id][propget] */ HRESULT ( STDMETHODCALLTYPE *get_Initialized )( 
             ILazyLocations * This,
             /* [retval][out] */ VARIANT_BOOL *pbInitialized);
@@ -532,10 +527,6 @@ EXTERN_C const IID IID_ILazyLocations;
 
 #define ILazyLocations_Invoke(This,dispIdMember,riid,lcid,wFlags,pDispParams,pVarResult,pExcepInfo,puArgErr)	\
     ( (This)->lpVtbl -> Invoke(This,dispIdMember,riid,lcid,wFlags,pDispParams,pVarResult,pExcepInfo,puArgErr) ) 
-
-
-#define ILazyLocations_get_Item(This,vIndex,ppLocation)	\
-    ( (This)->lpVtbl -> get_Item(This,vIndex,ppLocation) ) 
 
 
 #define ILazyLocations_get_Initialized(This,pbInitialized)	\

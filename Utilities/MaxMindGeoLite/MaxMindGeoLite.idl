@@ -46,7 +46,7 @@ interface ILocations : IDispatch
 	helpstring("ILazyLocations Interface"),
 	pointer_default(unique)
 ]
-interface ILazyLocations : ILocations
+interface ILazyLocations : IDispatch
 {
 	[propget, id(1)] HRESULT Initialized([out, retval] VARIANT_BOOL* pbInitialized);
 };

@@ -8,12 +8,14 @@ function EchoLocation(address, location) {
 
 locations = new ActiveXObject("AlaxInfo.MaxMindGeoLite.LazyLocations");
 
+elapsedTime = 0;
 for(; ; ) {
   if(locations.Initialized)
     break;
-  WScript.Echo("Initializing...");
+  WScript.Echo("Initializing (" + elapsedTime + " seconds) ...");
   //EchoLocation("alax.info", locations.Item("alax.info"));
   WScript.Sleep(5000);
+  elapsedTime += 5;
 }
 
 EchoLocation("alax.info", locations.Item("alax.info"));
