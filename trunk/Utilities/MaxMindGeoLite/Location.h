@@ -261,6 +261,224 @@ public:
 	}
 };
 
+////////////////////////////////////////////////////
+// CDispatchExT
+//
+// TODO: IDispatch methods should take care of IID argument
+
+template <typename T>
+class ATL_NO_VTABLE CDispatchExT :
+	public IDispatchEx
+{
+public:
+
+	////////////////////////////////////////////////////////
+	// CDispatchData
+
+	class CDispatchData
+	{
+	public:
+		IID m_InterfaceIdentifier;
+		IDispatch* m_pDispatch;
+
+	public:
+	// CDispatchData
+		CDispatchData() throw() :
+			m_InterfaceIdentifier(IID_NULL),
+			m_pDispatch(NULL)
+		{
+		}
+		CDispatchData(IDispatchEx* pDispatchEx, const IID& InterfaceIdentifier)
+		{
+			CComPtr<IDispatch> pDispatch;
+			__C(pDispatchEx->QueryInterface(InterfaceIdentifier, (VOID**) &pDispatch));
+			m_InterfaceIdentifier = InterfaceIdentifier;
+			m_pDispatch = pDispatch;
+		}
+	};
+
+private:
+	CRoArrayT<CDispatchData> m_DispatchDataArray;
+
+public:
+// CDispatchExT
+	VOID ResetDispatchInterfaceIdentifiers() throw()
+	{
+		m_DispatchDataArray.RemoveAll();
+	}
+	VOID SetDispatchInterfaceIdentifiers(const IID* pInterfaceIdentifiers, SIZE_T nInterfaceIdentifierCount)
+	{
+		_A(m_DispatchDataArray.IsEmpty());
+		for(SIZE_T nIndex = 0; nIndex < nInterfaceIdentifierCount; nIndex++)
+			_W(m_DispatchDataArray.Add(CDispatchData(this, pInterfaceIdentifiers[nIndex])) >= 0);
+	}
+	VOID SetDispatchInterfaceIdentifiers(const IID& InterfaceIdentifier)
+	{
+		SetDispatchInterfaceIdentifiers(&InterfaceIdentifier, 1);
+	}
+	VOID SetDispatchInterfaceIdentifiers(SIZE_T nInterfaceIdentifierCount, ...)
+	{
+		_A(nInterfaceIdentifierCount);
+		va_list Arguments;
+		va_start(Arguments, nInterfaceIdentifierCount);
+		CTempBufferT<IID> pInterfaceIdentifiers(nInterfaceIdentifierCount);
+		for(SIZE_T nIndex = 0; nIndex < nInterfaceIdentifierCount; nIndex++)
+			pInterfaceIdentifiers[nIndex] = *va_arg(Arguments, IID*);
+		va_end(Arguments);
+		SetDispatchInterfaceIdentifiers(pInterfaceIdentifiers, nInterfaceIdentifierCount);
+	}
+	IDispatch* GetDispatch(DISPID nDispIdentifier) const throw()
+	{
+		const SIZE_T nDispatchIndex = (UINT) (nDispIdentifier >> 12);
+		_A(nDispatchIndex < m_DispatchDataArray.GetCount());
+		return m_DispatchDataArray[nDispatchIndex].m_pDispatch;
+	}
+
+// IDispatchEx
+	STDMETHOD(GetDispID)(BSTR sName, DWORD nFlags, DISPID* pid) throw()
+	{
+		_Z4(atlTraceCOM, 4, _T("this 0x%p, sName \"%s\", nFlags 0x%x\n"), static_cast<T*>(this), CString(sName), nFlags);
+		_ATLTRY
+		{
+			__D(pid, E_POINTER);
+			nFlags;
+			OLECHAR* ppszNames[] = { const_cast<OLECHAR*>(sName), };
+			const LCID nLocaleIdentifier = GetThreadLocale();
+			*pid = -1;
+			HRESULT nResult = DISP_E_UNKNOWNNAME;
+			for(SIZE_T nIndex = 0; nIndex < m_DispatchDataArray.GetCount(); nIndex++)
+			{
+				DISPID nDispatchDispIdentifier;
+				const HRESULT nDispatchResult = m_DispatchDataArray[nIndex].m_pDispatch->GetIDsOfNames(IID_NULL, ppszNames, DIM(ppszNames), nLocaleIdentifier, &nDispatchDispIdentifier);
+				if(SUCCEEDED(nDispatchResult))
+				{
+					_A(!(nDispatchDispIdentifier & ~0x0FFF));
+					*pid = (DISPID) (nIndex << 12) + nDispatchDispIdentifier;
+					nResult = nDispatchResult;
+					break;
+				}
+			}
+			_Z4(atlTraceGeneral, 4, _T("nResult 0x%08x, *pid %d\n"), nResult, *pid);
+			return nResult;
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return E_NOTIMPL;
+	}
+	STDMETHOD(InvokeEx)(DISPID id, LCID nLocaleIdentifier, WORD nFlags, DISPPARAMS* pdp, VARIANT* pvarRes, EXCEPINFO* pei, IServiceProvider* pServiceProvider) throw()
+	{
+		_Z4(atlTraceCOM, 4, _T("this 0x%p, id %d, nLocaleIdentifier %d, nFlags 0x%x\n"), static_cast<T*>(this), id, nLocaleIdentifier, nFlags);
+		_ATLTRY
+		{
+			pServiceProvider;
+			UINT nErroneousArgument;
+			_A((id & ~0xFFFF) == 0);
+			const HRESULT nResult = GetDispatch(id)->Invoke(id & 0x0FFF, IID_NULL, nLocaleIdentifier, nFlags, pdp, pvarRes, pei, &nErroneousArgument);
+			_Z4(atlTraceGeneral, 4, _T("nResult 0x%08x\n"), nResult);
+			return nResult;
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return E_NOTIMPL;
+	}
+	STDMETHOD(DeleteMemberByName)(BSTR sName, DWORD nFlags) throw()
+	{
+		_Z4(atlTraceCOM, 4, _T("this 0x%p, sName \"%s\", nFlags 0x%x\n"), static_cast<T*>(this), CString(sName), nFlags);
+		return E_NOTIMPL;
+	}
+	STDMETHOD(DeleteMemberByDispID)(DISPID id) throw()
+	{
+		_Z4(atlTraceCOM, 4, _T("this 0x%p, id %d\n"), static_cast<T*>(this), id);
+		return E_NOTIMPL;
+	}
+	STDMETHOD(GetMemberProperties)(DISPID id, DWORD nFlagMask, DWORD* pnFlags) throw()
+	{
+		_Z4(atlTraceCOM, 4, _T("this 0x%p, id %d, nFlagMask 0x%x\n"), static_cast<T*>(this), id, nFlagMask);
+		return E_NOTIMPL;
+	}
+	STDMETHOD(GetMemberName)(DISPID id, BSTR* psName) throw()
+	{
+		_Z4(atlTraceCOM, 4, _T("this 0x%p, id %d\n"), static_cast<T*>(this), id);
+		return E_NOTIMPL;
+	}
+	STDMETHOD(GetNextDispID)(DWORD nFlags, DISPID id, DISPID* pid) throw()
+	{
+		_Z4(atlTraceCOM, 4, _T("this 0x%p, nFlags 0x%x, id %d\n"), static_cast<T*>(this), nFlags, id);
+		return E_NOTIMPL;
+	}
+	STDMETHOD(GetNameSpaceParent)(IUnknown** ppunk) throw()
+	{
+		_Z4(atlTraceCOM, 4, _T("this 0x%p\n"), static_cast<T*>(this));
+		return E_NOTIMPL;
+	}
+
+// IDispatch
+	STDMETHOD(GetTypeInfoCount)(UINT* pnCount) throw()
+	{
+		_Z4(atlTraceCOM, 4, _T("this 0x%p\n"), static_cast<T*>(this));
+		_ATLTRY
+		{
+			const HRESULT nResult = GetDispatch(0)->GetTypeInfoCount(pnCount);
+			_Z4(atlTraceGeneral, 4, _T("nResult 0x%08x\n"), nResult);
+			return nResult;
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return E_NOTIMPL;
+	}
+	STDMETHOD(GetTypeInfo)(UINT nIndex, LCID nLocaleIdentifier, ITypeInfo** ppTypeInfo) throw()
+	{
+		_Z4(atlTraceCOM, 4, _T("this 0x%p, nIndex %d, nLocaleIdentifier %d\n"), static_cast<T*>(this), nIndex, nLocaleIdentifier);
+		_ATLTRY
+		{
+			const HRESULT nResult = GetDispatch(0)->GetTypeInfo(nIndex, nLocaleIdentifier, ppTypeInfo);
+			_Z4(atlTraceGeneral, 4, _T("nResult 0x%08x\n"), nResult);
+			return nResult;
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return E_NOTIMPL;
+	}
+	STDMETHOD(GetIDsOfNames)(REFIID InterfaceIdentifier, LPOLESTR* ppszNames, UINT nNameCount, LCID nLocaleIdentifier, DISPID* rgDispId) throw()
+	{
+		_Z4(atlTraceCOM, 4, _T("this 0x%p, nNameCount %d, nLocaleIdentifier %d\n"), static_cast<T*>(this), nNameCount, nLocaleIdentifier);
+		_ATLTRY
+		{
+			const HRESULT nResult = GetDispatch(0)->GetIDsOfNames(InterfaceIdentifier, ppszNames, nNameCount, nLocaleIdentifier, rgDispId);
+			_Z4(atlTraceGeneral, 4, _T("nResult 0x%08x\n"), nResult);
+			return nResult;
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return E_NOTIMPL;
+	}
+	STDMETHOD(Invoke)(DISPID dispIdMember, REFIID InterfaceIdentifier, LCID nLocaleIdentifier, WORD nFlags, DISPPARAMS* pDispParams, VARIANT* pVarResult, EXCEPINFO* pExcepInfo, UINT* puArgErr) throw()
+	{
+		_Z4(atlTraceCOM, 4, _T("this 0x%p, dispIdMember %d, nLocaleIdentifier %d, nFlags 0x%x\n"), static_cast<T*>(this), dispIdMember, nLocaleIdentifier, nFlags);
+		_ATLTRY
+		{
+			const HRESULT nResult = GetDispatch(0)->Invoke(dispIdMember, InterfaceIdentifier, nLocaleIdentifier, nFlags, pDispParams, pVarResult, pExcepInfo, puArgErr);
+			_Z4(atlTraceGeneral, 4, _T("nResult 0x%08x\n"), nResult);
+			return nResult;
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return E_NOTIMPL;
+	}
+};
+
 ////////////////////////////////////////////////////////////
 // CLocations
 
@@ -557,7 +775,9 @@ OBJECT_ENTRY_AUTO(__uuidof(Locations), CLocations)
 class ATL_NO_VTABLE CLazyLocations : 
 	public CComObjectRootEx<CComMultiThreadModelNoCS>,
 	public CComCoClass<CLazyLocations, &__uuidof(LazyLocations)>,
-	public IDispatchImpl<ILazyLocations>
+	public IDispatchImpl<ILazyLocations>,
+	public IDispatchImpl<ILocations>,
+	public CDispatchExT<CLazyLocations>
 {
 	typedef CThreadT<CLazyLocations> CThread;
 
@@ -572,8 +792,9 @@ DECLARE_PROTECT_FINAL_CONSTRUCT()
 
 BEGIN_COM_MAP(CLazyLocations)
 	COM_INTERFACE_ENTRY(ILazyLocations)
-	COM_INTERFACE_ENTRY_IID(__uuidof(IDispatch), ILazyLocations)
 	COM_INTERFACE_ENTRY(ILocations)
+	COM_INTERFACE_ENTRY_IID(__uuidof(IDispatch), ILocations)
+	COM_INTERFACE_ENTRY(IDispatchEx)
 	COM_INTERFACE_ENTRY_AGGREGATE(__uuidof(IMarshal), m_FreeThreadedMarshaler)
 END_COM_MAP()
 
@@ -635,6 +856,7 @@ public:
 	{
 		_ATLTRY
 		{
+			SetDispatchInterfaceIdentifiers(2, &__uuidof(ILazyLocations), &__uuidof(ILocations));
 			CRoCriticalSectionLock ThreadLock(m_ThreadCriticalSection);
 			CObjectPtr<CThread> pThread;
 			__E(pThread.Construct()->Initialize(this, &CLazyLocations::ThreadProc));
