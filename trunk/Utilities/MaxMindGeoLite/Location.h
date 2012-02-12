@@ -101,6 +101,10 @@ namespace GeoLiteCity
 				pszDataPointer = pszSeparator + 1;
 			}
 		}
+		SIZE_T GetCount() const throw()
+		{
+			return __super::GetCount();
+		}
 		BOOL Lookup(INT nIdentifier, const CLocation** ppLocation = NULL) const throw()
 		{
 			if(nIdentifier < 1 || nIdentifier - 1 >= (INT) GetCount())
@@ -193,6 +197,10 @@ namespace GeoLiteCity
 				nPreviousEndAddress = Block.m_nEndAddress;
 				pszDataPointer = pszSeparator + 1;
 			}
+		}
+		SIZE_T GetCount() const throw()
+		{
+			return __super::GetCount();
 		}
 		BOOL Lookup(ULONG nAddress, const CBlock** ppBlock = NULL) const throw()
 		{
@@ -496,6 +504,8 @@ DECLARE_CLASSFACTORY_SINGLETON(CLocations)
 
 DECLARE_PROTECT_FINAL_CONSTRUCT()
 
+DECLARE_QI_TRACE(CLocations)
+
 BEGIN_COM_MAP(CLocations)
 	COM_INTERFACE_ENTRY(ILocations)
 	COM_INTERFACE_ENTRY(IDispatch)
@@ -518,6 +528,8 @@ public:
 
 	//DECLARE_PROTECT_FINAL_CONSTRUCT()
 
+	DECLARE_QI_TRACE(CLocation)
+
 	BEGIN_COM_MAP(CLocation)
 		COM_INTERFACE_ENTRY(ILocation)
 		COM_INTERFACE_ENTRY(IDispatch)
@@ -539,6 +551,7 @@ public:
 		VOID Initialize(const GeoLiteCity::CLocation& Location)
 		{
 			m_Location = Location;
+			_Z2(atlTraceGeneral, 2, _T("Initialized, Location.m_sCountryCode %hs, .m_sRegion %hs, .m_sCity %hs\n"), Location.m_sCountryCode, Location.m_sRegion, Location.m_sCity);
 		}
 
 	// ILocation
@@ -727,6 +740,7 @@ public:
 		//CRoCriticalSectionLock DataLock(m_DataCriticalSection);
 		m_LocationArray.Initialize(sLocationPath);
 		m_BlockArray.Initialize(sBlockPath);
+		_Z2(atlTraceGeneral, 2, _T("Initialized, m_LocationArray.GetCount() %d, m_BlockArray.GetCount() %d\n"), m_LocationArray.GetCount(), m_BlockArray.GetCount());
 	}
 
 // ILocations
@@ -789,6 +803,8 @@ public:
 DECLARE_CLASSFACTORY_SINGLETON(CLazyLocations)
 
 DECLARE_PROTECT_FINAL_CONSTRUCT()
+
+DECLARE_QI_TRACE(CLazyLocations)
 
 BEGIN_COM_MAP(CLazyLocations)
 	COM_INTERFACE_ENTRY(ILazyLocations)
@@ -879,6 +895,7 @@ public:
 	CObjectPtr<CLocations> GetLocations() const throw()
 	{
 		CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+		_Z2(atlTraceGeneral, 2, _T("Query for Locations, m_pLocations 0x%p\n"), m_pLocations);
 		return m_pLocations;
 	}
 
