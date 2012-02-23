@@ -5,6 +5,7 @@
 // $Id$
 
 #include "stdafx.h"
+#include <assert.h>
 
 class Item
 {
@@ -61,8 +62,20 @@ public:
 // OperationItem
 	OperationItem() :
 		m_pItem1(NULL),
+		m_nSymbol(0),
 		m_pItem2(NULL)
 	{
+	}
+	OperationItem(Item* pItem1, CHAR nSymbol, Item* pItem2) :
+		m_pItem1(pItem1),
+		m_nSymbol(nSymbol),
+		m_pItem2(pItem2)
+	{
+		assert(pItem1 && IsValidSymbol(nSymbol) && pItem2);
+	}
+	static BOOL IsValidSymbol(CHAR nSymbol)
+	{
+		return nSymbol && strchr("+-*:", nSymbol) != NULL;
 	}
 	INT GetPriority()
 	{
@@ -72,7 +85,7 @@ public:
 		case '-':
 			return 2;
 		case '*':
-		case '/':
+		case ':':
 			return 1;
 		}
 		return 0;
@@ -82,7 +95,7 @@ public:
 		switch(m_nSymbol)
 		{
 		case '-':
-		case '/':
+		case ':':
 			return FALSE;
 		}
 		return __super::IsCommutative();
@@ -94,6 +107,7 @@ public:
 			sString.AppendFormat(_T("(%s)"), m_pItem1->AsString());
 		else
 			sString.Append(m_pItem1->AsString());
+		assert(IsValidSymbol(m_nSymbol));
 		sString.AppendFormat(_T(" %c "), m_nSymbol);
 		if(m_pItem2->GetPriority() > GetPriority() || m_pItem2->IsOperation() && m_pItem2->GetPriority() == GetPriority() && !IsCommutative())
 			sString.AppendFormat(_T("(%s)"), m_pItem2->AsString());
@@ -211,6 +225,21 @@ VOID Generate()
 
 int _tmain(int argc, _TCHAR* argv[])
 {
+	#pragma region Special Case
+	#if defined(_DEBUG)
+	{
+		// NOTE: 
+		//   Actual: (77 + 53503) : 8360 : 88 : 12
+		//   Correct: (77 + 53503) : (8360 : 88) : 12
+		OperationItem* pA = new OperationItem(new ValueItem(77), '+', new ValueItem(53503));
+		OperationItem* pB = new OperationItem(new ValueItem(8630), ':', new ValueItem(88));
+		OperationItem* pC = new OperationItem(pA, ':', pB);
+		OperationItem* pD = new OperationItem(pC, ':', new ValueItem(12));
+		_tprintf(_T("pD->AsString() %s\n"), pD->AsString());
+		pD->AsString();
+	}
+	#endif // defined(_DEBUG)
+	#pragma endregion
 	srand(1);
 	for(INT nCount = 0; nCount < 1000; nCount++)
 	{
