@@ -1,7 +1,8 @@
-// stdafx.h : include file for standard system include files,
-// or project specific include files that are used frequently, but
-// are changed infrequently
-//
+////////////////////////////////////////////////////////////
+// Copyright (C) Roman Ryltsov, 2012
+// Created by Roman Ryltsov roman@alax.info
+// 
+// $Id$
 
 #pragma once
 
@@ -9,7 +10,6 @@
 
 #include <stdio.h>
 #include <tchar.h>
-
 
 #define _ATL_CSTRING_EXPLICIT_CONSTRUCTORS      // some CString constructors will be explicit
 
