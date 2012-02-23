@@ -1,3 +1,9 @@
+////////////////////////////////////////////////////////////
+// Copyright (C) Roman Ryltsov, 2012
+// Created by Roman Ryltsov roman@alax.info
+// 
+// $Id$
+
 #pragma once
 
 // Including SDKDDKVer.h defines the highest available Windows platform.

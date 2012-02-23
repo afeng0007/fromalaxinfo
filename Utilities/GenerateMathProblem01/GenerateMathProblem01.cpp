@@ -1,5 +1,8 @@
-// GenerateMathProblem01.cpp : Defines the entry point for the console application.
-//
+////////////////////////////////////////////////////////////
+// Copyright (C) Roman Ryltsov, 2012
+// Created by Roman Ryltsov roman@alax.info
+// 
+// $Id$
 
 #include "stdafx.h"
 
