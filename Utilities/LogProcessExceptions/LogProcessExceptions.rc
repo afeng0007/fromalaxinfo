@@ -1,0 +1,378 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "winres.h"
+#include "atlres.h"
+#include "rores.rc"
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (United States) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""winres.h""\r\n"
+    "#include ""atlres.h""\r\n"
+    "#include ""rores.rc""\r\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "//1 TYPELIB ""LogProcessExceptions.tlb\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Icon
+//
+
+// Icon with lowest ID value placed first to ensure application icon
+// remains consistent on all systems.
+IDI_MODULE              ICON                    "Module.ico"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_WIZARDHEADER        BITMAP                  "WizardHeader.bmp"
+IDB_WIZARDWATERMARK     BITMAP                  "WizardWatermark.bmp"
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_ABOUT DIALOGEX 0, 0, 280, 153
+STYLE DS_SETFONT | DS_MODALFRAME | DS_FIXEDSYS | WS_POPUP | WS_CAPTION | WS_SYSMENU
+CAPTION "About"
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    ICON            IDI_MODULE,IDC_ABOUT_ICON,10,10,20,20,SS_REALSIZEIMAGE
+    LTEXT           "Log Process Exceptions",IDC_ABOUT_TITLE,60,6,210,24
+    LTEXT           "Product Version %d.%d.%d.%d",IDC_ABOUT_PRODUCTVERSION,60,30,210,8
+    LTEXT           "Module Version %d.%d.%d.%d",IDC_ABOUT_FILEVERSION,60,42,210,8
+    LTEXT           "Web:",IDC_ABOUT_WEBSITETITLE,60,60,18,8
+    LTEXT           "<A HREF=""http://alax.info/"">http://alax.info/</A>",IDC_ABOUT_WEBSITE,108,60,162,8,NOT WS_GROUP | WS_TABSTOP
+    LTEXT           "Email:",IDC_ABOUT_EMAILTITLE,60,72,20,8
+    LTEXT           "<A HREF=""mailto:support@alax.info"">support@alax.info</A>",IDC_ABOUT_EMAIL,108,72,162,8,NOT WS_GROUP | WS_TABSTOP
+    LTEXT           "Copyright © Alax.Info, Roman Ryltsov, 2008-2011",IDC_ABOUT_COPYRIGHT,60,84,210,8,SS_NOPREFIX
+    DEFPUSHBUTTON   "OK",1,220,102,50,14
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,6,122,267,1
+    LTEXT           "Warning: ...",IDC_ABOUT_COPYRIGHTWARNING,6,130,268,18
+END
+
+IDD_MAIN_INTRODUCTION DIALOGEX 0, 0, 317, 192
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_SYSMENU
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Alax.Info Log Process Exceptions",IDC_WIZARDINTRODUCTION_TITLE,115,6,196,24
+    LTEXT           "This wizard will guide you through the steps required to attach to a running process and log runtime exceptions into minidump files.",IDC_WIZARDINTRODUCTION_DESCRIPTION,115,36,196,60
+    CONTROL         "&Skip introduction page next time",IDC_WIZARDINTRODUCTION_SKIP,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,115,156,196,10
+    LTEXT           "To continue, press Next.",-1,115,178,196,8
+END
+
+IDD_MAIN_COMPLETION DIALOGEX 0, 0, 317, 192
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_SYSMENU
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Wizard Completed",IDC_WIZARDCOMPLETION_TITLE,115,6,196,24
+    ICON            "",IDC_WIZARDCOMPLETION_ICON,120,36,20,20,SS_REALSIZEIMAGE
+    LTEXT           "The wizard has completed its task.",IDC_WIZARDCOMPLETION_RESULT,150,36,161,90
+    LTEXT           "<A>Open Minidump File Directory</A>",IDC_MAIN_OPERATION_OPENMINIDUMPFILEDIRECTORY,114,162,127,8,WS_TABSTOP
+    LTEXT           "To close wizard, press Finish.",IDC_WIZARDCOMPLETION_FINISHLABEL,115,178,197,8
+END
+
+IDD_MAIN_PROCESS DIALOGEX 0, 0, 317, 144
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_SYSMENU
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Choose a running process in the list below to attach debugger to. Press Next to proceed with setting debugging options.",IDC_STATIC,6,0,306,18
+    CONTROL         "",IDC_MAIN_PROCESSES,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_SHOWSELALWAYS | LVS_SORTASCENDING | LVS_ALIGNLEFT | LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,6,24,306,96
+    PUSHBUTTON      "&Refresh",IDC_MAIN_REFRESHPROCESSES,6,126,50,14
+    LTEXT           "<A HREF=""http://www.microsoft.com/whdc/devtools/debugging/default.mspx"">DbgHelp API: %s</A>\nMissing",IDC_MAIN_DBGHELPVERSION,192,132,120,8
+END
+
+IDD_MAIN_MINIDUMPTYPE DIALOGEX 0, 0, 317, 144
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_SYSMENU
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Please choose minidump type using controls below. To proceed and start/continue debug session, click Next.",IDC_STATIC,6,6,306,18
+    CONTROL         "Data Segments ",IDC_MAIN_MINIDUMPTYPE_DATASEGMENTS,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,30,67,10
+    CONTROL         "Full Memory ",IDC_MAIN_MINIDUMPTYPE_FULLMEMORY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,42,56,10
+    CONTROL         "Handle Data ",IDC_MAIN_MINIDUMPTYPE_HANDLEDATA,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,54,57,10
+    CONTROL         "Filter Memory ",IDC_MAIN_MINIDUMPTYPE_FILTERMEMORY,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,66,61,10
+    CONTROL         "Scan Memory ",IDC_MAIN_MINIDUMPTYPE_SCANMEMORY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,78,61,10
+    CONTROL         "Unloaded Modules ",IDC_MAIN_MINIDUMPTYPE_UNLOADEDMODULES,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,90,30,76,10
+    CONTROL         "Indirectly Referenced Memory ",IDC_MAIN_MINIDUMPTYPE_INDIRECTLYREFERENCEDMEMORY,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,90,42,115,10
+    CONTROL         "Filter Module Paths ",IDC_MAIN_MINIDUMPTYPE_FILTERMODULEPATHS,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,90,54,79,10
+    CONTROL         "Process Thread Data ",IDC_MAIN_MINIDUMPTYPE_PROCESSTHREADDATA,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,90,66,85,10
+    CONTROL         "Private Read/Write Memory ",IDC_MAIN_MINIDUMPTYPE_PRIVATEREADWRITEMEMORY,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,90,78,107,10
+    CONTROL         "Without Optional Data ",IDC_MAIN_MINIDUMPTYPE_WITHOUTOPTIONALDATA,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,96,89,10
+    CONTROL         "Full Memory Information ",IDC_MAIN_MINIDUMPTYPE_FULLMEMORYINFO,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,108,95,10
+    CONTROL         "Thread Information ",IDC_MAIN_MINIDUMPTYPE_THREADINFO,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,108,96,80,10
+    CONTROL         "Code Segments ",IDC_MAIN_MINIDUMPTYPE_CODESEGS,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,108,108,68,10
+    CONTROL         "Without Auxiliary State ",IDC_MAIN_MINIDUMPTYPE_WITHOUTAUXILIARYSTATE,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,216,30,92,10
+    CONTROL         "Full Auxiliary State ",IDC_MAIN_MINIDUMPTYPE_FULLAUXILIARYSTATE,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,216,42,77,10
+    CONTROL         "Private Write-Copy Memory ",IDC_MAIN_MINIDUMPTYPE_PRIVATEWRITECOPYMEMORY,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,204,96,107,10
+    CONTROL         "Ignore Inaccessible Memory ",IDC_MAIN_MINIDUMPTYPE_IGNOREINACCESSIBLEMEMORY,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,204,108,107,10
+    CONTROL         "Token Information ",IDC_MAIN_MINIDUMPTYPE_TOKENINFORMATION,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,204,120,77,10
+    LTEXT           "See also: <A HREF=""http://msdn.microsoft.com/en-us/library/ms680519%28VS.85%29.aspx"">MINIDUMP_TYPE Enumeration</A> on MSDN",IDC_MAIN_MINIDUMPTYPE,6,132,306,8
+END
+
+IDD_MAIN_OPERATION DIALOGEX 0, 0, 317, 144
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_SYSMENU
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Debug session is in progress. To stop debugging, click Next. To review options without stopping debugging, click Back.",IDC_STATIC,6,6,306,18
+    EDITTEXT        IDC_MAIN_OPERATION_LOG,6,30,306,96,ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_READONLY | WS_VSCROLL | WS_HSCROLL
+    LTEXT           "<A>Write Minidump File Now</A>",IDC_MAIN_OPERATION_WRITEMINIDUMPNOW,6,132,112,8
+    LTEXT           "<A>Open Minidump File Directory</A>",IDC_MAIN_OPERATION_OPENMINIDUMPFILEDIRECTORY,108,132,127,8,WS_TABSTOP
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO
+BEGIN
+    IDD_ABOUT, DIALOG
+    BEGIN
+    END
+
+    IDD_MAIN_INTRODUCTION, DIALOG
+    BEGIN
+    END
+
+    IDD_MAIN_COMPLETION, DIALOG
+    BEGIN
+    END
+
+    IDD_MAIN_PROCESS, DIALOG
+    BEGIN
+    END
+
+    IDD_MAIN_MINIDUMPTYPE, DIALOG
+    BEGIN
+    END
+
+    IDD_MAIN_OPERATION, DIALOG
+    BEGIN
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Version
+//
+
+VS_VERSION_INFO VERSIONINFO
+ FILEVERSION  1, 0, 0, 204
+ PRODUCTVERSION 1,0,0,1
+ FILEFLAGSMASK 0x3fL
+#ifdef _DEBUG
+ FILEFLAGS 0x1L
+#else
+ FILEFLAGS 0x0L
+#endif
+ FILEOS 0x4L
+ FILETYPE 0x2L
+ FILESUBTYPE 0x0L
+BEGIN
+    BLOCK "StringFileInfo"
+    BEGIN
+        BLOCK "040904e4"
+        BEGIN
+            VALUE "CompanyName", "Alax.Info"
+            VALUE "Created By", "Roman Ryltsov <roman@alax.info>"
+            VALUE "FileDescription", "Log Process Exceptions Utility"
+            VALUE "FileVersion",  "1, 0, 0, 204\0"
+            VALUE "InternalName", "LogProcessExceptions"
+            VALUE "LegalCopyright", "Copyright © Alax.Info, Roman Ryltsov, 2008-2011"
+            VALUE "OriginalFilename", "LogProcessExceptions.exe"
+            VALUE "ProductName", "Log Process Exceptions Utility"
+            VALUE "ProductVersion", "1.0.0.1"
+        END
+    END
+    BLOCK "VarFileInfo"
+    BEGIN
+        VALUE "Translation", 0x409, 1252
+    END
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// String Table
+//
+
+STRINGTABLE
+BEGIN
+    IDC_ABOUT_COPYRIGHTWARNING 
+                            "Warning: This computer program is protected by copyright law and international treaties. Unauthorized reproduction or distribution of this program, or any portion of it, may result in severe civil and criminal penalties, and will be prosecuted to the maximum extent possible under the law."
+END
+
+STRINGTABLE
+BEGIN
+    ID_FILE_NEW             "Create a new document\nNew"
+    ID_FILE_OPEN            "Open an existing document\nOpen"
+    ID_FILE_CLOSE           "Close the active document\nClose"
+    ID_FILE_SAVE            "Save the active document\nSave"
+    ID_FILE_SAVE_AS         "Save the active document with a new name\nSave As"
+    ID_FILE_PAGE_SETUP      "Change the printing options\nPage Setup"
+    ID_FILE_PRINT_SETUP     "Change the printer and printing options\nPrint Setup"
+    ID_FILE_PRINT           "Print the active document\nPrint"
+    ID_FILE_PRINT_PREVIEW   "Display full pages\nPrint Preview"
+END
+
+STRINGTABLE
+BEGIN
+    ID_APP_ABOUT            "Display program information, version number and copyright\nAbout"
+    ID_APP_EXIT             "Quit the application; prompts to save documents\nExit"
+END
+
+STRINGTABLE
+BEGIN
+    ID_NEXT_PANE            "Switch to the next window pane\nNext Pane"
+    ID_PREV_PANE            "Switch back to the previous window pane\nPrevious Pane"
+END
+
+STRINGTABLE
+BEGIN
+    ID_WINDOW_NEW           "Open another window for the active document\nNew Window"
+    ID_WINDOW_ARRANGE       "Arrange icons at the bottom of the window\nArrange Icons"
+    ID_WINDOW_CASCADE       "Arrange windows so they overlap\nCascade Windows"
+    ID_WINDOW_TILE_HORZ     "Arrange windows as non-overlapping tiles\nTile Windows"
+    ID_WINDOW_TILE_VERT     "Arrange windows as non-overlapping tiles\nTile Windows"
+    ID_WINDOW_SPLIT         "Split the active window into panes\nSplit"
+END
+
+STRINGTABLE
+BEGIN
+    ID_EDIT_CLEAR           "Erase the selection\nErase"
+    ID_EDIT_CLEAR_ALL       "Erase everything\nErase All"
+    ID_EDIT_COPY            "Copy the selection and put it on the Clipboard\nCopy"
+    ID_EDIT_CUT             "Cut the selection and put it on the Clipboard\nCut"
+    ID_EDIT_FIND            "Find the specified text\nFind"
+    ID_EDIT_PASTE           "Insert Clipboard contents\nPaste"
+    ID_EDIT_REPEAT          "Repeat the last action\nRepeat"
+    ID_EDIT_REPLACE         "Replace specific text with different text\nReplace"
+    ID_EDIT_SELECT_ALL      "Select the entire document\nSelect All"
+    ID_EDIT_UNDO            "Undo the last action\nUndo"
+    ID_EDIT_REDO            "Redo the previously undone action\nRedo"
+END
+
+STRINGTABLE
+BEGIN
+    ATL_IDS_SCSIZE          "Change the window size"
+    ATL_IDS_SCMOVE          "Change the window position"
+    ATL_IDS_SCMINIMIZE      "Reduce the window to an icon"
+    ATL_IDS_SCMAXIMIZE      "Enlarge the window to full size"
+    ATL_IDS_SCNEXTWINDOW    "Switch to the next document window"
+    ATL_IDS_SCPREVWINDOW    "Switch to the previous document window"
+    ATL_IDS_SCCLOSE         "Close the active window and prompts to save the documents"
+END
+
+STRINGTABLE
+BEGIN
+    ATL_IDS_SCRESTORE       "Restore the window to normal size"
+    ATL_IDS_SCTASKLIST      "Activate Task List"
+    ATL_IDS_MDICHILD        "Activate this window"
+END
+
+STRINGTABLE
+BEGIN
+    ATL_IDS_IDLEMESSAGE     "Ready"
+END
+
+STRINGTABLE
+BEGIN
+    ATL_IDS_MRU_FILE        "Open this document"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_PROJNAME            "Log Process Exceptions Utility"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_MAINWIZARD_CAPTION  "Log Process Exceptions"
+END
+
+STRINGTABLE
+BEGIN
+    IDD_MAIN_PROCESS        "Debuggee Process\nChoose process to attach as debugger to, and monitor process runtime exceptions"
+    IDC_MAIN_PROCESSES      "v, 1\nx, 0x00000420, 0x00000420\nc, Process, 150, -1, ""f, 1""\nc, Identifier, 90, 1, ""f, 1""\nc, Type, 60, 2, ""f,1""\nc, Window Caption, 240, 3, ""f,0""\nc, Account, 210, 4, ""f,0""\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDD_MAIN_MINIDUMPTYPE   "Minidump Type\nChoose type of the minidump to be created on process exception"
+END
+
+STRINGTABLE
+BEGIN
+    IDD_MAIN_OPERATION      "Debug Operation\nReview debug session status and notifications"
+END
+
+#endif    // English (United States) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+//1 TYPELIB "LogProcessExceptions.tlb
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+
