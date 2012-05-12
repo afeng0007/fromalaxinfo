@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2008-2011
+// Copyright (C) Roman Ryltsov, 2008-2012
 // Created by Roman Ryltsov roman@alax.info
 // 
 // $Id$
@@ -10,6 +10,7 @@
 #include <tlhelp32.h>
 #include <atlsecurity.h>
 #include "AboutDialog.h"
+#include "..\..\..\Repository-Private\Utilities\EmailTools\Message.h"
 
 #if PSAPI_VERSION == 1
 #pragma comment(lib, "psapi.lib")
@@ -868,7 +869,9 @@ END_MSG_MAP()
 		HRESULT m_nResult;
 		CObjectPtr<CThread> m_pDebugThread;
 		UINT m_nExceptionIndex;
+		BOOL m_bSkipInitialException;
 		UINT m_nUserIndex;
+		CObjectPtr<CMessageQueue> m_pMessageQueue;
 
 		VOID UpdateButtons() throw()
 		{
@@ -939,9 +942,10 @@ END_MSG_MAP()
 							const EXCEPTION_DEBUG_INFO& DebugInformation = DebugEvent.u.Exception;
 							_Z4(atlTraceGeneral, 4, _T(".ExceptionCode %d, .ExceptionFlags %d, .dwFirstChance %d\n"), DebugInformation.ExceptionRecord.ExceptionCode, DebugInformation.ExceptionRecord.ExceptionFlags, DebugInformation.dwFirstChance);
 							#pragma region Skip Initial Debugger Attachment Exception
-							if(DebugInformation.ExceptionRecord.ExceptionCode == 0x80000003 && !m_nExceptionIndex)
+							if(DebugInformation.ExceptionRecord.ExceptionCode == 0x80000003 && m_bSkipInitialException)
 							{
-								AppendLog(AtlFormatString(_T("Skipping initial debugger attachment exception (0x%08x)\r\n"), DebugInformation.ExceptionRecord.ExceptionCode));
+								AppendLog(AtlFormatString(_T("Skipping initial debugger attachment exception (0x%08X)\r\n"), DebugInformation.ExceptionRecord.ExceptionCode));
+								m_bSkipInitialException = FALSE;
 								break;
 							}
 							#pragma endregion
@@ -949,18 +953,39 @@ END_MSG_MAP()
 							// NOTE: See http://msdn.microsoft.com/en-us/library/xcb2z8hs.aspx, not a true exception, but an awful patch to set thread name
 							if(DebugInformation.ExceptionRecord.ExceptionCode == 0x406D1388)
 							{
-								AppendLog(AtlFormatString(_T("Skipping thread name setting exception (0x%08x)\r\n"), DebugInformation.ExceptionRecord.ExceptionCode));
+								AppendLog(AtlFormatString(_T("Skipping thread name setting exception (0x%08X)\r\n"), DebugInformation.ExceptionRecord.ExceptionCode));
 								break;
 							}
 							#pragma endregion
 							#pragma region Skip C++ Exceptions (Debug)
-							#if _DEVELOPMENT && FALSE
+							#if _DEVELOPMENT //&& FALSE
+							#if !defined(_WIN64)
 							COMPILER_MESSAGE("Debug: Skip C++ Exceptions")
 							if(DebugInformation.ExceptionRecord.ExceptionCode == 0xE06D7363)
 							{
-								AppendLog(AtlFormatString(_T("Skipping C++ exception (0x%08x)\r\n"), DebugInformation.ExceptionRecord.ExceptionCode));
-								break;
+								BOOL bSkip = TRUE;
+								if(DebugInformation.ExceptionRecord.NumberParameters >= 2)
+								{
+									HRESULT nNativeExceptionCode = S_OK;
+									SIZE_T nReadDataSize = 0;
+									if(ReadProcessMemory(Process, (const VOID*) DebugInformation.ExceptionRecord.ExceptionInformation[1], &nNativeExceptionCode, sizeof nNativeExceptionCode, &nReadDataSize))
+										if(nReadDataSize == sizeof nNativeExceptionCode)
+										{
+											if((nNativeExceptionCode & 0x0FFF0000) != 0x01390000) // DVRServerStretch
+											{
+												AppendLog(AtlFormatString(_T("Skipping C++ exception (0x%08X, 0x%08X)\r\n"), DebugInformation.ExceptionRecord.ExceptionCode, nNativeExceptionCode));
+												break;
+											} else
+												bSkip = FALSE;
+										}
+								}
+								if(bSkip)
+								{
+									AppendLog(AtlFormatString(_T("Skipping C++ exception (0x%08X)\r\n"), DebugInformation.ExceptionRecord.ExceptionCode));
+									break;
+								}
 							}
+							#endif // !defined(_WIN64)
 							#endif // _DEVELOPMENT 
 							#pragma endregion
 							_ATLTRY
@@ -981,9 +1006,9 @@ END_MSG_MAP()
 								CString sName;
 								sName.AppendFormat(_T("%s-%d-%03d"), pszProcessFileName, nProcessIdentifier, m_nExceptionIndex++);
 								sName.AppendFormat(_T("-%08x"), DebugInformation.ExceptionRecord.ExceptionCode);
+								HRESULT nNativeExceptionCode = S_OK;
 								if(DebugInformation.ExceptionRecord.ExceptionCode == 0xE06D7363 && DebugInformation.ExceptionRecord.NumberParameters >= 2)
 								{
-									HRESULT nNativeExceptionCode = 0;
 									SIZE_T nReadDataSize = 0;
 									if(ReadProcessMemory(Process, (const VOID*) DebugInformation.ExceptionRecord.ExceptionInformation[1], &nNativeExceptionCode, sizeof nNativeExceptionCode, &nReadDataSize))
 										if(nReadDataSize == sizeof nNativeExceptionCode)
@@ -997,6 +1022,52 @@ END_MSG_MAP()
 								const MINIDUMP_TYPE Type = m_Wizard.m_MinidumpTypePropertyPage.GetMinidumpType();
 								__E(MiniDumpWriteDump(Process, nProcessIdentifier, File, Type, ExceptionPointers.ContextRecord ? &ExceptionInformation : NULL, NULL, NULL));
 								AppendLog(AtlFormatString(_T("Written exception minidump into file %s\r\n"), sName));
+								#pragma region Message Notification
+								_ATLTRY
+								{
+									if(!m_pMessageQueue)
+										m_pMessageQueue.Construct();
+									CObjectPtr<CMessage> pMessage;
+									pMessage.Construct();
+									#pragma region Fixed Initialization
+									__C(pMessage->put_ServerHost(CComBSTR(_T("smtp.gmail.com"))));
+									__C(pMessage->put_Sender(CComBSTR(_T("Roman Ryltsov <ryltsov@gmail.com>"))));
+									__C(pMessage->put_ToRecipients(CComBSTR(_T("Roman Ryltsov <ryltsov@gmail.com>"))));
+									__C(pMessage->put_TransportLayerSecurity(ATL_VARIANT_TRUE));
+									__C(pMessage->put_AuthMethods(CComBSTR(_T("login"))));
+									__C(pMessage->put_AuthName(CComBSTR(_T("ryltsov@gmail.com"))));
+									__C(pMessage->put_AuthPassword(CComBSTR(_T(""))));
+									#pragma endregion 
+									TCHAR pszComputerName[MAX_COMPUTERNAME_LENGTH] = { 0 };
+									DWORD nComputerNameLength = DIM(pszComputerName);
+									_W(GetComputerName(pszComputerName, &nComputerNameLength));
+									CString sSubject = AtlFormatString(_T("Exception 0x%08X in %s on %s"), DebugInformation.ExceptionRecord.ExceptionCode, pszProcessFileName, pszComputerName);
+									CString sBody;
+									sBody += _T("Hi,") _T("\r\n")
+										_T("\r\n");
+									sBody += AtlFormatString(_T("This is Log Process Exception notifying on exception occurred:") _T("\r\n")
+										_T("\r\n"), 
+										pszComputerName);
+									sBody += AtlFormatString(_T(" * ") _T("Code: 0x%08X") _T("\r\n"), DebugInformation.ExceptionRecord.ExceptionCode);
+									if(nNativeExceptionCode != S_OK)
+										sBody += AtlFormatString(_T(" * ") _T("Native ATL Code: 0x%08X") _T("\r\n"), nNativeExceptionCode);
+									sBody += AtlFormatString(_T(" * ") _T("Local Time: %s") _T("\r\n"), _StringHelper::FormatDateTime());
+									sBody += AtlFormatString(_T(" * ") _T("Computer Name: %s") _T("\r\n"), pszComputerName);
+									// WARN: Attaching a minidump file requires it being closed by API (should we do ContinueDebugEvent and/or wait?)
+									//sBody += _T("\r\n")
+									//	_T("Minidump attached.") _T("\r\n");
+									__C(pMessage->put_Subject(CComBSTR(sSubject)));
+									__C(pMessage->put_Body(CComBSTR(sBody)));
+									//CObjectPtr<CMessage::CComAttachment> pAttachment = pMessage->GetAttachments()->Add();
+									//__C(pAttachment->put_Name(CComBSTR(sName)));
+									//__C(pAttachment->LoadFromFile(CComBSTR(sPath)));
+									m_pMessageQueue->Add(pMessage);
+								}
+								_ATLCATCHALL()
+								{
+									_Z_EXCEPTION();
+								}
+								#pragma endregion 
 							}
 							_ATLCATCHALL()
 							{
@@ -1098,6 +1169,7 @@ END_MSG_MAP()
 						AppendLog(AtlFormatString(_T("Using directory \"%s\" for minidump files...\r\n"), m_sDataDirectory));
 						AppendLog(AtlFormatString(_T("Attaching to process %d (%s)...\r\n"), ProcessData.m_nIdentifier, ProcessData.GetFileName()));
 						EnableTokenDebugPrivilege();
+						m_bSkipInitialException = TRUE;
 						AttachDebug();
 					}
 					_ATLCATCH(Exception)

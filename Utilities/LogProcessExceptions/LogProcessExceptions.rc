@@ -9,7 +9,8 @@
 //
 #include "winres.h"
 #include "atlres.h"
-#include "rores.rc"
+#include "rores.rc"
+
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
 
@@ -81,7 +82,7 @@ BEGIN
     LTEXT           "<A HREF=""http://alax.info/"">http://alax.info/</A>",IDC_ABOUT_WEBSITE,108,60,162,8,NOT WS_GROUP | WS_TABSTOP
     LTEXT           "Email:",IDC_ABOUT_EMAILTITLE,60,72,20,8
     LTEXT           "<A HREF=""mailto:support@alax.info"">support@alax.info</A>",IDC_ABOUT_EMAIL,108,72,162,8,NOT WS_GROUP | WS_TABSTOP
-    LTEXT           "Copyright © Alax.Info, Roman Ryltsov, 2008-2011",IDC_ABOUT_COPYRIGHT,60,84,210,8,SS_NOPREFIX
+    LTEXT           "Copyright © Alax.Info, Roman Ryltsov, 2008-2012",IDC_ABOUT_COPYRIGHT,60,84,210,8,SS_NOPREFIX
     DEFPUSHBUTTON   "OK",1,220,102,50,14
     CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,6,122,267,1
     LTEXT           "Warning: ...",IDC_ABOUT_COPYRIGHTWARNING,6,130,268,18
@@ -213,7 +214,7 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION  1, 0, 0, 204
+ FILEVERSION  1, 0, 0, 226
  PRODUCTVERSION 1,0,0,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
@@ -232,9 +233,9 @@ BEGIN
             VALUE "CompanyName", "Alax.Info"
             VALUE "Created By", "Roman Ryltsov <roman@alax.info>"
             VALUE "FileDescription", "Log Process Exceptions Utility"
-            VALUE "FileVersion",  "1, 0, 0, 204\0"
+            VALUE "FileVersion",  "1, 0, 0, 226\0"
             VALUE "InternalName", "LogProcessExceptions"
-            VALUE "LegalCopyright", "Copyright © Alax.Info, Roman Ryltsov, 2008-2011"
+            VALUE "LegalCopyright", "Copyright © Alax.Info, Roman Ryltsov, 2008-2012"
             VALUE "OriginalFilename", "LogProcessExceptions.exe"
             VALUE "ProductName", "Log Process Exceptions Utility"
             VALUE "ProductVersion", "1.0.0.1"
