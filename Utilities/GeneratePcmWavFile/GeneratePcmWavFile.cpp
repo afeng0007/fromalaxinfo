@@ -238,6 +238,41 @@ public:
 						SIZE_T nSampleIndex = 0;
 						for(SIZE_T nIndex = 0; nIndex < nDataSize; nIndex += pWaveFormatEx->nBlockAlign, nSampleIndex++)
 						{
+							#pragma region Per-channel Frequencies and Amplitudes
+							if(FALSE)
+							{
+								const DOUBLE pfSignalFrequencies[5] = { 1000, 1000, 1000, 1000, 1000 };
+								const DOUBLE pfSignalAmplitudes[5] = { m_fSignalAmplitude, 0, 0, 0, 0 };
+								SHORT* pnSampleData = (SHORT*) (Properties.pbBuffer + nIndex);
+								for(WORD nChannelIndex = 0; nChannelIndex < pWaveFormatEx->nChannels; nChannelIndex++)
+								{
+									const DOUBLE fSignalPeriod = (DOUBLE) pWaveFormatEx->nSamplesPerSec / pfSignalFrequencies[nChannelIndex];
+									const DOUBLE fSignalAmplitude = pfSignalAmplitudes[nChannelIndex];
+									const SHORT nValue = (SHORT) (fSignalAmplitude * sin(2 * M_PI * (ThreadContext.m_nCurrentSampleIndex + nSampleIndex) / fSignalPeriod));
+									pnSampleData[nChannelIndex] = nValue;
+								}
+								continue;
+							}
+							#pragma endregion
+							#pragma region Stream Time Coefficients
+							#if TRUE && FALSE
+							{
+								COMPILER_MESSAGE("Every 170 seconds: 50 seconds 1.0, 70 seconds 0.0, 50 seconds 1.0");
+								#pragma region Factor
+								REFERENCE_TIME nTime = ThreadContext.m_nMediaSampleTime + nIndex * (1000 * 10000i64) / pWaveFormatEx->nAvgBytesPerSec;
+								nTime /= 1000 * 10000i64;
+								// NOTE: Every 170 seconds: 50 seconds 1.0, 70 seconds 0.0, 50 seconds 1.0
+								nTime %= 170;
+								const DOUBLE fTimeFactor = (nTime < 50 || nTime >= 120) ? 1.0 : (1.0 / 256);
+								#pragma endregion
+								const SHORT nValue = (SHORT) (m_fSignalAmplitude * sin(2 * M_PI * (ThreadContext.m_nCurrentSampleIndex + nSampleIndex) / m_fSignalPeriod));
+								SHORT* pnSampleData = (SHORT*) (Properties.pbBuffer + nIndex);
+								for(WORD nChannelIndex = 0; nChannelIndex < pWaveFormatEx->nChannels; nChannelIndex++)
+									pnSampleData[nChannelIndex] = (SHORT) (fTimeFactor * nValue);
+								continue;
+							}
+							#endif // TRUE
+							#pragma endregion
 							const SHORT nValue = (SHORT) (m_fSignalAmplitude * sin(2 * M_PI * (ThreadContext.m_nCurrentSampleIndex + nSampleIndex) / m_fSignalPeriod));
 							SHORT* pnSampleData = (SHORT*) (Properties.pbBuffer + nIndex);
 							for(WORD nChannelIndex = 0; nChannelIndex < pWaveFormatEx->nChannels; nChannelIndex++)
