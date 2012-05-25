@@ -482,11 +482,36 @@ public:
 					sText.Append(_T("AM_MEDIA_TYPE:\r\n"));
 					const CMediaType& pMediaType = reinterpret_cast<const CMediaType&>(m_pCodecFormatData->m_pMediaType);
 					//sText.AppendFormat(_T("  ...\r\n"), pMediaType->majortype);
-					sText.AppendFormat(_T("  subtype: %ls\r\n"), _PersistHelper::StringFromIdentifier(pMediaType->subtype));
+					if(memcmp(&pMediaType->subtype.Data2, &MEDIASUBTYPE_MJPG.Data2, sizeof (GUID) - offsetof(GUID, Data2)) == 0)
+						sText.AppendFormat(_T("  subtype: %ls (%s)\r\n"), _PersistHelper::StringFromIdentifier(pMediaType->subtype), _FilterGraphHelper::GetFourccCodeString(pMediaType->subtype.Data1));
+					else
+						sText.AppendFormat(_T("  subtype: %ls\r\n"), _PersistHelper::StringFromIdentifier(pMediaType->subtype));
 					sText.AppendFormat(_T("  bFixedSizeSamples: %s\r\n"), _StringHelper::FormatNumber((LONG) pMediaType->bFixedSizeSamples));
 					sText.AppendFormat(_T("  bTemporalCompression: %s\r\n"), _StringHelper::FormatNumber((LONG) pMediaType->bTemporalCompression));
 					sText.AppendFormat(_T("  lSampleSize: %s\r\n"), _StringHelper::FormatNumber((LONG) pMediaType->lSampleSize));
-					sText.AppendFormat(_T("  formattype: %ls\r\n"), _PersistHelper::StringFromIdentifier(pMediaType->formattype));
+					#pragma region Format
+					static const struct
+					{
+						GUID formattype;
+						LPCTSTR pszTitle;
+					} g_pMap[] =
+					{
+						{ FORMAT_VideoInfo, _T("FORMAT_VideoInfo") },
+						{ FORMAT_VideoInfo2, _T("FORMAT_VideoInfo2") },
+						{ FORMAT_MPEG2_VIDEO, _T("FORMAT_MPEG2_VIDEO") },
+						{ FORMAT_WaveFormatEx, _T("FORMAT_WaveFormatEx") },
+					};
+					BOOL bFound = FALSE;
+					for(SIZE_T nIndex = 0; nIndex < DIM(g_pMap); nIndex++)
+						if(pMediaType->formattype == g_pMap[nIndex].formattype)
+						{
+							sText.AppendFormat(_T("  formattype: %ls (%s)\r\n"), _PersistHelper::StringFromIdentifier(pMediaType->formattype), g_pMap[nIndex].pszTitle);
+							bFound = TRUE;
+							break;
+						}
+					if(!bFound)
+						sText.AppendFormat(_T("  formattype: %ls\r\n"), _PersistHelper::StringFromIdentifier(pMediaType->formattype));
+					#pragma endregion
 					sText.AppendFormat(_T("  cbFormat: %s\r\n"), _StringHelper::FormatNumber((LONG) pMediaType->cbFormat));
 					if(pMediaType->formattype == FORMAT_VideoInfo)
 					{
