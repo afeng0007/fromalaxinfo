@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Library", "Library\Library.vcxproj", "{085D2DB3-9D37-4819-BB4B-931D73E0824D}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Inject", "Inject\Inject.vcxproj", "{21E590D8-D552-441A-9DCE-FEB930B20F5D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{085D2DB3-9D37-4819-BB4B-931D73E0824D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{085D2DB3-9D37-4819-BB4B-931D73E0824D}.Debug|Win32.Build.0 = Debug|Win32
+		{085D2DB3-9D37-4819-BB4B-931D73E0824D}.Release|Win32.ActiveCfg = Release|Win32
+		{085D2DB3-9D37-4819-BB4B-931D73E0824D}.Release|Win32.Build.0 = Release|Win32
+		{21E590D8-D552-441A-9DCE-FEB930B20F5D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{21E590D8-D552-441A-9DCE-FEB930B20F5D}.Debug|Win32.Build.0 = Debug|Win32
+		{21E590D8-D552-441A-9DCE-FEB930B20F5D}.Release|Win32.ActiveCfg = Release|Win32
+		{21E590D8-D552-441A-9DCE-FEB930B20F5D}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
