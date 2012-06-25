@@ -1,0 +1,27 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AtlDialogSample", "AtlDialogSample.vcxproj", "{5A0AC410-A0EB-4721-92F1-701E5D867265}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AtlDialogSamplePS", "AtlDialogSamplePS.vcxproj", "{0722C1C0-EFE4-40D0-8435-D6E4CEB21346}"
+	ProjectSection(ProjectDependencies) = postProject
+		{5A0AC410-A0EB-4721-92F1-701E5D867265} = {5A0AC410-A0EB-4721-92F1-701E5D867265}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{5A0AC410-A0EB-4721-92F1-701E5D867265}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5A0AC410-A0EB-4721-92F1-701E5D867265}.Debug|Win32.Build.0 = Debug|Win32
+		{5A0AC410-A0EB-4721-92F1-701E5D867265}.Release|Win32.ActiveCfg = Release|Win32
+		{5A0AC410-A0EB-4721-92F1-701E5D867265}.Release|Win32.Build.0 = Release|Win32
+		{0722C1C0-EFE4-40D0-8435-D6E4CEB21346}.Debug|Win32.ActiveCfg = Debug|Win32
+		{0722C1C0-EFE4-40D0-8435-D6E4CEB21346}.Release|Win32.ActiveCfg = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
