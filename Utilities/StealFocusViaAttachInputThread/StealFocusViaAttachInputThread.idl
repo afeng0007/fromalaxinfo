@@ -1,0 +1,18 @@
+////////////////////////////////////////////////////////////
+// Copyright (C) Roman Ryltsov, 2008-2012
+// Created by Roman Ryltsov roman@alax.info
+// 
+// $Id$
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	uuid(2E866865-C435-4826-B24C-774E12DD8DC9),
+	version(1.0),
+]
+library AlaxInfoStealFocusViaAttachInputThread
+{
+	importlib("stdole2.tlb");
+};
+
