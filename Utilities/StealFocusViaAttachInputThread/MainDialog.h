@@ -96,6 +96,14 @@ public:
 				{
 					const DWORD nWindowThreadIdentifier = Window.GetWindowThreadID();
 					const DWORD nThreadIdentifier = GetCurrentThreadId();
+					if(!nWindowThreadIdentifier || nWindowThreadIdentifier == nThreadIdentifier)
+					{
+						if(nWindowThreadIdentifier)
+							AtlMessageBoxEx(m_hWnd, _T("The application is supposed to steal focus from another application, so have another application running in foreground to check the stealing out!"), IDS_WARNING, MB_ICONINFORMATION | MB_OK);
+						m_nActionCountdown = 7;
+						SetTimer(TIMER_ACTION, 7250);
+						return 0;
+					}
 					__E(AttachThreadInput(nThreadIdentifier, nWindowThreadIdentifier, TRUE));
 					GetDlgItem(IDC_EDIT).SetFocus();
 					_W(AttachThreadInput(nThreadIdentifier, nWindowThreadIdentifier, FALSE));
