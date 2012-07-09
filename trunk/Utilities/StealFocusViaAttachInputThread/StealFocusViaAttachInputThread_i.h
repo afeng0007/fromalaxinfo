@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0555 */
-/* at Sun Jul 08 13:39:19 2012
+/* at Mon Jul 09 10:20:32 2012
  */
 /* Compiler settings for StealFocusViaAttachInputThread.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
