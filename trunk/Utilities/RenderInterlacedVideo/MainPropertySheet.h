@@ -16,6 +16,121 @@
 #include "rodshow.h"
 
 ////////////////////////////////////////////////////////////
+// CVmr7Window
+
+class CVmr7Window :
+	public CControlWindowT<CVmr7Window>
+{
+public:
+
+BEGIN_MSG_MAP_EX(CVmr7Window)
+	//CHAIN_MSG_MAP(CControlWindowT<CVmr7Window>)
+	MSG_WM_ERASEBKGND(OnEraseBkgnd)
+	MSG_WM_PAINT(OnPaint)
+	MSG_WM_DISPLAYCHANGE(OnDisplayChange)
+	MSG_WM_SIZE(OnSize)
+	MSG_WM_LBUTTONDBLCLK(OnLButtonDblClk)
+END_MSG_MAP()
+
+public:
+	CComPtr<IBaseFilter> m_pBaseFilter;
+	CComPtr<IVMRWindowlessControl> m_pVmrWindowlessControl;
+
+public:
+// CVmr7Window
+	static CLSID GetRendererClassIdentifier() throw()
+	{
+		return CLSID_VideoMixingRenderer;
+	}
+	static CComPtr<IBaseFilter> CoCreateBaseFilterInstance()
+	{
+		CComPtr<IBaseFilter> pBaseFilter;
+		__C(pBaseFilter.CoCreateInstance(GetRendererClassIdentifier()));
+		return pBaseFilter;
+	}
+	VOID Initialize(IBaseFilter* pBaseFilter)
+	{
+		_A(pBaseFilter);
+		_A(!m_pBaseFilter && !m_pVmrWindowlessControl);
+		m_pBaseFilter = pBaseFilter;
+		CComQIPtr<IVMRFilterConfig> pVmrFilterConfig = pBaseFilter;
+		__D(pVmrFilterConfig, E_NOINTERFACE);
+		__C(pVmrFilterConfig->SetRenderingMode(VMRMode_Windowless));
+		// NOTE: Cause the VMR to load the mixer and compositor
+		//       See http://msdn.microsoft.com/en-us/library/windows/desktop/dd390448%28v=vs.85%29.aspx
+		__C(pVmrFilterConfig->SetNumberOfStreams(1));
+		m_pVmrWindowlessControl = CComQIPtr<IVMRWindowlessControl>(m_pBaseFilter);
+		__D(m_pVmrWindowlessControl, E_NOINTERFACE);
+		__C(m_pVmrWindowlessControl->SetVideoClippingWindow(m_hWnd));
+		CRect VideoPosition = GetVideoPosition();
+		_Z4(atlTraceGeneral, 4, _T(".m_pVmrWindowlessControl 0x%p, VideoPosition at (%d, %d) size (%d, %d)\n"), m_pVmrWindowlessControl, VideoPosition.left, VideoPosition.top, VideoPosition.Width(), VideoPosition.Height());
+		__C(m_pVmrWindowlessControl->SetVideoPosition(NULL, VideoPosition));
+	}
+	VOID Terminate() throw()
+	{
+		m_pBaseFilter = NULL;
+		m_pVmrWindowlessControl = NULL;
+	}
+	CRect GetVideoPosition() const throw()
+	{
+		CRect Position;
+		_W(GetClientRect(Position));
+		return Position;
+	}
+
+// Window Message Handlers
+	LRESULT OnEraseBkgnd(CDCHandle Dc)
+	{
+		Dc;
+		if(m_pVmrWindowlessControl)
+		{
+			return TRUE;
+		} else
+			SetMsgHandled(FALSE);
+		return 0;
+	}
+	LRESULT OnPaint(CDCHandle)
+	{
+		if(m_pVmrWindowlessControl)
+		{
+			CPaintDC Dc(m_hWnd);
+			const HRESULT nRepaintVideoResult = m_pVmrWindowlessControl->RepaintVideo(m_hWnd, Dc);
+			_Z4(atlTraceUI, SUCCEEDED(nRepaintVideoResult) ? 6 : 4, _T("nRepaintVideoResult 0x%08x\n"), nRepaintVideoResult);
+		} else
+			SetMsgHandled(FALSE);
+		return 0;
+	}
+	LRESULT OnDisplayChange(UINT nDepth, CSize Extent)
+	{
+		if(m_pVmrWindowlessControl)
+		{
+			const HRESULT nDisplayModeChangedResult = m_pVmrWindowlessControl->DisplayModeChanged();
+			_Z4(atlTraceUI, 4, _T("nDisplayModeChangedResult 0x%08x\n"), nDisplayModeChangedResult);
+		}
+		return 0;
+	}
+	LRESULT OnSize(UINT nType, CSize)
+	{
+		if(nType != SIZE_MINIMIZED)
+			if(m_pVmrWindowlessControl)
+			{
+				CRect VideoPosition = GetVideoPosition();
+				const HRESULT nSetVideoPositionResult = m_pVmrWindowlessControl->SetVideoPosition(NULL, &VideoPosition);
+				_Z4(atlTraceUI, SUCCEEDED(nSetVideoPositionResult) ? 6 : 4, _T("nSetVideoPositionResult 0x%08x\n"), nSetVideoPositionResult);
+			}
+		return 0;
+	}
+	LRESULT OnLButtonDblClk(UINT, CPoint Position)
+	{
+		COlePropertyFrameDialog Dialog;
+		Dialog.SetObject(m_pBaseFilter);
+		Dialog.SetObjectPages();
+		Dialog.DoModal(m_hWnd);
+		return 0;
+	}
+};
+
+////////////////////////////////////////////////////////////
 // CVmr9Window
 
 class CVmr9Window :
@@ -417,7 +532,7 @@ public:
 				Paint(pnData + nFirstRowOffset + (40 + 1) * nNextRowOffset + (60 + nPositionB) * 2, nNextRowOffset, 0xFF);
 				REFERENCE_TIME nPositionC = nField1Time % g_nPeriod;
 				LONG nPositionD = (LONG) (abs((g_nPeriod / 2) - nPositionC) * (600 - 60) / (g_nPeriod / 2));
-				Paint(pnData + nFirstRowOffset + (40 + 0) * nNextRowOffset + (60 + nPositionD) * 2, nNextRowOffset, 0xFF); // Change color to 0x00 to distinguish between the fields
+				Paint(pnData + nFirstRowOffset + (40 + 0) * nNextRowOffset + (60 + nPositionD) * 2, nNextRowOffset, GetFilter()->GetColorize() ? 0x00 : 0xFF);
 				if(GetFilter()->GetWeave())
 					OutputProperties.dwTypeSpecificFlags |= AM_VIDEO_FLAG_WEAVE;
 				#pragma endregion
@@ -431,12 +546,14 @@ public:
 		CObjectPtr<COutputPin> m_pOutputPin;
 		CMediaType m_pRequestedMediaType;
 		BOOL m_bWeave;
+		BOOL m_bColorize;
 
 	public:
 	// CSourceFilter
 		CSourceFilter() throw() :
 			CBasePersistT<CSourceFilter>(GetDataCriticalSection()),
-			m_bWeave(FALSE)
+			m_bWeave(FALSE),
+			m_bColorize(FALSE)
 		{
 			_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
 		}
@@ -539,6 +656,16 @@ public:
 			CRoCriticalSectionLock DataLock(GetDataCriticalSection());
 			m_bWeave = bWeave;
 		}
+		BOOL GetColorize() const throw()
+		{
+			CRoCriticalSectionLock DataLock(GetDataCriticalSection());
+			return m_bColorize;
+		}
+		VOID SetColorize(BOOL bColorize) throw()
+		{
+			CRoCriticalSectionLock DataLock(GetDataCriticalSection());
+			m_bColorize = bColorize;
+		}
 	};
 
 	////////////////////////////////////////////////////////////
@@ -613,6 +740,277 @@ public:
 	};
 
 	////////////////////////////////////////////////////
+	// CVmr7PropertyPage
+
+	class CVmr7PropertyPage :
+		public CPropertyPageT<CVmr7PropertyPage>,
+		public CDialogResize<CVmr7PropertyPage>
+	{
+	public:
+		enum { IDD = IDD_MAIN_VMR7 };
+
+	BEGIN_MSG_MAP_EX(CVmr7PropertyPage)
+		CHAIN_MSG_MAP(CPropertyPageT<CVmr7PropertyPage>)
+		CHAIN_MSG_MAP(CDialogResize<CVmr7PropertyPage>)
+		MSG_WM_INITDIALOG(OnInitDialog)
+		MSG_WM_DESTROY(OnDestroy)
+		COMMAND_ID_HANDLER_EX(IDC_MAIN_VMR7_RUN, OnRunButtonClicked)
+		COMMAND_ID_HANDLER_EX(IDC_MAIN_VMR7_PAUSE, OnPauseButtonClicked)
+		COMMAND_ID_HANDLER_EX(IDC_MAIN_VMR7_STOP, OnStopButtonClicked)
+		COMMAND_ID_HANDLER_EX(IDC_MAIN_VMR7_WEAVE, OnWeaveButtonClicked)
+		COMMAND_ID_HANDLER_EX(IDC_MAIN_VMR7_COLORIZE, OnColorizeButtonClicked)
+		MESSAGE_HANDLER_EX(WM_FILTERGRAPHEVENT, OnFilterGraphEvent)
+		REFLECT_NOTIFICATIONS()
+	END_MSG_MAP()
+
+	BEGIN_DLGRESIZE_MAP(CVmr7PropertyPage)
+		DLGRESIZE_CONTROL(IDC_MAIN_VMR7_VIDEO, DLSZ_SIZE_X | DLSZ_SIZE_Y)
+		DLGRESIZE_CONTROL(IDC_MAIN_VMR7_RUN, DLSZ_MOVE_X)
+		DLGRESIZE_CONTROL(IDC_MAIN_VMR7_PAUSE, DLSZ_MOVE_X)
+		DLGRESIZE_CONTROL(IDC_MAIN_VMR7_STOP, DLSZ_MOVE_X)
+		DLGRESIZE_CONTROL(IDC_MAIN_VMR7_WEAVE, DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_MAIN_VMR7_COLORIZE, DLSZ_MOVE_Y)
+	END_DLGRESIZE_MAP()
+
+	public:
+
+		////////////////////////////////////////////////////////
+		// Window Message Identifiers
+
+		enum
+		{
+			WM_FIRST = WM_APP,
+			WM_FILTERGRAPHEVENT,
+		};
+
+	private:
+		CMainPropertySheet& m_Owner;
+		CStatic m_VideoStatic;
+		CGenericFilterGraph m_FilterGraph;
+		CObjectPtr<CSourceFilter> m_pSourceFilter;
+		CVmr7Window m_RendererWindow;
+		CButton m_RunButton;
+		CButton m_PauseButton;
+		CButton m_StopButton;
+		CButton m_WeaveButton;
+		CButton m_ColorizeButton;
+
+		VOID UpdateControls()
+		{
+			OAFilterState State;
+			if(SUCCEEDED(m_FilterGraph.m_pMediaControl->GetState(0, &State)))
+			{
+				m_RunButton.EnableWindow(State != State_Running);
+				m_PauseButton.EnableWindow(State != State_Paused);
+				m_StopButton.EnableWindow(State != State_Stopped);
+			} else
+			{
+				m_RunButton.EnableWindow(FALSE);
+				m_PauseButton.EnableWindow(FALSE);
+				m_StopButton.EnableWindow(FALSE);
+			}
+		}
+
+	public:
+	// CVmr7PropertyPage
+		CVmr7PropertyPage(CMainPropertySheet* pOwner) :
+			m_Owner(*pOwner)
+		{
+		}
+
+	// CDialogResize
+		VOID DlgResize_UpdateLayout(INT nWidth, INT nHeight)
+		{
+			__super::DlgResize_UpdateLayout(nWidth, nHeight);
+			CRect VideoPosition;
+			_W(m_VideoStatic.GetWindowRect(VideoPosition));
+			_W(ScreenToClient(VideoPosition));
+			_W(m_RendererWindow.MoveWindow(VideoPosition));
+		}
+
+	// Window Message Handelrs
+		LRESULT OnInitDialog(HWND, LPARAM)
+		{
+			m_VideoStatic = GetDlgItem(IDC_MAIN_VMR7_VIDEO);
+			m_VideoStatic.ShowWindow(SW_HIDE);
+			CRect VideoPosition;
+			_W(m_VideoStatic.GetWindowRect(VideoPosition));
+			_W(ScreenToClient(VideoPosition));
+			m_RunButton = GetDlgItem(IDC_MAIN_VMR7_RUN);
+			m_PauseButton = GetDlgItem(IDC_MAIN_VMR7_PAUSE);
+			m_StopButton = GetDlgItem(IDC_MAIN_VMR7_STOP);
+			m_WeaveButton = GetDlgItem(IDC_MAIN_VMR7_WEAVE);
+			m_ColorizeButton = GetDlgItem(IDC_MAIN_VMR7_COLORIZE);
+			DlgResize_Init(TRUE);
+			m_FilterGraph.CoCreateInstance();
+			CObjectPtr<CAmGraphBuilderCallback> pAmGraphBuilderCallback;
+			pAmGraphBuilderCallback.Construct();
+			pAmGraphBuilderCallback->SetGraphBuilder(m_FilterGraph.m_pFilterGraph);
+			const CComPtr<IBaseFilter> pBaseFilter = m_RendererWindow.CoCreateBaseFilterInstance();
+			__C(m_FilterGraph->AddFilter(pBaseFilter, CT2CW(_T("VMR-7"))));
+			m_RendererWindow.Create(m_hWnd);
+			_W(m_RendererWindow.MoveWindow(VideoPosition));
+			m_RendererWindow.ShowWindow(SW_SHOWNORMAL);
+			m_RendererWindow.Initialize(pBaseFilter);
+			CObjectPtr<CSourceFilter> pSourceFilter;
+			pSourceFilter.Construct()->Initialize();
+			pSourceFilter->SetWeave(m_WeaveButton.GetCheck());
+			pSourceFilter->SetColorize(m_ColorizeButton.GetCheck());
+			m_pSourceFilter = pSourceFilter;
+			__C(m_FilterGraph->AddFilter(pSourceFilter, CT2CW(_T("Source"))));
+			__C(m_FilterGraph->Connect(pSourceFilter->GetOutputPin(), _FilterGraphHelper::GetFilterPin(m_RendererWindow.m_pBaseFilter)));
+			__C(m_FilterGraph.m_pMediaEventEx->SetNotifyWindow((OAHWND) m_hWnd, WM_FILTERGRAPHEVENT, (LONG_PTR) this));
+			UpdateControls();
+			return 0;
+		}
+		LRESULT OnDestroy() throw()
+		{
+			if(m_FilterGraph.m_pMediaControl)
+				_V(m_FilterGraph.m_pMediaControl->Stop());
+			m_RendererWindow.Terminate();
+			m_pSourceFilter.Release();
+			m_FilterGraph.Release();
+			return 0;
+		}
+		LRESULT OnRunButtonClicked(UINT, INT, HWND)
+		{
+			CWaitCursor WaitCursor;
+			__D(m_FilterGraph.m_pMediaControl, E_NOINTERFACE);
+			__C(m_FilterGraph.m_pMediaControl->Run());
+			UpdateControls();
+			#pragma region Capabilities
+			_ATLTRY
+			{
+				const CComQIPtr<IVMRDeinterlaceControl> pVmrDeinterlaceControl = m_RendererWindow.m_pBaseFilter;
+				VMRVideoDesc VideoDescription;
+				ZeroMemory(&VideoDescription, sizeof VideoDescription);
+				VideoDescription.dwSize = sizeof VideoDescription;
+				const CVideoInfoHeader2* pVideoInfoHeader2 = m_pSourceFilter->GetRequestedMediaType().GetVideoInfoHeader2();
+				_A(pVideoInfoHeader2);
+				const CSize Extent = pVideoInfoHeader2->GetExtent();
+				VideoDescription.dwSampleWidth = Extent.cx;
+				VideoDescription.dwSampleHeight = Extent.cy;
+				VideoDescription.SingleFieldPerSample = FALSE;
+				VideoDescription.dwFourCC = pVideoInfoHeader2->GetBitmapInfoHeader().biCompression;
+				VideoDescription.InputSampleFreq.dwNumerator = 30000;
+				VideoDescription.InputSampleFreq.dwDenominator = 1001;
+				VideoDescription.OutputFrameFreq.dwNumerator = 60000;
+				VideoDescription.OutputFrameFreq.dwDenominator = 1001;
+				DWORD nModeCount = 16;
+				CTempBufferT<GUID> pModes(nModeCount);
+				const HRESULT nGetNumberOfDeinterlaceModesResult = pVmrDeinterlaceControl->GetNumberOfDeinterlaceModes(&VideoDescription, &nModeCount, pModes);
+				_Z4(atlTraceGeneral, 4, _T("nGetNumberOfDeinterlaceModesResult 0x%08x, nModeCount %d\n"), nGetNumberOfDeinterlaceModesResult, nModeCount);
+				if(SUCCEEDED(nGetNumberOfDeinterlaceModesResult))
+				{
+					for(DWORD nModeIndex = 0; nModeIndex < nModeCount; nModeIndex++)
+					{
+						const GUID& Mode = pModes[nModeIndex];
+						_Z4(atlTraceGeneral, 4, _T("nModeIndex %d, Mode %s\n"), nModeIndex, FormatDeinterlaceMode(Mode));
+						VMRDeinterlaceCaps Capabilities;
+						ZeroMemory(&Capabilities, sizeof Capabilities);
+						Capabilities.dwSize = sizeof Capabilities;
+						const HRESULT nGetDeinterlaceModeCapsResult = pVmrDeinterlaceControl->GetDeinterlaceModeCaps(const_cast<GUID*>(&Mode), &VideoDescription, &Capabilities);
+						_Z4(atlTraceGeneral, 4, _T("nGetDeinterlaceModeCapsResult 0x%08x, Capabilities.dwNumPreviousOutputFrames %d, .dwNumForwardRefSamples %d, .dwNumBackwardRefSamples %d, .DeinterlaceTechnology 0x%x\n"), nGetDeinterlaceModeCapsResult, Capabilities.dwNumPreviousOutputFrames, Capabilities.dwNumForwardRefSamples, Capabilities.dwNumBackwardRefSamples, Capabilities.DeinterlaceTechnology);
+					}
+				}
+				GUID DeinterlaceMode = GUID_NULL;
+				const HRESULT nGetDeinterlaceModeResult = pVmrDeinterlaceControl->GetDeinterlaceMode(0, &DeinterlaceMode);
+				_Z4(atlTraceGeneral, 4, _T("nGetDeinterlaceModeResult 0x%08x\n"), nGetDeinterlaceModeResult);
+				if(SUCCEEDED(nGetDeinterlaceModeResult) && !(nGetDeinterlaceModeResult == S_FALSE && DeinterlaceMode == GUID_NULL))
+					_Z4(atlTraceGeneral, 4, _T("DeinterlaceMode %s\n"), FormatDeinterlaceMode(DeinterlaceMode));
+				DWORD nPreferences = 0;
+				const HRESULT nGetDeinterlacePrefsResult = pVmrDeinterlaceControl->GetDeinterlacePrefs(&nPreferences);
+				_Z4(atlTraceGeneral, 4, _T("nGetDeinterlacePrefsResult 0x%08x, nPreferences 0x%x\n"), nGetDeinterlacePrefsResult, nPreferences);
+				GUID ActualDeinterlaceMode;
+				const HRESULT nGetActualDeinterlaceModeResult = pVmrDeinterlaceControl->GetActualDeinterlaceMode(0, &ActualDeinterlaceMode);
+				_Z4(atlTraceGeneral, 4, _T("nGetActualDeinterlaceModeResult 0x%08x\n"), nGetActualDeinterlaceModeResult);
+				if(SUCCEEDED(nGetActualDeinterlaceModeResult))
+					_Z4(atlTraceGeneral, 4, _T("ActualDeinterlaceMode %s\n"), FormatDeinterlaceMode(ActualDeinterlaceMode));
+			}
+			_ATLCATCHALL()
+			{
+				_Z_EXCEPTION();
+			}
+			#pragma endregion
+			return 0;
+		}
+		LRESULT OnPauseButtonClicked(UINT, INT, HWND)
+		{
+			CWaitCursor WaitCursor;
+			__D(m_FilterGraph.m_pMediaControl, E_NOINTERFACE);
+			__C(m_FilterGraph.m_pMediaControl->Pause());
+			UpdateControls();
+			return 0;
+		}
+		LRESULT OnStopButtonClicked(UINT, INT, HWND)
+		{
+			CWaitCursor WaitCursor;
+			if(m_FilterGraph.m_pMediaControl)
+				_V(m_FilterGraph.m_pMediaControl->Stop());
+			UpdateControls();
+			return 0;
+		}
+		LRESULT OnWeaveButtonClicked(UINT, INT, HWND)
+		{
+			if(m_pSourceFilter)
+				m_pSourceFilter->SetWeave(m_WeaveButton.GetCheck());
+			return 0;
+		}
+		LRESULT OnColorizeButtonClicked(UINT, INT, HWND)
+		{
+			if(m_pSourceFilter)
+				m_pSourceFilter->SetColorize(m_ColorizeButton.GetCheck());
+			return 0;
+		}
+		LRESULT OnFilterGraphEvent(UINT, WPARAM, LPARAM)
+		{
+			if(!m_FilterGraph.m_pMediaEventEx)
+				return 0;
+			_ATLTRY
+			{
+				for(; ; )
+				{
+					LONG nEventCode;
+					LONG_PTR nParameter1, nParameter2;
+					const HRESULT nGetEventResult = m_FilterGraph.m_pMediaEventEx->GetEvent(&nEventCode, &nParameter1, &nParameter2, 0);
+					if(nGetEventResult == E_ABORT)
+						break;
+					__C(nGetEventResult);
+					_ATLTRY
+					{
+						switch(nEventCode)
+						{
+						case EC_ERRORABORT:
+							_Z2(atlTraceGeneral, 2, _T("nEventCode EC_ERRORABORT 0x%02X, nParameter1 0x%08x, nParameter2 0x%08x\n"), nEventCode, nParameter1, nParameter2);
+							_A(FAILED(nParameter1));
+							AtlMessageBoxEx(m_hWnd, (LPCTSTR) AtlFormatString(_T("EC_ERRORABORT Event: %s."), AtlFormatSystemMessage((HRESULT) nParameter1).TrimRight(_T("\t\n\r ."))), IDS_ERROR, MB_ICONERROR | MB_OK);
+							break;
+						default:
+							_Z1(atlTraceGeneral, 1, _T("nEventCode 0x%02X, nParameter1 0x%08x, nParameter2 0x%08x\n"), nEventCode, nParameter1, nParameter2);
+						}
+					}
+					_ATLCATCHALL()
+					{
+						_V(m_FilterGraph.m_pMediaEventEx->FreeEventParams(nEventCode, nParameter1, nParameter2));
+						_ATLRETHROW;
+					}
+					_V(m_FilterGraph.m_pMediaEventEx->FreeEventParams(nEventCode, nParameter1, nParameter2));
+				}
+			}
+			_ATLCATCHALL()
+			{
+				_Z_EXCEPTION();
+			}
+			return 0;
+		}
+		INT OnKillActive()
+		{
+			m_StopButton.Click();
+			return 0;
+		}
+	};
+
+	////////////////////////////////////////////////////
 	// CVmr9PropertyPage
 
 	class CVmr9PropertyPage :
@@ -631,6 +1029,7 @@ public:
 		COMMAND_ID_HANDLER_EX(IDC_MAIN_VMR9_PAUSE, OnPauseButtonClicked)
 		COMMAND_ID_HANDLER_EX(IDC_MAIN_VMR9_STOP, OnStopButtonClicked)
 		COMMAND_ID_HANDLER_EX(IDC_MAIN_VMR9_WEAVE, OnWeaveButtonClicked)
+		COMMAND_ID_HANDLER_EX(IDC_MAIN_VMR9_COLORIZE, OnColorizeButtonClicked)
 		MESSAGE_HANDLER_EX(WM_FILTERGRAPHEVENT, OnFilterGraphEvent)
 		REFLECT_NOTIFICATIONS()
 	END_MSG_MAP()
@@ -641,6 +1040,7 @@ public:
 		DLGRESIZE_CONTROL(IDC_MAIN_VMR9_PAUSE, DLSZ_MOVE_X)
 		DLGRESIZE_CONTROL(IDC_MAIN_VMR9_STOP, DLSZ_MOVE_X)
 		DLGRESIZE_CONTROL(IDC_MAIN_VMR9_WEAVE, DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_MAIN_VMR9_COLORIZE, DLSZ_MOVE_Y)
 	END_DLGRESIZE_MAP()
 
 	public:
@@ -664,6 +1064,7 @@ public:
 		CButton m_PauseButton;
 		CButton m_StopButton;
 		CButton m_WeaveButton;
+		CButton m_ColorizeButton;
 
 		VOID UpdateControls()
 		{
@@ -710,6 +1111,7 @@ public:
 			m_PauseButton = GetDlgItem(IDC_MAIN_VMR9_PAUSE);
 			m_StopButton = GetDlgItem(IDC_MAIN_VMR9_STOP);
 			m_WeaveButton = GetDlgItem(IDC_MAIN_VMR9_WEAVE);
+			m_ColorizeButton = GetDlgItem(IDC_MAIN_VMR9_WEAVE);
 			DlgResize_Init(TRUE);
 			m_FilterGraph.CoCreateInstance();
 			CObjectPtr<CAmGraphBuilderCallback> pAmGraphBuilderCallback;
@@ -724,6 +1126,7 @@ public:
 			CObjectPtr<CSourceFilter> pSourceFilter;
 			pSourceFilter.Construct()->Initialize();
 			pSourceFilter->SetWeave(m_WeaveButton.GetCheck());
+			pSourceFilter->SetColorize(m_ColorizeButton.GetCheck());
 			m_pSourceFilter = pSourceFilter;
 			__C(m_FilterGraph->AddFilter(pSourceFilter, CT2CW(_T("Source"))));
 			__C(m_FilterGraph->Connect(pSourceFilter->GetOutputPin(), _FilterGraphHelper::GetFilterPin(m_RendererWindow.m_pBaseFilter)));
@@ -824,6 +1227,12 @@ public:
 				m_pSourceFilter->SetWeave(m_WeaveButton.GetCheck());
 			return 0;
 		}
+		LRESULT OnColorizeButtonClicked(UINT, INT, HWND)
+		{
+			if(m_pSourceFilter)
+				m_pSourceFilter->SetColorize(m_ColorizeButton.GetCheck());
+			return 0;
+		}
 		LRESULT OnFilterGraphEvent(UINT, WPARAM, LPARAM)
 		{
 			if(!m_FilterGraph.m_pMediaEventEx)
@@ -865,18 +1274,256 @@ public:
 			}
 			return 0;
 		}
+		INT OnKillActive()
+		{
+			m_StopButton.Click();
+			return 0;
+		}
+	};
+
+	////////////////////////////////////////////////////
+	// CEvrPropertyPage
+
+	class CEvrPropertyPage :
+		public CPropertyPageT<CEvrPropertyPage>,
+		public CDialogResize<CEvrPropertyPage>
+	{
+	public:
+		enum { IDD = IDD_MAIN_EVR };
+
+	BEGIN_MSG_MAP_EX(CEvrPropertyPage)
+		CHAIN_MSG_MAP(CPropertyPageT<CEvrPropertyPage>)
+		CHAIN_MSG_MAP(CDialogResize<CEvrPropertyPage>)
+		MSG_WM_INITDIALOG(OnInitDialog)
+		MSG_WM_DESTROY(OnDestroy)
+		COMMAND_ID_HANDLER_EX(IDC_MAIN_EVR_RUN, OnRunButtonClicked)
+		COMMAND_ID_HANDLER_EX(IDC_MAIN_EVR_PAUSE, OnPauseButtonClicked)
+		COMMAND_ID_HANDLER_EX(IDC_MAIN_EVR_STOP, OnStopButtonClicked)
+		COMMAND_ID_HANDLER_EX(IDC_MAIN_EVR_WEAVE, OnWeaveButtonClicked)
+		COMMAND_ID_HANDLER_EX(IDC_MAIN_EVR_COLORIZE, OnColorizeButtonClicked)
+		MESSAGE_HANDLER_EX(WM_FILTERGRAPHEVENT, OnFilterGraphEvent)
+		REFLECT_NOTIFICATIONS()
+	END_MSG_MAP()
+
+	BEGIN_DLGRESIZE_MAP(CEvrPropertyPage)
+		DLGRESIZE_CONTROL(IDC_MAIN_EVR_VIDEO, DLSZ_SIZE_X | DLSZ_SIZE_Y)
+		DLGRESIZE_CONTROL(IDC_MAIN_EVR_RUN, DLSZ_MOVE_X)
+		DLGRESIZE_CONTROL(IDC_MAIN_EVR_PAUSE, DLSZ_MOVE_X)
+		DLGRESIZE_CONTROL(IDC_MAIN_EVR_STOP, DLSZ_MOVE_X)
+		DLGRESIZE_CONTROL(IDC_MAIN_EVR_WEAVE, DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_MAIN_EVR_COLORIZE, DLSZ_MOVE_Y)
+	END_DLGRESIZE_MAP()
+
+	public:
+
+		////////////////////////////////////////////////////////
+		// Window Message Identifiers
+
+		enum
+		{
+			WM_FIRST = WM_APP,
+			WM_FILTERGRAPHEVENT,
+		};
+
+	private:
+		CMainPropertySheet& m_Owner;
+		CStatic m_VideoStatic;
+		CGenericFilterGraph m_FilterGraph;
+		CObjectPtr<CSourceFilter> m_pSourceFilter;
+		CEvrWindow m_RendererWindow;
+		CButton m_RunButton;
+		CButton m_PauseButton;
+		CButton m_StopButton;
+		CButton m_WeaveButton;
+		CButton m_ColorizeButton;
+
+		VOID UpdateControls()
+		{
+			OAFilterState State;
+			if(SUCCEEDED(m_FilterGraph.m_pMediaControl->GetState(0, &State)))
+			{
+				m_RunButton.EnableWindow(State != State_Running);
+				m_PauseButton.EnableWindow(State != State_Paused);
+				m_StopButton.EnableWindow(State != State_Stopped);
+			} else
+			{
+				m_RunButton.EnableWindow(FALSE);
+				m_PauseButton.EnableWindow(FALSE);
+				m_StopButton.EnableWindow(FALSE);
+			}
+		}
+
+	public:
+	// CEvrPropertyPage
+		CEvrPropertyPage(CMainPropertySheet* pOwner) :
+			m_Owner(*pOwner)
+		{
+		}
+
+	// CDialogResize
+		VOID DlgResize_UpdateLayout(INT nWidth, INT nHeight)
+		{
+			__super::DlgResize_UpdateLayout(nWidth, nHeight);
+			CRect VideoPosition;
+			_W(m_VideoStatic.GetWindowRect(VideoPosition));
+			_W(ScreenToClient(VideoPosition));
+			_W(m_RendererWindow.MoveWindow(VideoPosition));
+		}
+
+	// Window Message Handelrs
+		LRESULT OnInitDialog(HWND, LPARAM)
+		{
+			m_VideoStatic = GetDlgItem(IDC_MAIN_EVR_VIDEO);
+			m_VideoStatic.ShowWindow(SW_HIDE);
+			CRect VideoPosition;
+			_W(m_VideoStatic.GetWindowRect(VideoPosition));
+			_W(ScreenToClient(VideoPosition));
+			m_RunButton = GetDlgItem(IDC_MAIN_EVR_RUN);
+			m_PauseButton = GetDlgItem(IDC_MAIN_EVR_PAUSE);
+			m_StopButton = GetDlgItem(IDC_MAIN_EVR_STOP);
+			m_WeaveButton = GetDlgItem(IDC_MAIN_EVR_WEAVE);
+			m_ColorizeButton = GetDlgItem(IDC_MAIN_EVR_COLORIZE);
+			DlgResize_Init(TRUE);
+			m_FilterGraph.CoCreateInstance();
+			CObjectPtr<CAmGraphBuilderCallback> pAmGraphBuilderCallback;
+			pAmGraphBuilderCallback.Construct();
+			pAmGraphBuilderCallback->SetGraphBuilder(m_FilterGraph.m_pFilterGraph);
+			const CComPtr<IBaseFilter> pBaseFilter = m_RendererWindow.CoCreateBaseFilterInstance();
+			__C(m_FilterGraph->AddFilter(pBaseFilter, CT2CW(_T("EVR"))));
+			m_RendererWindow.Create(m_hWnd);
+			_W(m_RendererWindow.MoveWindow(VideoPosition));
+			m_RendererWindow.ShowWindow(SW_SHOWNORMAL);
+			m_RendererWindow.Initialize(pBaseFilter);
+			CObjectPtr<CSourceFilter> pSourceFilter;
+			pSourceFilter.Construct()->Initialize();
+			pSourceFilter->SetWeave(m_WeaveButton.GetCheck());
+			pSourceFilter->SetColorize(m_ColorizeButton.GetCheck());
+			m_pSourceFilter = pSourceFilter;
+			__C(m_FilterGraph->AddFilter(pSourceFilter, CT2CW(_T("Source"))));
+			__C(m_FilterGraph->Connect(pSourceFilter->GetOutputPin(), _FilterGraphHelper::GetFilterPin(m_RendererWindow.m_pBaseFilter)));
+			__C(m_FilterGraph.m_pMediaEventEx->SetNotifyWindow((OAHWND) m_hWnd, WM_FILTERGRAPHEVENT, (LONG_PTR) this));
+			UpdateControls();
+			return 0;
+		}
+		LRESULT OnDestroy() throw()
+		{
+			if(m_FilterGraph.m_pMediaControl)
+				_V(m_FilterGraph.m_pMediaControl->Stop());
+			m_RendererWindow.Terminate();
+			m_pSourceFilter.Release();
+			m_FilterGraph.Release();
+			return 0;
+		}
+		LRESULT OnRunButtonClicked(UINT, INT, HWND)
+		{
+			CWaitCursor WaitCursor;
+			__D(m_FilterGraph.m_pMediaControl, E_NOINTERFACE);
+			__C(m_FilterGraph.m_pMediaControl->Run());
+			UpdateControls();
+			#pragma region Capabilities
+			_ATLTRY
+			{
+				// TODO: IMFVideoProcessor
+			}
+			_ATLCATCHALL()
+			{
+				_Z_EXCEPTION();
+			}
+			#pragma endregion
+			return 0;
+		}
+		LRESULT OnPauseButtonClicked(UINT, INT, HWND)
+		{
+			CWaitCursor WaitCursor;
+			__D(m_FilterGraph.m_pMediaControl, E_NOINTERFACE);
+			__C(m_FilterGraph.m_pMediaControl->Pause());
+			UpdateControls();
+			return 0;
+		}
+		LRESULT OnStopButtonClicked(UINT, INT, HWND)
+		{
+			CWaitCursor WaitCursor;
+			if(m_FilterGraph.m_pMediaControl)
+				_V(m_FilterGraph.m_pMediaControl->Stop());
+			UpdateControls();
+			return 0;
+		}
+		LRESULT OnWeaveButtonClicked(UINT, INT, HWND)
+		{
+			if(m_pSourceFilter)
+				m_pSourceFilter->SetWeave(m_WeaveButton.GetCheck());
+			return 0;
+		}
+		LRESULT OnColorizeButtonClicked(UINT, INT, HWND)
+		{
+			if(m_pSourceFilter)
+				m_pSourceFilter->SetColorize(m_ColorizeButton.GetCheck());
+			return 0;
+		}
+		LRESULT OnFilterGraphEvent(UINT, WPARAM, LPARAM)
+		{
+			if(!m_FilterGraph.m_pMediaEventEx)
+				return 0;
+			_ATLTRY
+			{
+				for(; ; )
+				{
+					LONG nEventCode;
+					LONG_PTR nParameter1, nParameter2;
+					const HRESULT nGetEventResult = m_FilterGraph.m_pMediaEventEx->GetEvent(&nEventCode, &nParameter1, &nParameter2, 0);
+					if(nGetEventResult == E_ABORT)
+						break;
+					__C(nGetEventResult);
+					_ATLTRY
+					{
+						switch(nEventCode)
+						{
+						case EC_ERRORABORT:
+							_Z2(atlTraceGeneral, 2, _T("nEventCode EC_ERRORABORT 0x%02X, nParameter1 0x%08x, nParameter2 0x%08x\n"), nEventCode, nParameter1, nParameter2);
+							_A(FAILED(nParameter1));
+							AtlMessageBoxEx(m_hWnd, (LPCTSTR) AtlFormatString(_T("EC_ERRORABORT Event: %s."), AtlFormatSystemMessage((HRESULT) nParameter1).TrimRight(_T("\t\n\r ."))), IDS_ERROR, MB_ICONERROR | MB_OK);
+							break;
+						default:
+							_Z1(atlTraceGeneral, 1, _T("nEventCode 0x%02X, nParameter1 0x%08x, nParameter2 0x%08x\n"), nEventCode, nParameter1, nParameter2);
+						}
+					}
+					_ATLCATCHALL()
+					{
+						_V(m_FilterGraph.m_pMediaEventEx->FreeEventParams(nEventCode, nParameter1, nParameter2));
+						_ATLRETHROW;
+					}
+					_V(m_FilterGraph.m_pMediaEventEx->FreeEventParams(nEventCode, nParameter1, nParameter2));
+				}
+			}
+			_ATLCATCHALL()
+			{
+				_Z_EXCEPTION();
+			}
+			return 0;
+		}
+		INT OnKillActive()
+		{
+			m_StopButton.Click();
+			return 0;
+		}
 	};
 
 public:
+	CVmr7PropertyPage m_Vmr7PropertyPage;
 	CVmr9PropertyPage m_Vmr9PropertyPage;
+	CEvrPropertyPage m_EvrPropertyPage;
 
 public:
 // CMainPropertySheet
 	CMainPropertySheet() :
 		CSizablePropertySheetT<CMainPropertySheet>(_T("Render Interlaced Video")),
-		m_Vmr9PropertyPage(this)
+		m_Vmr7PropertyPage(this),
+		m_Vmr9PropertyPage(this),
+		m_EvrPropertyPage(this)
 	{
+		AddPage(m_Vmr7PropertyPage);
 		AddPage(m_Vmr9PropertyPage);
+		AddPage(m_EvrPropertyPage);
 	}
 	BOOL SetInitialPosition()
 	{
