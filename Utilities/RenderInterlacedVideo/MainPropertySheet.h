@@ -1111,7 +1111,7 @@ public:
 			m_PauseButton = GetDlgItem(IDC_MAIN_VMR9_PAUSE);
 			m_StopButton = GetDlgItem(IDC_MAIN_VMR9_STOP);
 			m_WeaveButton = GetDlgItem(IDC_MAIN_VMR9_WEAVE);
-			m_ColorizeButton = GetDlgItem(IDC_MAIN_VMR9_WEAVE);
+			m_ColorizeButton = GetDlgItem(IDC_MAIN_VMR9_COLORIZE);
 			DlgResize_Init(TRUE);
 			m_FilterGraph.CoCreateInstance();
 			CObjectPtr<CAmGraphBuilderCallback> pAmGraphBuilderCallback;
@@ -1423,7 +1423,52 @@ public:
 			#pragma region Capabilities
 			_ATLTRY
 			{
-				// TODO: IMFVideoProcessor
+				const CComQIPtr<IMFGetService> pMfGetService = m_RendererWindow.m_pBaseFilter;
+				__D(pMfGetService, E_NOINTERFACE);
+				CComQIPtr<IMFVideoProcessor> pMfVideoProcessor;
+				__C(pMfGetService->GetService(MR_VIDEO_MIXER_SERVICE, __uuidof(IMFVideoProcessor), (VOID**) &pMfVideoProcessor));
+				__D(pMfVideoProcessor, E_NOINTERFACE);
+				UINT nModeCount = 0;
+				CComHeapPtr<GUID> pModes;
+				const HRESULT nGetAvailableVideoProcessorModesResult = pMfVideoProcessor->GetAvailableVideoProcessorModes(&nModeCount, &pModes);
+				_Z4(atlTraceGeneral, 4, _T("nGetAvailableVideoProcessorModesResult 0x%08x, nModeCount %d\n"), nGetAvailableVideoProcessorModesResult, nModeCount);
+				if(SUCCEEDED(nGetAvailableVideoProcessorModesResult))
+				{
+					for(DWORD nModeIndex = 0; nModeIndex < nModeCount; nModeIndex++)
+					{
+						const GUID& Mode = pModes[nModeIndex];
+						_Z4(atlTraceGeneral, 4, _T("nModeIndex %d, Mode %s\n"), nModeIndex, FormatDeinterlaceMode(Mode));
+						DXVA2_VideoProcessorCaps Capabilities;
+						ZeroMemory(&Capabilities, sizeof Capabilities);
+						const HRESULT nGetVideoProcessorCapsResult = pMfVideoProcessor->GetVideoProcessorCaps(const_cast<GUID*>(&Mode), &Capabilities);
+						_Z4(atlTraceGeneral, 4, _T("nGetVideoProcessorCapsResult 0x%08x") _T(", ") 
+							_T("Capabilities") 
+							_T(".NumForwardRefSamples %d") _T(", ") 
+							_T(".NumBackwardRefSamples %d") _T(", ") 
+							_T(".DeinterlaceTechnology %d") _T(", ") 
+							_T(".ProcAmpControlCaps %d") _T(", ") 
+							_T(".VideoProcessorOperations %d") _T(", ") 
+							_T(".NoiseFilterTechnology %d") _T(", ") 
+							_T(".DetailFilterTechnology %d") _T(", ") 
+							_T("\n"), 
+							nGetVideoProcessorCapsResult, 
+							Capabilities.DeviceCaps,
+							//Capabilities.InputPool,
+							Capabilities.NumForwardRefSamples,
+							Capabilities.NumBackwardRefSamples,
+							Capabilities.DeinterlaceTechnology,
+							Capabilities.ProcAmpControlCaps,
+							Capabilities.VideoProcessorOperations,
+							Capabilities.NoiseFilterTechnology,
+							Capabilities.DetailFilterTechnology,
+							0);
+					}
+				}
+				GUID Mode = GUID_NULL;
+				const HRESULT nGetVideoProcessorModeResult = pMfVideoProcessor->GetVideoProcessorMode(&Mode);
+				_Z4(atlTraceGeneral, 4, _T("nGetVideoProcessorModeResult 0x%08x\n"), nGetVideoProcessorModeResult);
+				if(SUCCEEDED(nGetVideoProcessorModeResult) && !(nGetVideoProcessorModeResult == S_FALSE && Mode == GUID_NULL))
+					_Z4(atlTraceGeneral, 4, _T("Mode %s\n"), FormatDeinterlaceMode(Mode));
 			}
 			_ATLCATCHALL()
 			{
@@ -1535,12 +1580,24 @@ public:
 	static CString FormatDeinterlaceMode(const GUID& DeinterlaceMode)
 	{
 		// NOTE: Windows SDK does not provide a linkable identifier...
+		#pragma region VMR-7/9
 		struct __declspec(uuid("{335aa36e-7884-43a4-9c91-7f87faf3e37e}")) DXVA_DeinterlaceBobDevice;
 		struct __declspec(uuid("{0e85cb93-3046-4ff0-aecc-d58cb5f035fd}")) DXVA_DeinterlaceContainerDevice;
 		if(DeinterlaceMode == __uuidof(DXVA_DeinterlaceBobDevice))
 			return _T("DXVA_DeinterlaceBobDevice");
 		if(DeinterlaceMode == __uuidof(DXVA_DeinterlaceContainerDevice))
 			return _T("DXVA_DeinterlaceContainerDevice");
+		#pragma endregion
+		#pragma region EVR, DXVA2
+		struct __declspec(uuid("{5a54a0c9-c7ec-4bd9-8ede-f3c75dc4393b}")) DXVA2_VideoProcProgressiveDevice;
+		struct __declspec(uuid("{335aa36e-7884-43a4-9c91-7f87faf3e37e}")) DXVA2_VideoProcBobDevice;
+		struct __declspec(uuid("{4553d47f-ee7e-4e3f-9475-dbf1376c4810}")) DXVA2_VideoProcSoftwareDevice;
+		if(DeinterlaceMode == __uuidof(DXVA2_VideoProcProgressiveDevice))
+			return _T("DXVA2_VideoProcProgressiveDevice");
+		if(DeinterlaceMode == __uuidof(DXVA2_VideoProcBobDevice))
+			return _T("DXVA2_VideoProcBobDevice");
+		if(DeinterlaceMode == __uuidof(DXVA2_VideoProcSoftwareDevice))
+			return _T("DXVA2_VideoProcSoftwareDevice");
 		return CString(_PersistHelper::StringFromIdentifier(DeinterlaceMode));
 	}
 
