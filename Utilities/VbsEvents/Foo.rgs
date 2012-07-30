@@ -1,0 +1,26 @@
+HKCR
+{
+	AlaxInfo.VbsEvents.Foo.1 = s 'Foo Class'
+	{
+		CLSID = s '{A8F6416C-B59C-4D00-A536-541A7E86BA12}'
+	}
+	AlaxInfo.VbsEvents.Foo = s 'Foo Class'
+	{		
+		CurVer = s 'AlaxInfo.VbsEvents.Foo.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {A8F6416C-B59C-4D00-A536-541A7E86BA12} = s 'Foo Class'
+		{
+			ProgID = s 'AlaxInfo.VbsEvents.Foo.1'
+			VersionIndependentProgID = s 'AlaxInfo.VbsEvents.Foo'
+			ForceRemove Programmable
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Apartment'
+			}
+			TypeLib = s '{F5547BD2-82AB-460F-974F-0FD926AA6B86}'
+			Version = s '1.0'
+		}
+	}
+}

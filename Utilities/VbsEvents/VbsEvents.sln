@@ -1,0 +1,27 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VbsEvents", "VbsEvents.vcxproj", "{751ED3FA-4A56-4599-ABD4-25D990316612}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VbsEventsPS", "VbsEventsPS.vcxproj", "{4DF04A0E-6522-47D1-8631-87DBC9673B97}"
+	ProjectSection(ProjectDependencies) = postProject
+		{751ED3FA-4A56-4599-ABD4-25D990316612} = {751ED3FA-4A56-4599-ABD4-25D990316612}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{751ED3FA-4A56-4599-ABD4-25D990316612}.Debug|Win32.ActiveCfg = Debug|Win32
+		{751ED3FA-4A56-4599-ABD4-25D990316612}.Debug|Win32.Build.0 = Debug|Win32
+		{751ED3FA-4A56-4599-ABD4-25D990316612}.Release|Win32.ActiveCfg = Release|Win32
+		{751ED3FA-4A56-4599-ABD4-25D990316612}.Release|Win32.Build.0 = Release|Win32
+		{4DF04A0E-6522-47D1-8631-87DBC9673B97}.Debug|Win32.ActiveCfg = Debug|Win32
+		{4DF04A0E-6522-47D1-8631-87DBC9673B97}.Release|Win32.ActiveCfg = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

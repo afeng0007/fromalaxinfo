@@ -1,0 +1,46 @@
+////////////////////////////////////////////////////////////
+// Copyright (C) Roman Ryltsov, 2008-2012
+// Created by Roman Ryltsov roman@alax.info
+// 
+// $Id$
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	object,
+	uuid(9117226B-D79D-43B9-9010-51195CA44C8B),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IFoo : IDispatch
+{
+	[id(1)] HRESULT Method([in] BSTR sText);
+};
+[
+	uuid(F5547BD2-82AB-460F-974F-0FD926AA6B86),
+	version(1.0),
+]
+library VbsEventsLib
+{
+	importlib("stdole2.tlb");
+	[
+		uuid(0E1DB37B-1126-4242-9BE6-818ECD6C6933)		
+	]
+	dispinterface _IFooEvents
+	{
+		properties:
+		methods:
+			[id(1)] void Event([in] BSTR sText);
+	};
+	[
+		uuid(A8F6416C-B59C-4D00-A536-541A7E86BA12)		
+	]
+	coclass Foo
+	{
+		[default] interface IFoo;
+		[default, source] dispinterface _IFooEvents;
+	};
+};
+
