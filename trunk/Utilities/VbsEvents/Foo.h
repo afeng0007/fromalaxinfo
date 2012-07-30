@@ -7,7 +7,6 @@
 #pragma once
 
 #include <atlstr.h>
-#include "resource.h"       // main symbols
 #include "VbsEvents_i.h"
 #include "_IFooEvents_CP.h"
 
@@ -25,7 +24,7 @@ class ATL_NO_VTABLE CFoo :
 	public CComCoClass<CFoo, &CLSID_Foo>,
 	public IConnectionPointContainerImpl<CFoo>,
 	public CProxy_IFooEvents<CFoo>,
-	public IDispatchImpl<IFoo, &IID_IFoo, &LIBID_VbsEventsLib, 1, 0>,
+	public IDispatchImpl<IFoo>,
 	public IProvideClassInfo2Impl<&__uuidof(Foo), &__uuidof(_IFooEvents)>
 {
 public:
@@ -38,6 +37,8 @@ BEGIN_COM_MAP(CFoo)
 	COM_INTERFACE_ENTRY(IFoo)
 	COM_INTERFACE_ENTRY(IDispatch)
 	COM_INTERFACE_ENTRY(IConnectionPointContainer)
+	COM_INTERFACE_ENTRY(IProvideClassInfo2)
+	COM_INTERFACE_ENTRY(IProvideClassInfo)
 END_COM_MAP()
 
 BEGIN_CONNECTION_POINT_MAP(CFoo)
