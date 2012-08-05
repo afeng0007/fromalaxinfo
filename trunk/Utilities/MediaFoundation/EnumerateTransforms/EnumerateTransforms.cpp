@@ -136,7 +136,8 @@ public:
 					const CComPtr<IMFActivate>& pMfActivate = ActivateArray[nActivateIndex];
 					CString sItem = AtlFormatString(_T("#%d"), nActivateIndex);
 					CComHeapPtr<WCHAR> pszFriendlyName;
-					if(SUCCEEDED(pMfActivate->GetAllocatedString(MFT_FRIENDLY_NAME_Attribute, &pszFriendlyName, NULL)))
+					UINT32 nFriendlyNameLength;
+					if(SUCCEEDED(pMfActivate->GetAllocatedString(MFT_FRIENDLY_NAME_Attribute, &pszFriendlyName, &nFriendlyNameLength)))
 						sItem.Insert(0, AtlFormatString(_T("%ls "), pszFriendlyName));
 					_tprintf(_T("\t") _T("%s\n"), sItem);
 					_ATLTRY
