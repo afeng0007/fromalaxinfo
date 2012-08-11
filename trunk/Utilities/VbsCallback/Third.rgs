@@ -1,0 +1,26 @@
+HKCR
+{
+	AlaxInfo.VbsCallback.Third.1 = s 'Third Class'
+	{
+		CLSID = s '{E1DE5528-01C7-4FC3-B4E2-447925F55E6D}'
+	}
+	AlaxInfo.VbsCallback.Third = s 'Third Class'
+	{		
+		CurVer = s 'AlaxInfo.VbsCallback.Third.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {E1DE5528-01C7-4FC3-B4E2-447925F55E6D} = s 'Third Class'
+		{
+			ProgID = s 'AlaxInfo.VbsCallback.Third.1'
+			VersionIndependentProgID = s 'AlaxInfo.VbsCallback.Third'
+			ForceRemove Programmable
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Apartment'
+			}
+			TypeLib = s '{C14D3DD0-6C32-4A28-99E6-7CC4D28FE295}'
+			Version = s '1.0'
+		}
+	}
+}

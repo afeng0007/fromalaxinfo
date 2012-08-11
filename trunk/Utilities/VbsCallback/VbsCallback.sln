@@ -1,0 +1,27 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VbsCallback", "VbsCallback.vcxproj", "{C7134A7B-46FD-4C4B-8905-EC745EDB9554}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VbsCallbackPS", "VbsCallbackPS.vcxproj", "{5E22D72C-ABD7-4316-B16A-4BE383777F28}"
+	ProjectSection(ProjectDependencies) = postProject
+		{C7134A7B-46FD-4C4B-8905-EC745EDB9554} = {C7134A7B-46FD-4C4B-8905-EC745EDB9554}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C7134A7B-46FD-4C4B-8905-EC745EDB9554}.Debug|Win32.ActiveCfg = Debug|Win32
+		{C7134A7B-46FD-4C4B-8905-EC745EDB9554}.Debug|Win32.Build.0 = Debug|Win32
+		{C7134A7B-46FD-4C4B-8905-EC745EDB9554}.Release|Win32.ActiveCfg = Release|Win32
+		{C7134A7B-46FD-4C4B-8905-EC745EDB9554}.Release|Win32.Build.0 = Release|Win32
+		{5E22D72C-ABD7-4316-B16A-4BE383777F28}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5E22D72C-ABD7-4316-B16A-4BE383777F28}.Release|Win32.ActiveCfg = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
