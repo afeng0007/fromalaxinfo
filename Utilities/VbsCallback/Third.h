@@ -36,7 +36,7 @@ END_CONNECTION_POINT_MAP()
 public:
 // CThird
 
-// IFirst
+// IThird
 	STDMETHOD(OuterDo)(LONG nA, LONG* pnB) throw()
 	{
 		ATLASSERT(pnB);
