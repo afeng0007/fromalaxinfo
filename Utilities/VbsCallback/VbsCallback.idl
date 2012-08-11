@@ -1,0 +1,95 @@
+////////////////////////////////////////////////////////////
+// Copyright (C) Roman Ryltsov, 2008-2012
+// Created by Roman Ryltsov roman@alax.info
+// 
+// $Id$
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	object,
+	uuid(8D754F22-9EA0-4B27-9B01-2E6CEDE27F6E),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IFirstSite : IDispatch
+{
+	[id(1)] HRESULT InnerDo([in] LONG nC, [out, retval] LONG* pnD);
+};
+[
+	object,
+	uuid(2E1BDC6B-4AFE-46D3-9D4A-11D063BCF6C7),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IFirst : IDispatch
+{
+	//[id(1)] HRESULT OuterDo([in] LONG nA, [in] IFirstSite* pSite, [out, retval] LONG* pnB);
+	[id(1)] HRESULT OuterDo([in] LONG nA, [in] IDispatch* pSite, [out, retval] LONG* pnB);
+};
+[
+	object,
+	uuid(E9172437-1628-45D7-B175-5B1CFA79D49B),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface ISecond : IDispatch
+{
+	[id(1)] HRESULT OuterDo([in] LONG nA, [in] IDispatch* pSite, [out, retval] LONG* pnB);
+};
+[
+	object,
+	uuid(A3F9C57C-4A82-4EBA-8190-302A0CCCBF3B),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IThird : IDispatch
+{
+	[id(1)] HRESULT OuterDo([in] LONG nA, [out, retval] LONG* pnB);
+};
+[
+	uuid(C14D3DD0-6C32-4A28-99E6-7CC4D28FE295),
+	version(1.0),
+]
+library AlaxInfoVbsCallback
+{
+	importlib("stdole2.tlb");
+	[
+		uuid(564A63EF-A5FF-45E9-AEF9-B3728F71E30E)		
+	]
+	coclass First
+	{
+		[default] interface IFirst;
+	};
+	[
+		uuid(4E05E837-0BF7-4371-96ED-58AA68736306)		
+	]
+	coclass Second
+	{
+		[default] interface ISecond;
+	};
+	[
+		uuid(543C4C99-8849-4902-BABC-BF44384534D8)		
+	]
+	dispinterface _IThirdEvents
+	{
+		properties:
+		methods:
+			[id(1)] void InnerDo([in, out] VARIANT* pvC);
+	};
+	[
+		uuid(E1DE5528-01C7-4FC3-B4E2-447925F55E6D)		
+	]
+	coclass Third
+	{
+		[default] interface IThird;
+		[default, source] dispinterface _IThirdEvents;
+	};
+};
+
+import "shobjidl.idl";
