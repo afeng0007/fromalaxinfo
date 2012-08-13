@@ -179,7 +179,11 @@ public:
 				return FALSE;
 			CRoReMatchContext MatchContext;
 			#pragma region Google Maps
-			static CAtlStaticRegExp<> g_ExpressionA(_T("^ *(https?://)?[^/]*maps.google[^/]*/.+?") _T("ll={[\\.0-9]+},{[\\.0-9]+}"), FALSE);
+			#define OPTIONAL_PROTOCOL	_T("(https?://)?[^/]*") 
+			#define VALUE				_T("{\\-?[\\.0-9]+}") 
+				static CAtlStaticRegExp<> g_ExpressionA(_T("^ *") OPTIONAL_PROTOCOL _T("maps.google[^/]*/.+?") _T("ll=") VALUE _T(",") VALUE, FALSE);
+			#undef OPTIONAL_PROTOCOL
+			#undef VALUE
 			if(g_ExpressionA.Match(sText, &MatchContext))
 			{
 				DOUBLE fLatitude, fLongitude;
@@ -190,7 +194,11 @@ public:
 			}
 			#pragma endregion 
 			#pragma region Yandex Maps
-			static CAtlStaticRegExp<> g_ExpressionB(_T("^ *(https?://)?[^/]*maps.yandex[^/]*/.+?") _T("ll={[\\.0-9]+}(,|(\\%2C)){[\\.0-9]+}"), FALSE);
+			#define OPTIONAL_PROTOCOL	_T("(https?://)?[^/]*") 
+			#define VALUE				_T("{\\-?[\\.0-9]+}") 
+				static CAtlStaticRegExp<> g_ExpressionB(_T("^ *") OPTIONAL_PROTOCOL _T("maps.yandex[^/]*/.+?") _T("ll=") VALUE _T("(,|(\\%2C))") VALUE, FALSE);
+			#undef OPTIONAL_PROTOCOL
+			#undef VALUE
 			if(g_ExpressionB.Match(sText, &MatchContext))
 			{
 				DOUBLE fLatitude, fLongitude;
@@ -460,18 +468,23 @@ public:
 		_W(CenterWindow());
 		m_bSetClipboardTextActive = FALSE;
 		m_NextClipboardViewerWindow = SetClipboardViewer();
+		#if !defined(_DEBUG)
 		for(SIZE_T nIndex = 0; nIndex < 12; nIndex++)
 			_W(RegisterHotKey(m_hWnd, (INT) nIndex, MOD_CONTROL | MOD_SHIFT, VK_F1 + nIndex));
-#if _DEVELOPMENT
-		//SetText(_T("http://maps.google.com.ua/maps/ms?msid=206853065838475655514.0004af0a0899ed541f5f2&msa=0&ll=45.296505,35.771999&spn=0.039547,0.095272"));
-		//SetText(_T("http://maps.yandex.ru/?ll=13.376147%2C45.797846&spn=2.820740%2C1.127727&z=9&l=map"));
-#endif // _DEVELOPMENT
+		#endif // !defined(_DEBUG)
+		#if _DEVELOPMENT
+		//Parse(_T("http://maps.google.com.ua/maps/ms?msid=206853065838475655514.0004af0a0899ed541f5f2&msa=0&ll=45.296505,35.771999&spn=0.039547,0.095272"));
+		//Parse(_T("http://maps.yandex.ru/?ll=13.376147%2C45.797846&spn=2.820740%2C1.127727&z=9&l=map"));
+		//Parse(_T("https://maps.google.com/maps?q=ll=36.257978,-115.236111&spn=0.094126,0.157585&sll=33.809282,-117.915442&sspn=0.09699,0.157585&oq=las+vegax&t=h&hnear=Las+Vegas,+Clark,+Nevada&z=13"));
+		#endif // _DEVELOPMENT
 		return TRUE;
 	}
 	LRESULT OnDestroy() throw()
 	{
+		#if !defined(_DEBUG)
 		for(SIZE_T nIndex = 0; nIndex < 12; nIndex++)
 			_W(UnregisterHotKey(m_hWnd, (INT) nIndex));
+		#endif // !defined(_DEBUG)
 		_W(ChangeClipboardChain(m_NextClipboardViewerWindow));
 		return 0;
 	}
