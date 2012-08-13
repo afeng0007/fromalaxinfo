@@ -179,7 +179,7 @@ public:
 				return FALSE;
 			CRoReMatchContext MatchContext;
 			#pragma region Google Maps
-			static CAtlStaticRegExp<> g_ExpressionA(_T("^ *(http://)?[^/]*maps.google[^/]*/.+?") _T("ll={[\\.0-9]+},{[\\.0-9]+}"), FALSE);
+			static CAtlStaticRegExp<> g_ExpressionA(_T("^ *(https?://)?[^/]*maps.google[^/]*/.+?") _T("ll={[\\.0-9]+},{[\\.0-9]+}"), FALSE);
 			if(g_ExpressionA.Match(sText, &MatchContext))
 			{
 				DOUBLE fLatitude, fLongitude;
@@ -190,7 +190,7 @@ public:
 			}
 			#pragma endregion 
 			#pragma region Yandex Maps
-			static CAtlStaticRegExp<> g_ExpressionB(_T("^ *(http://)?[^/]*maps.yandex[^/]*/.+?") _T("ll={[\\.0-9]+}(,|(\\%2C)){[\\.0-9]+}"), FALSE);
+			static CAtlStaticRegExp<> g_ExpressionB(_T("^ *(https?://)?[^/]*maps.yandex[^/]*/.+?") _T("ll={[\\.0-9]+}(,|(\\%2C)){[\\.0-9]+}"), FALSE);
 			if(g_ExpressionB.Match(sText, &MatchContext))
 			{
 				DOUBLE fLatitude, fLongitude;
