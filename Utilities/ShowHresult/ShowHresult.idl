@@ -1,0 +1,18 @@
+////////////////////////////////////////////////////////////
+// Copyright (C) Roman Ryltsov, 2008-2011
+// Created by Roman Ryltsov roman@alax.info
+// 
+// $Id$
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	uuid(E8D16BFE-2BB5-4C5F-8B23-F5FE43C65DE6),
+	version(1.0),
+]
+library AlaxInfoShowHresult
+{
+	importlib("stdole2.tlb");
+};
+
