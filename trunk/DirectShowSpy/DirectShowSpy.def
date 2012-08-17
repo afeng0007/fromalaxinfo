@@ -1,0 +1,10 @@
+; DirectShowSpy.def : Declares the module parameters.
+
+LIBRARY      "DirectShowSpy.DLL"
+
+EXPORTS
+	DllCanUnloadNow		PRIVATE
+	DllGetClassObject	PRIVATE
+	DllRegisterServer	PRIVATE
+	DllUnregisterServer	PRIVATE
+	DllInstall		PRIVATE

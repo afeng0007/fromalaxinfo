@@ -1,0 +1,149 @@
+Loading ryltsov@gmail.com…
+Loading standard view | Load basic HTML (for slow connections)
+
+This is taking longer than usual. Try reloading the page.
+If that doesn't work, you can:
+
+   1. Try using https.
+   2. If you're on a slow connection, try basic HTML view.
+   3. For more troubleshooting tips, visit the help center. 
+
+Loading...
+	
+Guest chat
+	ClosePop-outMinimize
+Add people to this chat
+Cancel
+Invite
+ Guest has joined.
+ Guest:  Hello Alax
+i've just read your post on graph spy
+it really sounds very useful
+however i'm not shure how to use it
+i've regsvr32 it, but i haven't figure it out how use it with other apps's graphs
+ Sent at 3:49 PM on Thursday
+ me:  Hi there
+ Sent at 7:06 PM on Thursday
+ me:  Yes you need to regsvr32 and from this point all new filter graphs should be available on running object table so that you connect to them as to remote graphs using GraphEdit
+ Sent at 7:08 PM on Thursday
+ Guest:  no additional steps are needed ?
+i've started some applications and graph edit doesn't detect any remote graph
+maybe rebooting the machine ?
+ me:  I don't think so, but there is another possible cause
+did you at all see any remote graphs using Graph Edit?
+after upgrading to XP SP3 you might need to run regsvr32 quartz.dll to get the ability for GraphEdit to see remote graphs again
+ Sent at 7:18 PM on Thursday
+ Guest:  yes, i have some of my own apps with a ROT reference
+if i remove the ROT reference from my code
+i'm still unable to reach the remote graph
+ me:  ok, so try regsvr32 quartz.dll from windows\system32 folder and see it this is helpful for both my dll and your apps
+ Sent at 7:21 PM on Thursday
+ Guest:  ok. btw, i forgot to mention that i'm using Vista SP1
+ me:  if you can't see your own graphs with graphedit through ROT, then there is definitely some problem...
+as for my dll, except for ROT you can check generated log file in C:\ProgramData (this is hidden dir)
+if you see it's populating then my dll is intercepting filter graph instantiations
+ Sent at 7:24 PM on Thursday
+ Guest:  2009-01-29 12:28:01        0700        4184        dllmain.h(29): CDirectShowSpyModule::CDirectShowSpyModule: this 0x63b6327c
+2009-01-29 12:28:01        0700        4184        FilterGraphSpy.h(53): CSpy::UpdateRegistry: bRegister 1
+2009-01-29 12:28:04        0700        4184        dllmain.h(33): CDirectShowSpyModule::~CDirectShowSpyModule: this 0x63b6327
+this is the log from your dll
+ Sent at 7:44 PM on Thursday
+ Guest:  i have executed apps several times and i believe it only logged twice
+i regsvr32ed quartz.dll and i believe it made no diference
+ me:  these are only log entries generated during registration
+ Guest:  ok
+than i guess it isn't populating..
+ me:  OK, there may be something different on Vista (I am using XP but I was pretty sure it is the same way on Vista) or wrong with the system since you don't see remote graphs
+BTW you need to regsvr32 from elevated admin command prompt
+(this is to make sure)
+ Guest:  yes,i did it on an admin console
+i going to try on XP
+ Sent at 7:49 PM on Thursday
+ Guest:  ok
+i installed your dll on a xp system
+executed SDP download,
+ Sent at 7:56 PM on Thursday
+ Guest:  still can't access the remote graph
+ Sent at 7:57 PM on Thursday
+ Guest:  however the DirectShowSpy.log is diferent
+2009-01-29 17:50:13        13684        13576        dllmain.h(29): CDirectShowSpyModule::CDirectShowSpyModule: this 0x0098327c
+2009-01-29 17:50:13        13684        13576        FilterGraphSpy.h(53): CSpy::UpdateRegistry: bRegister 1
+2009-01-29 17:50:14        13684        13576        dllmain.h(33): CDirectShowSpyModule::~CDirectShowSpyModule: this 0x0098327c
+2009-01-29 17:51:57        14080        13896        dllmain.h(29): CDirectShowSpyModule::CDirectShowSpyModule: this 0x00de327c
+2009-01-29 17:51:57        14080        13896        FilterGraphSpy.h(75): CSpy::CSpy: this 0x00e03d78
+2009-01-29 17:51:57        14080        13896        FilterGraphSpy.h(142): CSpy::EnumFilters: ...
+2009-01-29 17:52:11        14080        13896        FilterGraphSpy.h(79): CSpy::~CSpy: this 0x00e03d78
+2009-01-29 17:52:11        14080        13864        dllmain.h(33): CDirectShowSpyModule::~CDirectShowSpyModule: this 0x00de327c
+2009-01-29 17:52:48        13716        13772        dllmain.h(29): CDirectShowSpyModule::CDirectShowSpyModule: this 0x0098327c
+2009-01-29 17:52:48        13716        13772        FilterGraphSpy.h(53): CSpy::UpdateRegistry: bRegister 0
+2009-01-29 17:52:49        13716        13772        dllmain.h(33): CDirectShowSpyModule::~CDirectShowSpyModule: this 0x0098327c
+ me:  "bRegister 0" means you reg'ged with /u and unregistered
+ Sent at 8:00 PM on Thursday
+ Guest:  sorry, i checked the log only after removal
+ me:  Hold on, I checked the log higher
+(this chat window is way too small)
+ Guest:  :)
+ me:  e.g. there is "CSpy::EnumFilters: ..." which means that it actually worked
+there is no other way for these lines to appear in the log other than if the graph is hooked by my dll and it is intercepting all filter graphs
+BTW if you run MEdia Player Classic, it also publishes its graph on ROT
+and with my DLL you will have two entries there, both point to the same graph
+ Guest:  ok i'll check it out
+ me:  this is how you can quite easily checkity
+ Sent at 8:03 PM on Thursday
+ me:  BTW, do you have any objections from putting this chat as a comment to the blog post?
+ Sent at 8:06 PM on Thursday
+ Guest:  none, be my guest
+i'll paste it
+ok
+on the xp system i don't have the wmp classic installed,
+i  have the 11.0.57. version only
+i'm reaching the remote graph with graphedit
+i don't quite know if this your dll responsability
+i guess not
+your log remains the same
+ 
+You are chatting with an unidentified user. Be careful what you discuss.
+
+    *
+    *
+    *
+    *
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+Roman Ryltsov
+Guest chat
