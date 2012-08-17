@@ -1,0 +1,37 @@
+////////////////////////////////////////////////////////////
+// Copyright (C) Roman Ryltsov, 2012
+// Created by Roman Ryltsov roman@alax.info
+// 
+// $Id$
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	object,
+	uuid(3D8A7768-9890-4021-B1AC-5CB913D32146),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IFoo : IDispatch
+{
+	[id(1)] HRESULT Bar([in] VARIANT vInput, [out, retval] VARIANT* pvOutput);
+};
+[
+	uuid(37375E14-A7D6-477D-BE5D-85767DBCE79A),
+	version(1.0),
+]
+library ServerLib
+{
+	importlib("stdole2.tlb");
+	[
+		uuid(B4B8E7FA-D672-487A-9B12-2F8D0B6287B5)		
+	]
+	coclass Foo
+	{
+		[default] interface IFoo;
+	};
+};
+
+import "shobjidl.idl";
