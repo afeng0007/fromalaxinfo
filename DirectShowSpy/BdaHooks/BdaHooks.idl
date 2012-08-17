@@ -1,0 +1,75 @@
+////////////////////////////////////////////////////////////
+// Copyright (C) Roman Ryltsov, 2008-2009
+// Created by Roman Ryltsov roman@alax.info
+// 
+// $Id$
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	object,
+	uuid(C241D3AA-D1CC-45CF-9D65-38EC9A196619),
+	dual,
+	nonextensible,
+	helpstring("IAddRemoveHook Interface"),
+	pointer_default(unique)
+]
+interface IAddRemoveHook : IDispatch
+{
+};
+[
+	object,
+	uuid(FABCEED1-2E77-491C-8D00-A018B5A8C856),
+	dual,
+	nonextensible,
+	helpstring("IConnectHook Interface"),
+	pointer_default(unique)
+]
+interface IConnectHook : IDispatch
+{
+};
+[
+	object,
+	uuid(77C8D900-78F5-404C-9BC5-E31CC05683F6),
+	dual,
+	nonextensible,
+	helpstring("IStateControlHook Interface"),
+	pointer_default(unique)
+]
+interface IStateControlHook : IDispatch
+{
+};
+[
+	uuid(A868B371-37CA-4E4F-B32B-721617752A55),
+	version(1.0),
+	helpstring("Alax.Info BDA Hooks 1.0 Type Library")
+]
+library AlaxInfoBdaHooks
+{
+	importlib("stdole2.tlb");
+	[
+		uuid(B854D1B7-C267-4C23-8ACE-2F1427BB1867),
+		helpstring("AddRemoveHook Class")
+	]
+	coclass AddRemoveHook
+	{
+		[default] interface IAddRemoveHook;
+	};
+	[
+		uuid(158F5103-6476-4EBC-BE00-7FE77410E2B3),
+		helpstring("ConnectHook Class")
+	]
+	coclass ConnectHook
+	{
+		[default] interface IConnectHook;
+	};
+	[
+		uuid(7949E086-B28E-457D-9D85-1DED7C62F06E),
+		helpstring("StateControlHook Class")
+	]
+	coclass StateControlHook
+	{
+		[default] interface IStateControlHook;
+	};
+};

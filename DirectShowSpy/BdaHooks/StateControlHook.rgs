@@ -1,0 +1,51 @@
+HKCR
+{
+	%PROGID% = s '%DESCRIPTION%'
+	{
+		CLSID = s '%CLSID%'
+	}
+	%VIPROGID% = s '%DESCRIPTION%'
+	{
+		CLSID = s '%CLSID%'
+		CurVer = s '%PROGID%'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove %CLSID% = s '%DESCRIPTION%'
+		{
+			ProgID = s '%PROGID%'
+			VersionIndependentProgID = s '%VIPROGID%'
+			ForceRemove 'Programmable'
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Both'
+			}
+			val AppID = s '%APPID%'
+			TypeLib = s '%LIBID%'
+		}
+		NoRemove '{F552C23D-F088-41C3-A080-8464D7BB9BAD}'
+		{
+			NoRemove Hooks
+			{
+				NoRemove 'State Control Hooks'
+				{
+					ForceRemove %CLSID% = s '%DESCRIPTION%'
+					{
+					}
+				}
+			}
+		}
+		NoRemove '{2C281C40-8853-4A30-99D3-9DCFF2C015C9}'
+		{
+			NoRemove Hooks
+			{
+				NoRemove 'State Control Hooks'
+				{
+					ForceRemove %CLSID% = s '%DESCRIPTION%'
+					{
+					}
+				}
+			}
+		}
+	}
+}

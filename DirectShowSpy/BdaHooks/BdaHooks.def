@@ -1,0 +1,10 @@
+; BdaHooks.def : Declares the module parameters.
+
+LIBRARY      "BdaHooks.DLL"
+
+EXPORTS
+	DllCanUnloadNow		PRIVATE
+	DllGetClassObject	PRIVATE
+	DllRegisterServer	PRIVATE
+	DllUnregisterServer	PRIVATE
+	DllInstall		PRIVATE

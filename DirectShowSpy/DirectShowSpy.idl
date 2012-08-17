@@ -1,0 +1,108 @@
+////////////////////////////////////////////////////////////
+// Copyright (C) Roman Ryltsov, 2008-2011
+// Created by Roman Ryltsov roman@alax.info
+// 
+// $Id$
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	object,
+	uuid(6945711B-FE0F-4C54-965F-5B67969C28B7),
+	dual,
+	oleautomation,
+	nonextensible,
+	helpstring("ISpy Interface"),
+	pointer_default(unique)
+]
+interface ISpy : IDispatch
+{
+};
+[
+	object,
+	uuid(34B280D7-A144-4a64-BCB9-3616896F6877),
+	dual,
+	oleautomation,
+	nonextensible,
+	helpstring("IFilterMapperSpy Interface"),
+	pointer_default(unique)
+]
+interface IFilterMapperSpy : IDispatch
+{
+};
+[
+	uuid(B9EC374B-834B-4DA9-BFB5-C1872CE736FF),
+	version(1.0),
+	helpstring("Alax.Info Filter Graph Spy 1.0 Type Library")
+]
+library AlaxInfoDirectShowSpy
+{
+	importlib("stdole2.tlb");
+	[
+		object,
+		uuid(ACBECDFD-D8CA-49c8-B799-D23225D5BFAD),
+		nonextensible,
+		helpstring("IFilterGraphAddRemoveHook Interface"),
+		pointer_default(unique)
+	]
+	interface IFilterGraphAddRemoveHook : IUnknown
+	{
+		HRESULT OnAddFilter([in] ISpy* pSpy, [in] IUnknown* pBaseFilterUnknown, [in] LPCWSTR pszName, [in, out] BOOL* pbDefault);
+		HRESULT OnRemoveFilter([in] ISpy* pSpy, [in] IUnknown* pBaseFilterUnknown, [in, out] BOOL* pbDefault);
+		HRESULT OnAddSourceFilter([in] ISpy* pSpy, [in] LPCWSTR pszFileName, [in] LPCWSTR pszFilterName, [out] IUnknown** ppBaseFilterUnknown, [in, out] BOOL* pbDefault);
+		HRESULT OnAddSourceFilterForMoniker([in] ISpy* pSpy, [in] IUnknown* pMonikerUnknown, [in] IUnknown* pBindCtxUnknown, [in] LPCWSTR pszFilterName, [out] IUnknown** ppBaseFilterUnknown, [in, out] BOOL* pbDefault);
+	};
+	[
+		object,
+		uuid(D0F4C168-D09D-481e-903D-7461CE69E391),
+		nonextensible,
+		helpstring("IFilterGraphConnectHook Interface"),
+		pointer_default(unique)
+	]
+	interface IFilterGraphConnectHook : IUnknown
+	{
+		HRESULT OnConnectDirect([in] ISpy* pSpy, [in] IUnknown* pOutputPinUnknown, [in] IUnknown* pInputPinUnknown, [in] const BYTE* pMediaTypeData, [in, out] BOOL* pbDefault);
+		HRESULT OnReconnect([in] ISpy* pSpy, [in] IUnknown* pPinUnknown, [in, out] BOOL* pbDefault);
+		HRESULT OnDisconnect([in] ISpy* pSpy, [in] IUnknown* pPinUnknown, [in, out] BOOL* pbDefault);
+		HRESULT OnConnect([in] ISpy* pSpy, [in] IUnknown* pOutputPinUnknown, [in] IUnknown* pInputPinUnknown, [in, out] BOOL* pbDefault);
+		HRESULT OnReconnectEx([in] ISpy* pSpy, [in] IUnknown* pPinUnknown, [in] const BYTE* pMediaTypeData, [in, out] BOOL* pbDefault);
+	};
+	[
+		object,
+		uuid(65FA1519-A935-4fa9-A15D-9426457E02F6),
+		nonextensible,
+		helpstring("IFilterGraphStateControlHook Interface"),
+		pointer_default(unique)
+	]
+	interface IFilterGraphStateControlHook : IUnknown
+	{
+		HRESULT OnRun([in] ISpy* pSpy, [in, out] BOOL* pbDefault);
+		HRESULT OnPause([in] ISpy* pSpy, [in, out] BOOL* pbDefault);
+		HRESULT OnStop([in] ISpy* pSpy, [in, out] BOOL* pbDefault);
+	};
+	[
+		uuid(F552C23D-F088-41C3-A080-8464D7BB9BAD),
+		helpstring("Spy Class")
+	]
+	coclass Spy
+	{
+		[default] interface ISpy;
+	};
+	[
+		uuid(2C281C40-8853-4a30-99D3-9DCFF2C015C9),
+		helpstring("NoThreadSpy Class")
+	]
+	coclass NoThreadSpy
+	{
+		[default] interface ISpy;
+	};
+	[
+		uuid(B6274D9B-1AD3-4c32-83C5-35DC33CAFF47),
+		helpstring("FilterMapperSpy Class")
+	]
+	coclass FilterMapperSpy
+	{
+		[default] interface IFilterMapperSpy;
+	};
+};
