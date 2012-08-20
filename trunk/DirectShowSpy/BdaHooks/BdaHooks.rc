@@ -62,7 +62,7 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION  1, 0, 0, 68
+ FILEVERSION  1, 0, 0, 73
  PRODUCTVERSION 1,0,0,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
@@ -81,7 +81,7 @@ BEGIN
             VALUE "Comments", "Created by Roman Ryltsov roman@alax.info"
             VALUE "CompanyName", "Roman Ryltsov"
             VALUE "FileDescription", "Alax.Info DirectShow Filter Graph Spy Module"
-            VALUE "FileVersion",  "1, 0, 0, 68\0"
+            VALUE "FileVersion",  "1, 0, 0, 73\0"
             VALUE "LegalCopyright", "Copyright © Alax.Info, Roman Ryltsov, 2008-2009"
             VALUE "OLESelfRegister", "Yes"
             VALUE "InternalName", "BdaHooks.dll"

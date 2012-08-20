@@ -789,7 +789,6 @@ public:
 		return m_pInnerMediaControl->StopWhenReady();
 	}
 
-
 // IMediaEventSink
     STDMETHOD(Notify)(LONG nEventCode, LONG_PTR nParameter1, LONG_PTR nParameter2) throw()
 	{
