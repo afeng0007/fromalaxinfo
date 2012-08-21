@@ -21,8 +21,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="$(SolutionDir)_Bin\$(ConfigurationName)\$(PlatformName)"
-			IntermediateDirectory="$(SolutionDir)_Bin\$(ConfigurationName)\$(PlatformName)\$(ProjectName)"
+			OutputDirectory="$(SolutionDir)_Bin\$(PlatformName)\$(ConfigurationName)\"
+			IntermediateDirectory="$(SolutionDir)_Bin\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="2"
 			UseOfATL="2"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -110,8 +110,8 @@
 		</Configuration>
 		<Configuration
 			Name="Debug|x64"
-			OutputDirectory="$(SolutionDir)_Bin\$(ConfigurationName)\$(PlatformName)"
-			IntermediateDirectory="$(SolutionDir)_Bin\$(ConfigurationName)\$(PlatformName)\$(ProjectName)"
+			OutputDirectory="$(SolutionDir)_Bin\$(PlatformName)\$(ConfigurationName)\"
+			IntermediateDirectory="$(SolutionDir)_Bin\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="2"
 			UseOfATL="2"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -198,8 +198,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="$(SolutionDir)_Bin\$(ConfigurationName)\$(PlatformName)"
-			IntermediateDirectory="$(SolutionDir)_Bin\$(ConfigurationName)\$(PlatformName)\$(ProjectName)"
+			OutputDirectory="$(SolutionDir)_Bin\$(PlatformName)\$(ConfigurationName)\"
+			IntermediateDirectory="$(SolutionDir)_Bin\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="2"
 			UseOfATL="2"
 			ATLMinimizesCRunTimeLibraryUsage="false"
@@ -287,8 +287,8 @@
 		</Configuration>
 		<Configuration
 			Name="Release|x64"
-			OutputDirectory="$(SolutionDir)_Bin\$(ConfigurationName)\$(PlatformName)"
-			IntermediateDirectory="$(SolutionDir)_Bin\$(ConfigurationName)\$(PlatformName)\$(ProjectName)"
+			OutputDirectory="$(SolutionDir)_Bin\$(PlatformName)\$(ConfigurationName)\"
+			IntermediateDirectory="$(SolutionDir)_Bin\$(PlatformName)\$(ConfigurationName)\$(ProjectName)\"
 			ConfigurationType="2"
 			UseOfATL="2"
 			ATLMinimizesCRunTimeLibraryUsage="false"

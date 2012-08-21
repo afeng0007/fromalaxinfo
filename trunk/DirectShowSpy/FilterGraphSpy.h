@@ -505,6 +505,57 @@ public:
 		}
 		return FALSE;
 	}
+	static BOOL LookupEventCodeName(LONG nEventCode, LPCSTR& pszName) throw()
+	{
+		// NOTE: See Windows SDK evcode.h
+		static const struct { LONG nEventCode; LPCSTR pszName; } g_pMap[] = 
+		{
+			#define A(x) { x, #x },
+			A(EC_COMPLETE)
+			A(EC_USERABORT)
+			A(EC_ERRORABORT)
+			A(EC_TIME)
+			A(EC_REPAINT)
+			A(EC_STREAM_ERROR_STOPPED)
+			A(EC_STREAM_ERROR_STILLPLAYING)
+			A(EC_ERROR_STILLPLAYING)
+			A(EC_PALETTE_CHANGED)
+			A(EC_VIDEO_SIZE_CHANGED)
+			A(EC_QUALITY_CHANGE)
+			A(EC_SHUTTING_DOWN)
+			A(EC_CLOCK_CHANGED)
+			A(EC_PAUSED)
+			A(EC_OPENING_FILE)
+			A(EC_BUFFERING_DATA)
+			A(EC_FULLSCREEN_LOST)
+			A(EC_ACTIVATE)
+			A(EC_NEED_RESTART)
+			A(EC_WINDOW_DESTROYED)
+			A(EC_DISPLAY_CHANGED)
+			A(EC_STARVATION)
+			A(EC_OLE_EVENT)
+			A(EC_NOTIFY_WINDOW)
+			A(EC_STREAM_CONTROL_STOPPED)
+			A(EC_STREAM_CONTROL_STARTED)
+			A(EC_END_OF_SEGMENT)
+			A(EC_SEGMENT_STARTED)
+			A(EC_LENGTH_CHANGED)
+			A(EC_DEVICE_LOST)
+			A(EC_SAMPLE_NEEDED)
+			A(EC_PROCESSING_LATENCY)
+			A(EC_SAMPLE_LATENCY)
+			A(EC_SCRUB_TIME)
+			A(EC_STEP_COMPLETE)
+			#undef A
+		};
+		for(SIZE_T nIndex = 0; nIndex < DIM(g_pMap); nIndex++)
+			if(g_pMap[nIndex].nEventCode == nEventCode)
+			{
+				pszName = g_pMap[nIndex].pszName;
+				return TRUE;
+			}
+		return FALSE;
+	}
 
 // ISpy
 
@@ -792,16 +843,25 @@ public:
 // IMediaEventSink
     STDMETHOD(Notify)(LONG nEventCode, LONG_PTR nParameter1, LONG_PTR nParameter2) throw()
 	{
+		#if TRUE
+			LPCSTR pszEventName = NULL;
+			if(LookupEventCodeName(nEventCode, pszEventName))
+			{
+				_Z4(atlTraceCOM, 4, _T("nEventCode %hs (0x%02X), nParameter1 0x%p, nParameter2 0x%p\n"), pszEventName, nEventCode, nParameter1, nParameter2);
+			} else
+		#endif
 		_Z4(atlTraceCOM, 4, _T("nEventCode 0x%02X, nParameter1 0x%p, nParameter2 0x%p\n"), nEventCode, nParameter1, nParameter2);
 		#if defined(_M_IX86)
 			// WARN: Guarding section around might be preventing from walknig frame up the stack
-			if(nEventCode == EC_ERRORABORT)
+			if(nEventCode == EC_ERRORABORT) // || nEventCode == EC_VIDEO_SIZE_CHANGED)
 			{
 				CONTEXT ThreadContext = { CONTEXT_FULL };
 				GetCurrentThreadContext(&ThreadContext);
-				CDebugTraceCallStack::TraceCallStack(ThreadContext, (nEventCode == EC_ERRORABORT) ? 32 : 8);
+				CDebugTraceCallStack::TraceCallStack(ThreadContext, 32); //(nEventCode == EC_ERRORABORT) ? 32 : 8);
 			}
 		#endif // defined(_M_IX86)
+		if(!m_pInnerMediaEventSink)
+			return S_FALSE;
 		return m_pInnerMediaEventSink->Notify(nEventCode, nParameter1, nParameter2);
 	}
 
@@ -829,11 +889,25 @@ public:
 	}
 	STDMETHOD(CancelDefaultHandling)(LONG nEventCode) throw()
 	{
+		#if TRUE
+			LPCSTR pszEventName = NULL;
+			if(LookupEventCodeName(nEventCode, pszEventName))
+			{
+				_Z4(atlTraceCOM, 4, _T("nEventCode %hs (0x%02X)\n"), pszEventName, nEventCode);
+			} else
+		#endif
 		_Z4(atlTraceCOM, 4, _T("nEventCode 0x%02X\n"), nEventCode);
 		return m_pInnerMediaEventEx->CancelDefaultHandling(nEventCode);
 	}
 	STDMETHOD(RestoreDefaultHandling)(LONG nEventCode) throw()
 	{
+		#if TRUE
+			LPCSTR pszEventName = NULL;
+			if(LookupEventCodeName(nEventCode, pszEventName))
+			{
+				_Z4(atlTraceCOM, 4, _T("nEventCode %hs (0x%02X)\n"), pszEventName, nEventCode);
+			} else
+		#endif
 		_Z4(atlTraceCOM, 4, _T("nEventCode 0x%02X\n"), nEventCode);
 		return m_pInnerMediaEventEx->RestoreDefaultHandling(nEventCode);
 	}
