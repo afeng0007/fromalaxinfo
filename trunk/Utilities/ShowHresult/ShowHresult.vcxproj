@@ -290,20 +290,30 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="D2dIdentifier.inc">
+      <FileType>CppHeader</FileType>
+    </None>
     <ClInclude Include="NotifyIconWindow.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="ShowHresult_i.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
+    <None Include="WicIdentifier.inc">
+      <FileType>CppHeader</FileType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ShowHresult.rc" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="D3dIdentifier.inc" />
     <None Include="Information.ico" />
+    <None Include="MfIdentifier.inc" />
     <None Include="Module.ico" />
+    <None Include="DsIdentifier.inc" />
     <None Include="ReadMe.txt" />
     <None Include="Module.rgs" />
+    <None Include="SystemIdentifier.inc" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ShowHresult.idl" />

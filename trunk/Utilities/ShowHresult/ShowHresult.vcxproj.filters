@@ -17,6 +17,9 @@
       <UniqueIdentifier>{53fd12cc-ddd2-4765-bea3-9472cd3f147a}</UniqueIdentifier>
       <SourceControlFiles>False</SourceControlFiles>
     </Filter>
+    <Filter Include="Header Files\Include Files">
+      <UniqueIdentifier>{6e194ef0-846f-45b4-b76c-c3a671c1712a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -45,6 +48,12 @@
     <ClInclude Include="NotifyIconWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="D2dIdentifier.inc">
+      <Filter>Header Files\Include Files</Filter>
+    </ClInclude>
+    <ClInclude Include="WicIdentifier.inc">
+      <Filter>Header Files\Include Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ShowHresult.rc">
@@ -61,6 +70,18 @@
     </None>
     <None Include="Module.rgs">
       <Filter>Resource Files</Filter>
+    </None>
+    <None Include="D3dIdentifier.inc">
+      <Filter>Header Files\Include Files</Filter>
+    </None>
+    <None Include="MfIdentifier.inc">
+      <Filter>Header Files\Include Files</Filter>
+    </None>
+    <None Include="DsIdentifier.inc">
+      <Filter>Header Files\Include Files</Filter>
+    </None>
+    <None Include="SystemIdentifier.inc">
+      <Filter>Header Files\Include Files</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
