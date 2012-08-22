@@ -15,6 +15,7 @@
 #include <d3d9.h> // _FACD3D
 #include <d2derr.h> // FACILITY_D2D
 #include <wincodec.h> // FACILITY_WINCODEC_ERR
+#include <wia_lh.h> // FACILITY_WIA
 #include "rowinhttp.h"
 #include "AboutDialog.h"
 
@@ -251,6 +252,26 @@ private:
 				return CString(g_pMap[nIndex].pszName);
 		return _T("");
 	}
+	static BOOL IsWiaResult(HRESULT nResult, CString* psMessage = NULL)
+	{
+		if(HRESULT_FACILITY(nResult) != FACILITY_WIA)
+			return FALSE;
+		psMessage;
+		return !LookupWiaIdentifier(nResult).IsEmpty();
+	}
+	static CString LookupWiaIdentifier(HRESULT nValue)
+	{
+		static const struct { HRESULT nValue; LPCSTR pszName; } g_pMap[] = 
+		{
+			#define A(x) { x, #x },
+			#include "WiaIdentifier.inc"
+			#undef A
+		};
+		for(SIZE_T nIndex = 0; nIndex < DIM(g_pMap); nIndex++)
+			if(g_pMap[nIndex].nValue == nValue)
+				return CString(g_pMap[nIndex].pszName);
+		return _T("");
+	}
 
 public:
 // CNotifyIconWindow
@@ -358,6 +379,10 @@ public:
 		{
 			sTitle = _T("WinCodec");
 			sIdentifier = LookupWicIdentifier(nResult);
+		} else if(IsWiaResult(nResult, &sMessage))
+		{
+			sTitle = _T("WIA");
+			sIdentifier = LookupWiaIdentifier(nResult);
 		} else 
 		{
 			sMessage = AtlFormatSystemMessage(nResult);
