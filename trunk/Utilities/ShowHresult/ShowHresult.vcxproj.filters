@@ -86,6 +86,9 @@
     <None Include="WiaIdentifier.inc">
       <Filter>Header Files\Include Files</Filter>
     </None>
+    <None Include="UrtIdentifier.Inc">
+      <Filter>Header Files\Include Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ShowHresult.idl">

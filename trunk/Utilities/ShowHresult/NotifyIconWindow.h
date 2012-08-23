@@ -16,6 +16,7 @@
 #include <d2derr.h> // FACILITY_D2D
 #include <wincodec.h> // FACILITY_WINCODEC_ERR
 #include <wia_lh.h> // FACILITY_WIA
+#include <corerror.h> // FACILITY_URT
 #include "rowinhttp.h"
 #include "AboutDialog.h"
 
@@ -272,6 +273,26 @@ private:
 				return CString(g_pMap[nIndex].pszName);
 		return _T("");
 	}
+	static BOOL IsUrtResult(HRESULT nResult, CString* psMessage = NULL)
+	{
+		if(HRESULT_FACILITY(nResult) != FACILITY_URT)
+			return FALSE;
+		psMessage;
+		return !LookupUrtIdentifier(nResult).IsEmpty();
+	}
+	static CString LookupUrtIdentifier(HRESULT nValue)
+	{
+		static const struct { HRESULT nValue; LPCSTR pszName; } g_pMap[] = 
+		{
+			#define A(x) { x, #x },
+			#include "UrtIdentifier.inc"
+			#undef A
+		};
+		for(SIZE_T nIndex = 0; nIndex < DIM(g_pMap); nIndex++)
+			if(g_pMap[nIndex].nValue == nValue)
+				return CString(g_pMap[nIndex].pszName);
+		return _T("");
+	}
 
 public:
 // CNotifyIconWindow
@@ -383,6 +404,10 @@ public:
 		{
 			sTitle = _T("WIA");
 			sIdentifier = LookupWiaIdentifier(nResult);
+		} else if(IsUrtResult(nResult, &sMessage))
+		{
+			sTitle = _T(".NET");
+			sIdentifier = LookupUrtIdentifier(nResult);
 		} else 
 		{
 			sMessage = AtlFormatSystemMessage(nResult);
