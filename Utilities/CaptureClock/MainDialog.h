@@ -7,6 +7,8 @@
 #pragma once
 
 #include "rodshow.h"
+#include "rowinhttp.h"
+#include "rocrypt.h"
 #include "AboutDialog.h"
 
 ////////////////////////////////////////////////////////////
@@ -651,22 +653,58 @@ public:
 			_ATLRETHROW;
 		}
 		UpdateControls();
-		if(!m_sLog.IsEmpty())
-		{
-			CString sLog;
-			OSVERSIONINFO VersionInformation = { sizeof VersionInformation };
-			_W(GetVersionEx(&VersionInformation));
-			_A(VersionInformation.dwPlatformId == VER_PLATFORM_WIN32_NT);
-			sLog += AtlFormatString(_T("Windows Version") _T("\t") _T("%d.%d.%d %s") _T("\r\n"), VersionInformation.dwMajorVersion, VersionInformation.dwMinorVersion, VersionInformation.dwBuildNumber, VersionInformation.szCSDVersion);
-			CFilterData& VideoFilterData = m_VideoDeviceComboBox.GetItemData(m_VideoDeviceComboBox.GetCurSel());
-			sLog += AtlFormatString(_T("Video Device") _T("\t") _T("%ls") _T("\t") _T("%ls") _T("\r\n"), VideoFilterData.GetFriendlyName(), VideoFilterData.GetMonikerDisplayName());
-			CFilterData& AudioFilterData = m_AudioDeviceComboBox.GetItemData(m_AudioDeviceComboBox.GetCurSel());
-			sLog += AtlFormatString(_T("Audio Device") _T("\t") _T("%ls") _T("\t") _T("%ls") _T("\r\n"), AudioFilterData.GetFriendlyName(), AudioFilterData.GetMonikerDisplayName());
-			sLog += _T("\r\n");
-			sLog += m_sLog;
-			SetClipboardText(m_hWnd, sLog);
-			MessageBeep(MB_OK);
-		}
+		#if !_DEVELOPMENT
+			if(m_sLog.IsEmpty())
+				return 0; // No Effective Log
+		#endif // !_DEVELOPMENT
+		#pragma region Log
+		CString sLog;
+		TCHAR pszComputerName[256] = { 0 };
+		DWORD nComputerNameLength = DIM(pszComputerName);
+		_W(GetComputerName(pszComputerName, &nComputerNameLength));
+		sLog += AtlFormatString(_T("Computer Name") _T("\t") _T("%s") _T("\r\n"), pszComputerName);
+		OSVERSIONINFO VersionInformation = { sizeof VersionInformation };
+		_W(GetVersionEx(&VersionInformation));
+		_A(VersionInformation.dwPlatformId == VER_PLATFORM_WIN32_NT);
+		sLog += AtlFormatString(_T("Windows Version") _T("\t") _T("%d.%d.%d %s") _T("\r\n"), VersionInformation.dwMajorVersion, VersionInformation.dwMinorVersion, VersionInformation.dwBuildNumber, VersionInformation.szCSDVersion);
+		CFilterData& VideoFilterData = m_VideoDeviceComboBox.GetItemData(m_VideoDeviceComboBox.GetCurSel());
+		sLog += AtlFormatString(_T("Video Device") _T("\t") _T("%ls") _T("\t") _T("%ls") _T("\r\n"), VideoFilterData.GetFriendlyName(), VideoFilterData.GetMonikerDisplayName());
+		CFilterData& AudioFilterData = m_AudioDeviceComboBox.GetItemData(m_AudioDeviceComboBox.GetCurSel());
+		sLog += AtlFormatString(_T("Audio Device") _T("\t") _T("%ls") _T("\t") _T("%ls") _T("\r\n"), AudioFilterData.GetFriendlyName(), AudioFilterData.GetMonikerDisplayName());
+		sLog += _T("\r\n");
+		sLog += m_sLog;
+		#pragma endregion
+		SetClipboardText(m_hWnd, sLog);
+		MessageBeep(MB_OK);
+		#if !_DEVELOPMENT
+			if(AtlMessageBoxEx(m_hWnd, 
+					_T("The runtime execution data was placed onto clipboard in tab separated value format, you can paste it into a text or a spreadsheet document for further processing or analysis.") _T("\r\n")
+					_T("\r\n")
+					_T("Would you also like to share the results and post them to the website?"), IDS_CONFIRMATION, MB_ICONINFORMATION | MB_YESNO | ((m_nTimerEventIndex < 60) ? MB_DEFBUTTON2 : 0))  != IDYES)
+				return 0; // No Submission
+		#else
+			return 0; // No Submission
+		#endif // !_DEVELOPMENT
+		#pragma region HTTP POST
+		CWinHttpPostData PostData;
+		PostData.AddValue(_T("s"), AtlLoadString(IDS_PROJNAME));
+		CStringA sTextA = Utf8StringFromString(sLog);
+		PostData.AddValue(_T("b"), _Base64Helper::Encode<CString>((const BYTE*) (LPCSTR) sTextA, sTextA.GetLength(), _Base64Helper::FLAG_NOPAD | _Base64Helper::FLAG_NOCRLF));
+		CWinHttpSessionHandle Session = OpenWinHttpSessionHandle(AtlLoadString(IDS_PROJNAME));
+		__E(Session);
+		CWinHttpConnectionHandle Connection = Session.Connect(CStringW(_T("alax.info")));
+		__E(Connection);
+		CWinHttpRequestHandle Request = Connection.OpenRequest(CStringW(_T("POST")), CStringW(_T("/post.php")));
+		__E(Request);
+		CStringW sPostHeaders = PostData.GetHeaders();
+		CStringA sPostData(PostData.GetValue());
+		__E(Request.Send(sPostHeaders, -1, const_cast<LPSTR>((LPCSTR) sPostData), sPostData.GetLength(), sPostData.GetLength()));
+		__E(Request.ReceiveResponse());
+		DWORD nStatusCode = 0;
+		__E(Request.QueryNumberHeader(WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER, nStatusCode));
+		__D(nStatusCode == HTTP_STATUS_OK, MAKE_HRESULT(SEVERITY_ERROR, FACILITY_HTTP, nStatusCode));
+		#pragma endregion
+		AtlMessageBoxEx(m_hWnd, _T("The results were posted to the website, thank you for sharing them!"), IDS_INFORMATION, MB_ICONINFORMATION | MB_OK);
 		return 0;
 	}
 };
