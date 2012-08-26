@@ -469,6 +469,15 @@ public:
 				// NOTE: A log item every half a minute
 				const BOOL bLog = ++m_nTimerEventIndex % 30 == 0;
 				CRoArrayT<CString> Array;
+				REFERENCE_TIME nSystemTime;
+				if(m_pReferenceClock)
+				{
+					_V(m_pReferenceClock->GetTime(&nSystemTime));
+					nSystemTime -= m_nAnchorTime;
+					m_SystemTimeEdit.SetValue(AtlFormatString(_T("%s"), _FilterGraphHelper::FormatReferenceTime(nSystemTime)));
+					if(bLog)
+						Array.Add(AtlFormatString(_T("%I64d"), (nSystemTime + 5000i64 - 1) / 10000i64));
+				}
 				if(m_pVideoRendererFilter)
 				{
 					SIZE_T nCount;
@@ -479,6 +488,7 @@ public:
 					{
 						Array.Add(AtlFormatString(_T("%d"), nCount));
 						Array.Add(AtlFormatString(_T("%I64d"), (nTime + 5000i64 - 1) / 10000i64));
+						Array.Add(AtlFormatString(_T("%I64d"), ((nTime - nSystemTime) + 5000i64 - 1) / 10000i64));
 					}
 				}
 				if(m_pAudioRendererFilter)
@@ -491,18 +501,10 @@ public:
 					{
 						Array.Add(AtlFormatString(_T("%d"), nCount));
 						Array.Add(AtlFormatString(_T("%I64d"), (nTime + 5000i64 - 1) / 10000i64));
+						Array.Add(AtlFormatString(_T("%I64d"), ((nTime - nSystemTime) + 5000i64 - 1) / 10000i64));
 					}
 				}
-				if(m_pReferenceClock)
-				{
-					REFERENCE_TIME nTime;
-					_V(m_pReferenceClock->GetTime(&nTime));
-					nTime -= m_nAnchorTime;
-					m_SystemTimeEdit.SetValue(AtlFormatString(_T("%s"), _FilterGraphHelper::FormatReferenceTime(nTime)));
-					if(bLog)
-						Array.InsertAt(0, AtlFormatString(_T("%I64d"), (nTime + 5000i64 - 1) / 10000i64));
-				}
-				if(bLog && Array.GetCount() == 5)
+				if(bLog && Array.GetCount() == 1 + 3 + 3)
 				{
 					if(m_sLog.IsEmpty())
 					{
@@ -511,8 +513,10 @@ public:
 							_T("System Time"),
 							_T("Video Sample Count"),
 							_T("Video Sample Time"),
+							_T("Relative Video Sample Time"),
 							_T("Audio Sample Count"),
 							_T("Audio Sample Time"),
+							_T("Relative Audio Sample Time"),
 						};
 						m_sLog.Append(_StringHelper::Join(g_ppszHeader, _T("\t")) + _T("\r\n"));
 					}
@@ -578,7 +582,29 @@ public:
 				pRendererFilter.Construct();
 				pRendererFilter->Initialize(MEDIATYPE_Audio);
 				__C(m_FilterGraph->AddFilter(pRendererFilter, CT2CW(_T("Audio Renderer"))));
-				__C(m_FilterGraph->Connect(GetCapturePin(pSourceBaseFilter), pRendererFilter->GetInputPin()));
+				const CComPtr<IPin> pCapturePin = GetCapturePin(pSourceBaseFilter);
+				_ATLTRY
+				{
+					const CComQIPtr<IAMBufferNegotiation> pAmBufferNegotiation = pCapturePin;
+					__D(pAmBufferNegotiation, E_NOINTERFACE);
+					const CComQIPtr<IAMStreamConfig> pAmStreamConfig = pCapturePin;
+					__D(pAmStreamConfig, E_NOINTERFACE);
+					CMediaType pMediaType;
+					__C(pAmStreamConfig->GetFormat(&pMediaType));
+					const CWaveFormatEx* pWaveFormatEx = pMediaType.GetWaveFormatEx();
+					__D(pWaveFormatEx, E_UNNAMED);
+					ALLOCATOR_PROPERTIES Properties;
+					Properties.cbAlign = -1;
+					Properties.cbBuffer = pWaveFormatEx->nAvgBytesPerSec / 10; // 100 millisecond
+					Properties.cbPrefix = -1;
+					Properties.cBuffers = 50; // 50 buffers (5 seconds in total)
+					__C(pAmBufferNegotiation->SuggestAllocatorProperties(&Properties));
+				}
+				_ATLCATCHALL()
+				{
+					_Z_EXCEPTION();
+				}
+				__C(m_FilterGraph->Connect(pCapturePin, pRendererFilter->GetInputPin()));
 				m_pAudioRendererFilter = pRendererFilter;
 			}
 			#pragma endregion 
@@ -615,7 +641,18 @@ public:
 		m_StartButton.EnableWindow(TRUE);
 		if(!m_sLog.IsEmpty())
 		{
-			SetClipboardText(m_hWnd, m_sLog);
+			CString sLog;
+			OSVERSIONINFO VersionInformation = { sizeof VersionInformation };
+			_W(GetVersionEx(&VersionInformation));
+			_A(VersionInformation.dwPlatformId == VER_PLATFORM_WIN32_NT);
+			sLog += AtlFormatString(_T("Windows Version") _T("\t") _T("%d.%d.%d %s") _T("\r\n"), VersionInformation.dwMajorVersion, VersionInformation.dwMinorVersion, VersionInformation.dwBuildNumber, VersionInformation.szCSDVersion);
+			CFilterData& VideoFilterData = m_VideoDeviceComboBox.GetItemData(m_VideoDeviceComboBox.GetCurSel());
+			sLog += AtlFormatString(_T("Video Device") _T("\t") _T("%ls") _T("\t") _T("%ls") _T("\r\n"), VideoFilterData.GetFriendlyName(), VideoFilterData.GetMonikerDisplayName());
+			CFilterData& AudioFilterData = m_AudioDeviceComboBox.GetItemData(m_AudioDeviceComboBox.GetCurSel());
+			sLog += AtlFormatString(_T("Audio Device") _T("\t") _T("%ls") _T("\t") _T("%ls") _T("\r\n"), AudioFilterData.GetFriendlyName(), AudioFilterData.GetMonikerDisplayName());
+			sLog += _T("\r\n");
+			sLog += m_sLog;
+			SetClipboardText(m_hWnd, sLog);
 			MessageBeep(MB_OK);
 		}
 		return 0;
