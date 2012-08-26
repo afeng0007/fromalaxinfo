@@ -416,6 +416,15 @@ public:
 		}
 		return pCapturePin ? pCapturePin : pAssumedCapturePin;
 	}
+	VOID UpdateControls()
+	{
+		m_VideoDeviceComboBox.EnableWindow(m_FilterGraph.m_pFilterGraph == NULL);
+		m_VideoDeviceComboBox.GetWindow(GW_HWNDPREV).EnableWindow(m_VideoDeviceComboBox.IsWindowEnabled());
+		m_AudioDeviceComboBox.EnableWindow(m_FilterGraph.m_pFilterGraph == NULL);
+		m_AudioDeviceComboBox.GetWindow(GW_HWNDPREV).EnableWindow(m_AudioDeviceComboBox.IsWindowEnabled());
+		m_StartButton.EnableWindow(m_FilterGraph.m_pFilterGraph == NULL);
+		m_StopButton.EnableWindow(m_FilterGraph.m_pFilterGraph != NULL);
+	}
 
 // Window Message Handelrs
 	LRESULT OnInitDialog(HWND, LPARAM)
@@ -450,7 +459,9 @@ public:
 		m_StopButton = GetDlgItem(IDC_STOP);
 		m_StopButton.EnableWindow(FALSE);
 		_W(CenterWindow());
+		UpdateControls();
 		#if _DEVELOPMENT
+		// TODO: ...
 		#endif // _DEVELOPMENT
 		return TRUE;
 	}
@@ -618,10 +629,11 @@ public:
 		}
 		_ATLCATCHALL()
 		{
-			m_StartButton.EnableWindow(TRUE);
+			ReleaseFilterGraph();
+			UpdateControls();
 			_ATLRETHROW;
 		}
-		m_StopButton.EnableWindow(TRUE);
+		UpdateControls();
 		return 0;
 	}
 	LRESULT OnStopClicked(UINT, INT, HWND)
@@ -635,10 +647,10 @@ public:
 		}
 		_ATLCATCHALL()
 		{
-			m_StopButton.EnableWindow(TRUE);
+			UpdateControls();
 			_ATLRETHROW;
 		}
-		m_StartButton.EnableWindow(TRUE);
+		UpdateControls();
 		if(!m_sLog.IsEmpty())
 		{
 			CString sLog;
