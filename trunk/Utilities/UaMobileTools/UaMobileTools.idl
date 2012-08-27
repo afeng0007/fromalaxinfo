@@ -1,0 +1,41 @@
+////////////////////////////////////////////////////////////
+// Copyright (C) Roman Ryltsov, 2008-2012
+// Created by Roman Ryltsov roman@alax.info
+// 
+// $Id$
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	object,
+	uuid(48174E17-C955-4FD9-9671-9814710855A3),
+	dual,
+	oleautomation,
+	helpstring("IKyivstarUaBalanceQuery Interface"),
+	pointer_default(unique)
+]
+interface IKyivstarUaBalanceQuery : IDispatch
+{
+	[id(1)] HRESULT Initialize([in] BSTR sNumber, [in] BSTR sPassword);
+	[propget, id(11)] HRESULT Number([out, retval] BSTR* psNumber);
+	[propget, id(12)] HRESULT Balance([out, retval] DOUBLE* pfBalance);
+};
+[
+	uuid(4A08DB2F-10FA-483C-85D3-84F717833444),
+	version(1.0),
+	helpstring("Alax.Info UA Mobile Tools 1.0 Type Library")
+]
+library AlaxInfoUaMobileTools
+{
+	importlib("stdole2.tlb");
+	[
+		uuid(BE7310DD-BFCA-4676-91E0-F9232DF56155),
+		helpstring("Kyivstar.ua Balance Query Class")
+	]
+	coclass KyivstarUaBalanceQuery
+	{
+		[default] interface IKyivstarUaBalanceQuery;
+	};
+};
+
