@@ -77,16 +77,19 @@
     <None Include="SystemIdentifier.inc">
       <Filter>Header Files\Include Files</Filter>
     </None>
-    <None Include="D2dIdentifier.inc">
-      <Filter>Header Files</Filter>
-    </None>
-    <None Include="WicIdentifier.inc">
-      <Filter>Header Files</Filter>
-    </None>
     <None Include="WiaIdentifier.inc">
       <Filter>Header Files\Include Files</Filter>
     </None>
     <None Include="UrtIdentifier.Inc">
+      <Filter>Header Files\Include Files</Filter>
+    </None>
+    <None Include="D2dIdentifier.inc">
+      <Filter>Header Files\Include Files</Filter>
+    </None>
+    <None Include="WicIdentifier.inc">
+      <Filter>Header Files\Include Files</Filter>
+    </None>
+    <None Include="SystemHresultIdentifier.inc">
       <Filter>Header Files\Include Files</Filter>
     </None>
   </ItemGroup>
