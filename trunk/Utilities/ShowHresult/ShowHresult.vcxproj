@@ -298,8 +298,15 @@
     <ClInclude Include="ShowHresult_i.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
-    <None Include="UrtIdentifier.Inc" />
-    <None Include="WiaIdentifier.inc" />
+    <None Include="SystemHresultIdentifier.inc">
+      <FileType>CppHeader</FileType>
+    </None>
+    <None Include="UrtIdentifier.Inc">
+      <FileType>CppHeader</FileType>
+    </None>
+    <None Include="WiaIdentifier.inc">
+      <FileType>CppHeader</FileType>
+    </None>
     <None Include="WicIdentifier.inc">
       <FileType>CppHeader</FileType>
     </None>
@@ -308,14 +315,22 @@
     <ResourceCompile Include="ShowHresult.rc" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="D3dIdentifier.inc" />
+    <None Include="D3dIdentifier.inc">
+      <FileType>CppHeader</FileType>
+    </None>
     <None Include="Information.ico" />
-    <None Include="MfIdentifier.inc" />
+    <None Include="MfIdentifier.inc">
+      <FileType>CppHeader</FileType>
+    </None>
     <None Include="Module.ico" />
-    <None Include="DsIdentifier.inc" />
+    <None Include="DsIdentifier.inc">
+      <FileType>CppHeader</FileType>
+    </None>
     <None Include="ReadMe.txt" />
     <None Include="Module.rgs" />
-    <None Include="SystemIdentifier.inc" />
+    <None Include="SystemIdentifier.inc">
+      <FileType>CppHeader</FileType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ShowHresult.idl" />

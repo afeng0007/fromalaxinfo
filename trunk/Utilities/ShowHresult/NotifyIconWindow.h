@@ -79,8 +79,9 @@ private:
 			*psMessage = sMessage;
 		return TRUE;
 	}
-	static CString LookupQuartzIdentifier(HRESULT nValue)
+	static BOOL LookupQuartzIdentifier(HRESULT nValue, CString& sIdentifier)
 	{
+		_A(sIdentifier.IsEmpty());
 		static const struct { HRESULT nValue; LPCSTR pszName; } g_pMap[] = 
 		{
 			#define A(x) { x, #x },
@@ -89,8 +90,11 @@ private:
 		};
 		for(SIZE_T nIndex = 0; nIndex < DIM(g_pMap); nIndex++)
 			if(g_pMap[nIndex].nValue == nValue)
-				return CString(g_pMap[nIndex].pszName);
-		return _T("");
+			{
+				sIdentifier = CString(g_pMap[nIndex].pszName);
+				return TRUE;
+			}
+		return FALSE;
 	}
 	static BOOL IsWmResult(HRESULT nResult, CString* psMessage = NULL)
 	{
@@ -121,7 +125,7 @@ private:
 			*psMessage = sMessage;
 		return TRUE;
 	}
-	static CString LookupMfIdentifier(HRESULT nValue)
+	static BOOL LookupMfIdentifier(HRESULT nValue, CString& sIdentifier)
 	{
 		static const struct { HRESULT nValue; LPCSTR pszName; } g_pMap[] = 
 		{
@@ -131,8 +135,11 @@ private:
 		};
 		for(SIZE_T nIndex = 0; nIndex < DIM(g_pMap); nIndex++)
 			if(g_pMap[nIndex].nValue == nValue)
-				return CString(g_pMap[nIndex].pszName);
-		return _T("");
+			{
+				sIdentifier = CString(g_pMap[nIndex].pszName);
+				return TRUE;
+			}
+		return FALSE;
 	}
 	static BOOL IsWs2Result(HRESULT nResult, CString* psMessage = NULL)
 	{
@@ -176,12 +183,12 @@ private:
 			*psMessage = sMessage;
 		return TRUE;
 	}
-	static CString LookupSystemIdentifier(HRESULT nValue)
+	static BOOL LookupSystemIdentifier(HRESULT nValue, CString& sIdentifier)
 	{
 		if(HRESULT_SEVERITY(nValue) == SEVERITY_ERROR && HRESULT_FACILITY(nValue) == FACILITY_WIN32)
 			nValue = HRESULT_CODE(nValue);
 		if(nValue < 0 || nValue >= 16384)
-			return _T("");
+			return FALSE;
 		static const struct { HRESULT nValue; LPCSTR pszName; } g_pMap[] = 
 		{
 			#define A(x) { x, #x },
@@ -190,17 +197,41 @@ private:
 		};
 		for(SIZE_T nIndex = 0; nIndex < DIM(g_pMap); nIndex++)
 			if(g_pMap[nIndex].nValue == nValue)
-				return CString(g_pMap[nIndex].pszName);
-		return _T("");
+			{
+				sIdentifier = CString(g_pMap[nIndex].pszName);
+				return TRUE;
+			}
+		return FALSE;
+	}
+	static BOOL LookupHresultSystemIdentifier(HRESULT nValue, CString& sIdentifier)
+	{
+		//if(HRESULT_SEVERITY(nValue) != SEVERITY_ERROR)
+		//	return _T("");
+		if((UINT) HRESULT_FACILITY(nValue) >= 0x40)
+			return FALSE;
+		static const struct { HRESULT nValue; LPCSTR pszName; } g_pMap[] = 
+		{
+			#define A(x) { x, #x },
+			#include "SystemHresultIdentifier.inc"
+			#undef A
+		};
+		for(SIZE_T nIndex = 0; nIndex < DIM(g_pMap); nIndex++)
+			if(g_pMap[nIndex].nValue == nValue)
+			{
+				sIdentifier = CString(g_pMap[nIndex].pszName);
+				return TRUE;
+			}
+		return FALSE;
 	}
 	static BOOL IsD3dResult(HRESULT nResult, CString* psMessage = NULL)
 	{
 		if(HRESULT_FACILITY(nResult) != _FACD3D)
 			return FALSE;
 		psMessage;
-		return !LookupD3dIdentifier(nResult).IsEmpty();
+		CString sIdentifier;
+		return LookupD3dIdentifier(nResult, sIdentifier);
 	}
-	static CString LookupD3dIdentifier(HRESULT nValue)
+	static BOOL LookupD3dIdentifier(HRESULT nValue, CString& sIdentifier)
 	{
 		static const struct { HRESULT nValue; LPCSTR pszName; } g_pMap[] = 
 		{
@@ -210,17 +241,21 @@ private:
 		};
 		for(SIZE_T nIndex = 0; nIndex < DIM(g_pMap); nIndex++)
 			if(g_pMap[nIndex].nValue == nValue)
-				return CString(g_pMap[nIndex].pszName);
-		return _T("");
+			{
+				sIdentifier = CString(g_pMap[nIndex].pszName);
+				return TRUE;
+			}
+		return FALSE;
 	}
 	static BOOL IsD2dResult(HRESULT nResult, CString* psMessage = NULL)
 	{
 		if(HRESULT_FACILITY(nResult) != FACILITY_D2D)
 			return FALSE;
 		psMessage;
-		return !LookupD2dIdentifier(nResult).IsEmpty();
+		CString sIdentifier;
+		return LookupD2dIdentifier(nResult, sIdentifier);
 	}
-	static CString LookupD2dIdentifier(HRESULT nValue)
+	static BOOL LookupD2dIdentifier(HRESULT nValue, CString& sIdentifier)
 	{
 		static const struct { HRESULT nValue; LPCSTR pszName; } g_pMap[] = 
 		{
@@ -230,17 +265,21 @@ private:
 		};
 		for(SIZE_T nIndex = 0; nIndex < DIM(g_pMap); nIndex++)
 			if(g_pMap[nIndex].nValue == nValue)
-				return CString(g_pMap[nIndex].pszName);
-		return _T("");
+			{
+				sIdentifier = CString(g_pMap[nIndex].pszName);
+				return TRUE;
+			}
+		return FALSE;
 	}
 	static BOOL IsWicResult(HRESULT nResult, CString* psMessage = NULL)
 	{
 		if(HRESULT_FACILITY(nResult) != FACILITY_WINCODEC_ERR)
 			return FALSE;
 		psMessage;
-		return !LookupWicIdentifier(nResult).IsEmpty();
+		CString sIdentifier;
+		return LookupWicIdentifier(nResult, sIdentifier);
 	}
-	static CString LookupWicIdentifier(HRESULT nValue)
+	static BOOL LookupWicIdentifier(HRESULT nValue, CString& sIdentifier)
 	{
 		static const struct { HRESULT nValue; LPCSTR pszName; } g_pMap[] = 
 		{
@@ -250,17 +289,21 @@ private:
 		};
 		for(SIZE_T nIndex = 0; nIndex < DIM(g_pMap); nIndex++)
 			if(g_pMap[nIndex].nValue == nValue)
-				return CString(g_pMap[nIndex].pszName);
-		return _T("");
+			{
+				sIdentifier = CString(g_pMap[nIndex].pszName);
+				return TRUE;
+			}
+		return FALSE;
 	}
 	static BOOL IsWiaResult(HRESULT nResult, CString* psMessage = NULL)
 	{
 		if(HRESULT_FACILITY(nResult) != FACILITY_WIA)
 			return FALSE;
 		psMessage;
-		return !LookupWiaIdentifier(nResult).IsEmpty();
+		CString sIdentifier;
+		return LookupWiaIdentifier(nResult, sIdentifier);
 	}
-	static CString LookupWiaIdentifier(HRESULT nValue)
+	static BOOL LookupWiaIdentifier(HRESULT nValue, CString& sIdentifier)
 	{
 		static const struct { HRESULT nValue; LPCSTR pszName; } g_pMap[] = 
 		{
@@ -270,17 +313,21 @@ private:
 		};
 		for(SIZE_T nIndex = 0; nIndex < DIM(g_pMap); nIndex++)
 			if(g_pMap[nIndex].nValue == nValue)
-				return CString(g_pMap[nIndex].pszName);
-		return _T("");
+			{
+				sIdentifier = CString(g_pMap[nIndex].pszName);
+				return TRUE;
+			}
+		return FALSE;
 	}
 	static BOOL IsUrtResult(HRESULT nResult, CString* psMessage = NULL)
 	{
 		if(HRESULT_FACILITY(nResult) != FACILITY_URT)
 			return FALSE;
 		psMessage;
-		return !LookupUrtIdentifier(nResult).IsEmpty();
+		CString sIdentifier;
+		return LookupUrtIdentifier(nResult, sIdentifier);
 	}
-	static CString LookupUrtIdentifier(HRESULT nValue)
+	static BOOL LookupUrtIdentifier(HRESULT nValue, CString& sIdentifier)
 	{
 		static const struct { HRESULT nValue; LPCSTR pszName; } g_pMap[] = 
 		{
@@ -290,8 +337,11 @@ private:
 		};
 		for(SIZE_T nIndex = 0; nIndex < DIM(g_pMap); nIndex++)
 			if(g_pMap[nIndex].nValue == nValue)
-				return CString(g_pMap[nIndex].pszName);
-		return _T("");
+			{
+				sIdentifier = CString(g_pMap[nIndex].pszName);
+				return TRUE;
+			}
+		return FALSE;
 	}
 
 public:
@@ -372,48 +422,38 @@ public:
 		#pragma region Lookup
 		// NOTE: Include file regular expression replacement: ^.+?\#define +([^ ]+?) +MAKE_D3D.+\r?$ -> A($1)
 		CString sTitle, sMessage, sIdentifier;
-		if(IsQuartzResult(nResult, &sMessage))
+		if(IsQuartzResult(nResult, &sMessage))// || LookupQuartzIdentifier(nResult, sIdentifier))
 		{
+			LookupQuartzIdentifier(nResult, sIdentifier);
 			sTitle = _T("DirectShow");
-			sIdentifier = LookupQuartzIdentifier(nResult);
 		} else if(IsWmResult(nResult, &sMessage))
 			sTitle = _T("Windows Media");
-		else if(IsMfResult(nResult, &sMessage))
-		{
+		else if(IsMfResult(nResult, &sMessage) || LookupMfIdentifier(nResult, sIdentifier))
 			sTitle = _T("Media Foundation");
-			sIdentifier = LookupMfIdentifier(nResult);
-		} else if(IsWs2Result(nResult, &sMessage))
+		////////////////////////////////////////////////////
+		// NOTE: These are perhaps useless in Windows 7, but I am under impression they are helpful in earlier systems
+		else if(IsWs2Result(nResult, &sMessage))
 			sTitle = _T("Sockets");
 		else if(IsWinHttpResult(nResult, &sMessage))
 			sTitle = _T("WinHTTP");
 		else if(IsWinInetResult(nResult, &sMessage))
 			sTitle = _T("WinInet");
-		else if(IsD3dResult(nResult, &sMessage))
-		{
+		////////////////////////////////////////////////////
+		else if(IsD3dResult(nResult, &sMessage) || LookupD3dIdentifier(nResult, sIdentifier))
 			sTitle = _T("DirectDraw/Direct3D");
-			sIdentifier = LookupD3dIdentifier(nResult);
-		} else if(IsD2dResult(nResult, &sMessage))
-		{
+		else if(IsD2dResult(nResult, &sMessage) || LookupD2dIdentifier(nResult, sIdentifier))
 			sTitle = _T("Direct2D");
-			sIdentifier = LookupD2dIdentifier(nResult);
-		} else if(IsWicResult(nResult, &sMessage))
-		{
+		else if(IsWicResult(nResult, &sMessage) || LookupWicIdentifier(nResult, sIdentifier))
 			sTitle = _T("WinCodec");
-			sIdentifier = LookupWicIdentifier(nResult);
-		} else if(IsWiaResult(nResult, &sMessage))
-		{
+		else if(IsWiaResult(nResult, &sMessage) || LookupWiaIdentifier(nResult, sIdentifier))
 			sTitle = _T("WIA");
-			sIdentifier = LookupWiaIdentifier(nResult);
-		} else if(IsUrtResult(nResult, &sMessage))
-		{
+		else if(IsUrtResult(nResult, &sMessage) || LookupUrtIdentifier(nResult, sIdentifier))
 			sTitle = _T(".NET");
-			sIdentifier = LookupUrtIdentifier(nResult);
-		} else 
+		else 
 		{
 			sMessage = AtlFormatSystemMessage(nResult);
-			sIdentifier = LookupSystemIdentifier(nResult);
-			if(sIdentifier.IsEmpty())
-				sIdentifier = LookupHresultSystemIdentifier(nResult);
+			if(!LookupSystemIdentifier(nResult, sIdentifier))
+				 LookupHresultSystemIdentifier(nResult, sIdentifier);
 			if(!sMessage.IsEmpty() || !sIdentifier.IsEmpty())
 				sTitle = _T("System");
 		}
@@ -466,10 +506,11 @@ public:
 		_pAtlModule->Lock();
 		#if defined(_DEBUG)
 		//Process(AtlFormatString(_T("%d"), 0x80040227)); // VFW_E_WRONG_STATE
-		Process(_T("0xC00D36B9")); // MF_E_NO_MORE_TYPES)
+		//Process(_T("0xC00D36B9")); // MF_E_NO_MORE_TYPES)
 		//Process(AtlFormatString(_T("0x%x"), HRESULT_FROM_WIN32(WSAEADDRINUSE))); // WSAEADDRINUSE
 		//Process(AtlFormatString(_T("0x%x"), HRESULT_FROM_WIN32(ERROR_WINHTTP_AUTODETECTION_FAILED))); // ERROR_WINHTTP_AUTODETECTION_FAILED
-		Process(_T("0x80290208L"));
+		//Process(_T("0x80290208L"));
+		Process(_T("10053"));
 		#endif // defined(_DEBUG)
 		return TRUE;
 	}
