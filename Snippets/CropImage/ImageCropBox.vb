@@ -123,13 +123,13 @@ Public Class ImageCropBox
         DrawSpot(e.Graphics, ClientSelectionRectangle.Left, ClientSelectionRectangle.Bottom)
         DrawSpot(e.Graphics, ClientSelectionRectangle.Right, ClientSelectionRectangle.Bottom)
     End Sub
-    Private Function SourcePointFromPoint(Position As Point)
+    Private Function SourcePointFromPoint(Position As Point) As Point
         Dim SourcePosition As Point
         SourcePosition.X = Math.Round((Position.X - ClientImageOrigin.X) * Image.Width / ClientImageExtent.Width)
         SourcePosition.Y = Math.Round((Position.Y - ClientImageOrigin.Y) * Image.Height / ClientImageExtent.Height)
         SourcePointFromPoint = SourcePosition
     End Function
-    Private Function PointFromSourcePoint(SourcePosition As Point)
+    Private Function PointFromSourcePoint(SourcePosition As Point) As Point
         Dim Position As Point
         Position.X = ClientImageOrigin.X + Math.Round(SourcePosition.X * ClientImageExtent.Width / Image.Width)
         Position.Y = ClientImageOrigin.Y + Math.Round(SourcePosition.Y * ClientImageExtent.Height / Image.Height)
@@ -178,7 +178,7 @@ Public Class ImageCropBox
                     SourcePosition = SourcePointFromPoint(Position)
                     SelectionRectangle = Rectangle.FromLTRB(SelectionRectangle.Left, SelectionRectangle.Top, SourcePosition.X, SourcePosition.Y)
                 Case 4 ' Move
-                    Dim Move As Size = e.Location - MouseDownPosition
+                    Dim Move As Size = SourcePointFromPoint(e.Location) - SourcePointFromPoint(MouseDownPosition)
                     Dim PreSelection As Rectangle = MouseDownSelection
                     PreSelection.Offset(Move)
                     PreSelection.Offset(Math.Max(0, -PreSelection.Left), Math.Max(0, -PreSelection.Top))
