@@ -384,6 +384,36 @@ public:
 			_W(Shell_NotifyIcon(NIM_MODIFY, &m_NotifyIconData));
 		}
 	}
+	static BOOL IsDecimal(TCHAR nCharacter) throw()
+	{
+		return _tcschr(_T("0123456789"), nCharacter) != NULL;
+	}
+	static BOOL IsDecimal(const TCHAR* pszCharacters, SIZE_T nCount) throw()
+	{
+		for(SIZE_T nIndex = 0; nIndex < nCount; nIndex++)
+			if(!IsDecimal(pszCharacters[nIndex]))
+				return FALSE;
+		return TRUE;
+	}
+	static BOOL IsDecimal(const TCHAR* pszCharacters) throw()
+	{
+		return IsDecimal(pszCharacters, _tcslen(pszCharacters));
+	}
+	static BOOL IsHexadecimal(TCHAR nCharacter) throw()
+	{
+		return _tcschr(_T("0123456789ABCDEFabcdef"), nCharacter) != NULL;
+	}
+	static BOOL IsHexadecimal(const TCHAR* pszCharacters, SIZE_T nCount) throw()
+	{
+		for(SIZE_T nIndex = 0; nIndex < nCount; nIndex++)
+			if(!IsHexadecimal(pszCharacters[nIndex]))
+				return FALSE;
+		return TRUE;
+	}
+	static BOOL IsHexadecimal(const TCHAR* pszCharacters) throw()
+	{
+		return IsHexadecimal(pszCharacters, _tcslen(pszCharacters));
+	}
 	BOOL Process(LPCTSTR pszText)
 	{
 		#pragma region Parse
@@ -391,29 +421,51 @@ public:
 			return FALSE;
 		CString sText = pszText;
 		sText.Trim();
+		#pragma region Delete Trailing L (as in 0x00000000L)
 		if(!sText.IsEmpty() && _tcschr(_T("Ll"), sText[sText.GetLength() - 1]))
 			sText.Delete(sText.GetLength() - 1);
+		#pragma endregion 
+		#pragma region Unquote Single Quote
+		if(sText.GetLength() > 2 && sText[0] == _T('\'') && sText[sText.GetLength() - 1] == _T('\''))
+		{
+			sText = sText.Mid(1, sText.GetLength() - 2);
+			sText.Trim();
+		}
+		#pragma endregion 
 		if(sText.IsEmpty())
 			return FALSE;
 		LONGLONG nLongLongResult;
+		#pragma region Hexadecimal
 		if(_tcsnicmp(sText, _T("0x"), 2) == 0)
 		{
-			SIZE_T nIndex = 2;
-			for(; nIndex < (SIZE_T) sText.GetLength(); nIndex++)
-				if(!_tcschr(_T("0123456789ABCDEFabcdef"), sText[nIndex]))
-					return FALSE;
+			if(!IsHexadecimal((LPCTSTR) sText + 2))
+				return FALSE;
 			if(!StrToInt64Ex(sText, STIF_SUPPORT_HEX, &nLongLongResult))
 				return FALSE; 
 		} else
+		#pragma endregion 
+		#pragma region Integer
 		{
 			SIZE_T nIndex = 0;
 			if(sText[0] == _T('-'))
 				nIndex++;
-			for(; nIndex < (SIZE_T) sText.GetLength(); nIndex++)
-				if(!_tcschr(_T("0123456789"), sText[nIndex]))
+			if(!IsDecimal((LPCTSTR) sText + nIndex))
+			{
+				#pragma region Eight Characater Long Hexadecimal without Prefix
+				if(sText.GetLength() == nIndex + 8 && IsHexadecimal((LPCTSTR) sText + nIndex))
+				{
+					sText.Insert(0, _T("0x"));
+					if(!StrToInt64Ex(sText, STIF_SUPPORT_HEX, &nLongLongResult))
+						return FALSE; 
+				} else
+				#pragma endregion 
 					return FALSE;
-			nLongLongResult = _ttoi64(sText);
+			} else
+				nLongLongResult = _ttoi64(sText);
+			if(nIndex)
+				nLongLongResult = -nLongLongResult;
 		}
+		#pragma endregion 
 		const LONG nHighLongLongResult = (LONG) (nLongLongResult >> 32);
 		if(!nLongLongResult || nHighLongLongResult > 0 || nHighLongLongResult < -1)
 			return FALSE;
