@@ -290,6 +290,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="WmIdentifier.inc" />
     <None Include="D2dIdentifier.inc">
       <FileType>CppHeader</FileType>
     </None>

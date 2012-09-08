@@ -8,6 +8,7 @@
 
 #include <vfwmsgs.h>
 #include <asferr.h> // FACILITY_NS
+#include <nserror.h> // FACILITY_NS
 #include <mferror.h> // FACILITY_MF
 #include <wmcodecdsp.h> // FACILITY_WMAAECMA
 #include <ddraw.h> // _FACD3D
@@ -113,6 +114,22 @@ private:
 		if(psMessage)
 			*psMessage = sMessage;
 		return TRUE;
+	}
+	static BOOL LookupWmIdentifier(HRESULT nValue, CString& sIdentifier)
+	{
+		static const struct { HRESULT nValue; LPCSTR pszName; } g_pMap[] = 
+		{
+			#define A(x) { x, #x },
+			#include "WmIdentifier.inc"
+			#undef A
+		};
+		for(SIZE_T nIndex = 0; nIndex < DIM(g_pMap); nIndex++)
+			if(g_pMap[nIndex].nValue == nValue)
+			{
+				sIdentifier = CString(g_pMap[nIndex].pszName);
+				return TRUE;
+			}
+		return FALSE;
 	}
 	static BOOL IsMfResult(HRESULT nResult, CString* psMessage = NULL)
 	{
@@ -479,8 +496,10 @@ public:
 			LookupQuartzIdentifier(nResult, sIdentifier);
 			sTitle = _T("DirectShow");
 		} else if(IsWmResult(nResult, &sMessage))
+		{
+			LookupWmIdentifier(nResult, sIdentifier);
 			sTitle = _T("Windows Media");
-		else if(IsMfResult(nResult, &sMessage) || LookupMfIdentifier(nResult, sIdentifier))
+		} else if(IsMfResult(nResult, &sMessage) || LookupMfIdentifier(nResult, sIdentifier))
 			sTitle = _T("Media Foundation");
 		////////////////////////////////////////////////////
 		// NOTE: These are perhaps useless in Windows 7, but I am under impression they are helpful in earlier systems
