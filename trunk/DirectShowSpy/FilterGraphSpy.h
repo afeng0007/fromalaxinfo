@@ -786,7 +786,7 @@ public:
 	}
 	STDMETHOD(GetState)(LONG nTimeout, OAFilterState* pState) throw()
 	{
-		_Z4(atlTraceCOM, 4, _T("nTimeout %d\n"), nTimeout);
+		_Z5(atlTraceCOM, 5, _T("nTimeout %d\n"), nTimeout);
 		return m_pInnerMediaControl->GetState(nTimeout, pState);
 	}
 	STDMETHOD(RenderFile)(BSTR sFileName) throw()
