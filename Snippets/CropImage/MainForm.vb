@@ -10,6 +10,7 @@ Public Class MainForm
         DefaultText = Text
         Box = New ImageCropBox
         Box.MinimalSelectionSize = New Size(320, 240)
+        Box.PreserveAspectRatio = True
         Box.Image = Bitmap.FromFile("D:\Projects\Alax.Info\Repository-Public\Snippets\CropImage\20120821_185619.jpg")
         Controls.Add(Box)
         Box.Dock = DockStyle.Fill
