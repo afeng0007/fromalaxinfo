@@ -9,9 +9,9 @@ Public Class MainForm
     Private Sub MainForm_Load(sender As System.Object, e As System.EventArgs) Handles MyBase.Load
         DefaultText = Text
         Box = New ImageCropBox
-        Box.MinimalSelectionSize = New Size(320, 240)
+        Box.MinimalSelectionSize = New Size(80, 60)
         Box.PreserveAspectRatio = True
-        Box.Image = Bitmap.FromFile("D:\Projects\Alax.Info\Repository-Public\Snippets\CropImage\20120821_185619.jpg")
+        Box.Image = Bitmap.FromFile("D:\Projects\Alax.Info\Repository-Public\Snippets\CropImage\20120821_185619 (720x480).jpg")
         Controls.Add(Box)
         Box.Dock = DockStyle.Fill
         Dim CurrentScreen As Screen = Screen.FromControl(Me)
