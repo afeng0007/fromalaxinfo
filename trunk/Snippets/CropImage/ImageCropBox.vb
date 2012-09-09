@@ -34,6 +34,7 @@ Public Class ImageCropBox
     End Sub
 
     Private Function ApplyMinimalSelection(ByVal SelectionRectangle As Rectangle) As Rectangle
+        Dim MinimalSelectionSize = EffectiveMinimalSelectionSize
         If SelectionRectangle.Width < MinimalSelectionSize.Width Then
             SelectionRectangle.Width = MinimalSelectionSize.Width
             If _Image IsNot Nothing AndAlso SelectionRectangle.Right > _Image.Width Then SelectionRectangle.X = Math.Max(0, _Image.Width - SelectionRectangle.Width)
@@ -79,7 +80,7 @@ Public Class ImageCropBox
         Set(value As Bitmap)
             _Image = value
             If _Image IsNot Nothing Then
-                SelectionRectangle = New Rectangle(value.Width * 1 / 16, value.Height * 1 / 16, value.Width * 14 / 16, value.Height * 14 / 160)
+                SelectionRectangle = New Rectangle(value.Width * 1 / 16, value.Height * 1 / 16, value.Width * 14 / 16, value.Height * 14 / 16)
                 'SelectionRectangle = New Rectangle(0, 0, value.Width, value.Height)
                 _FadeImage = _Image.Clone
                 Dim FadeImageGraphics As Graphics = Graphics.FromImage(_FadeImage)
@@ -101,6 +102,16 @@ Public Class ImageCropBox
             _MinimalSelectionSize = value
             ' TODO: Update SelectionRectangle
         End Set
+    End Property
+    Private ReadOnly Property EffectiveMinimalSelectionSize As Size
+        Get
+            EffectiveMinimalSelectionSize = MinimalSelectionSize
+            If MinimalSelectionSize.Width > 0 And MinimalSelectionSize.Height > 0 And PreserveAspectRatio And Image IsNot Nothing Then
+                Dim Position = New Rectangle(0, 0, MinimalSelectionSize.Width, MinimalSelectionSize.Height)
+                Dim AdjustedPositon As Rectangle
+                If ApplyAspectRatio(Position, AdjustedPositon) Then EffectiveMinimalSelectionSize = AdjustedPositon.Size
+            End If
+        End Get
     End Property
     Public Property SelectionRectangle As Rectangle
         Get
@@ -203,8 +214,9 @@ Public Class ImageCropBox
     Private Sub ImageCropBox_MouseMove(sender As Object, e As System.Windows.Forms.MouseEventArgs) Handles Me.MouseMove
         Dim Position As Point = e.Location, SourcePosition As Point
         If Capture Then
+            Dim MinimalSelectionSize = EffectiveMinimalSelectionSize
             Dim P1 As Point, P2 As Point
-            Dim NewSelectionRectangle As Rectangle, NewAdjustedSelectionRectangle As Rectangle
+            Dim NewSelectionRectangle As Rectangle
             Select Case DragSpotIndex
                 Case 0 ' Left Top
                     P1 = ClientImageOrigin
@@ -212,48 +224,36 @@ Public Class ImageCropBox
                     ApplyPointConstraint(Position, P1, P2)
                     SourcePosition = SourcePointFromPoint(Position)
                     NewSelectionRectangle = Rectangle.FromLTRB(SourcePosition.X, SourcePosition.Y, SelectionRectangle.Right, SelectionRectangle.Bottom)
-                    If ApplyAspectRatio(NewSelectionRectangle, NewAdjustedSelectionRectangle) Then
-                        NewAdjustedSelectionRectangle.Offset(NewSelectionRectangle.Width - NewAdjustedSelectionRectangle.Width, NewSelectionRectangle.Height - NewAdjustedSelectionRectangle.Height)
-                        SelectionRectangle = NewAdjustedSelectionRectangle
-                    Else
-                        SelectionRectangle = NewSelectionRectangle
-                    End If
+                    NewSelectionRectangle = ApplyMinimalSelection(ApplyAspectRatioAndCenterRectangle(NewSelectionRectangle))
+                    NewSelectionRectangle.Offset(SelectionRectangle.Right - NewSelectionRectangle.Right, SelectionRectangle.Bottom - NewSelectionRectangle.Bottom)
+                    SelectionRectangle = NewSelectionRectangle
                 Case 1 ' Right Top
                     P1 = New Point(ClientImageOrigin.X + ClientImageExtent.Width, ClientImageOrigin.Y)
                     P2 = PointFromSourcePoint(New Point(SelectionRectangle.Left + MinimalSelectionSize.Width, SelectionRectangle.Bottom - MinimalSelectionSize.Height))
                     ApplyPointConstraint(Position, New Point(P2.X, P1.Y), New Point(P1.X, P2.Y))
                     SourcePosition = SourcePointFromPoint(Position)
                     NewSelectionRectangle = Rectangle.FromLTRB(SelectionRectangle.Left, SourcePosition.Y, SourcePosition.X, SelectionRectangle.Bottom)
-                    If ApplyAspectRatio(NewSelectionRectangle, NewAdjustedSelectionRectangle) Then
-                        NewAdjustedSelectionRectangle.Offset(0, NewSelectionRectangle.Height - NewAdjustedSelectionRectangle.Height)
-                        SelectionRectangle = NewAdjustedSelectionRectangle
-                    Else
-                        SelectionRectangle = NewSelectionRectangle
-                    End If
+                    NewSelectionRectangle = ApplyMinimalSelection(ApplyAspectRatioAndCenterRectangle(NewSelectionRectangle))
+                    NewSelectionRectangle.Offset(SelectionRectangle.Left - NewSelectionRectangle.Left, SelectionRectangle.Bottom - NewSelectionRectangle.Bottom)
+                    SelectionRectangle = NewSelectionRectangle
                 Case 2 ' Left Bottom
                     P1 = New Point(ClientImageOrigin.X, ClientImageOrigin.Y + ClientImageExtent.Height)
                     P2 = PointFromSourcePoint(New Point(SelectionRectangle.Right - MinimalSelectionSize.Width, SelectionRectangle.Top + MinimalSelectionSize.Height))
                     ApplyPointConstraint(Position, New Point(P1.X, P2.Y), New Point(P2.X, P1.Y))
                     SourcePosition = SourcePointFromPoint(Position)
                     NewSelectionRectangle = Rectangle.FromLTRB(SourcePosition.X, SelectionRectangle.Top, SelectionRectangle.Right, SourcePosition.Y)
-                    If ApplyAspectRatio(NewSelectionRectangle, NewAdjustedSelectionRectangle) Then
-                        NewAdjustedSelectionRectangle.Offset(NewSelectionRectangle.Width - NewAdjustedSelectionRectangle.Width, 0)
-                        SelectionRectangle = NewAdjustedSelectionRectangle
-                    Else
-                        SelectionRectangle = NewSelectionRectangle
-                    End If
+                    NewSelectionRectangle = ApplyMinimalSelection(ApplyAspectRatioAndCenterRectangle(NewSelectionRectangle))
+                    NewSelectionRectangle.Offset(SelectionRectangle.Right - NewSelectionRectangle.Right, SelectionRectangle.Top - NewSelectionRectangle.Top)
+                    SelectionRectangle = NewSelectionRectangle
                 Case 3 ' Right Bottom
                     P1 = PointFromSourcePoint(New Point(SelectionRectangle.Left + MinimalSelectionSize.Width, SelectionRectangle.Top + MinimalSelectionSize.Height))
                     P2 = ClientImageOrigin + ClientImageExtent
                     ApplyPointConstraint(Position, P1, P2)
                     SourcePosition = SourcePointFromPoint(Position)
                     NewSelectionRectangle = Rectangle.FromLTRB(SelectionRectangle.Left, SelectionRectangle.Top, SourcePosition.X, SourcePosition.Y)
-                    If ApplyAspectRatio(NewSelectionRectangle, NewAdjustedSelectionRectangle) Then
-                        'NewAdjustedSelectionRectangle.Offset(0, 0)
-                        SelectionRectangle = NewAdjustedSelectionRectangle
-                    Else
-                        SelectionRectangle = NewSelectionRectangle
-                    End If
+                    NewSelectionRectangle = ApplyMinimalSelection(ApplyAspectRatioAndCenterRectangle(NewSelectionRectangle))
+                    NewSelectionRectangle.Offset(SelectionRectangle.Left - NewSelectionRectangle.Left, SelectionRectangle.Top - NewSelectionRectangle.Top)
+                    SelectionRectangle = NewSelectionRectangle
                 Case 4 ' Move
                     Dim Move As Size = SourcePointFromPoint(e.Location) - SourcePointFromPoint(MouseDownPosition)
                     Dim PreSelection As Rectangle = MouseDownSelection
