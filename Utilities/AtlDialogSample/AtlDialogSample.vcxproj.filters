@@ -53,6 +53,9 @@
     <None Include="AtlDialogSample.rgs">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="6uvaguzj.bmp">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="AtlDialogSample.idl">
