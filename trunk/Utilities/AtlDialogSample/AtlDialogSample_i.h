@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0555 */
-/* at Mon Jun 25 21:16:17 2012
+/* at Mon Sep 10 23:56:05 2012
  */
 /* Compiler settings for AtlDialogSample.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 

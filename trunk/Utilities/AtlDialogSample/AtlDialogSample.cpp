@@ -22,9 +22,14 @@ public:
 
 BEGIN_MSG_MAP(CMainDialog)
 	MESSAGE_HANDLER(WM_INITDIALOG, OnInitDialog)
+	MESSAGE_HANDLER(WM_DESTROY, OnDestroy)
 	COMMAND_ID_HANDLER(IDCANCEL, OnCommand)
 	COMMAND_ID_HANDLER(IDOK, OnCommand)
 END_MSG_MAP()
+
+private:
+	CWindow m_PictureStatic;
+	HBITMAP m_hPictureBitmap;
 
 public:
 // CMainDialog
@@ -32,7 +37,16 @@ public:
 // Window Message Handlers
 	LRESULT OnInitDialog(UINT nMessage, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
 	{
+		m_PictureStatic = GetDlgItem(IDC_PICTURE);
+		m_hPictureBitmap = LoadBitmap(_AtlBaseModule.GetResourceInstance(), MAKEINTRESOURCE(IDB_PICTURE));
+		ATLASSERT(m_hPictureBitmap);
+		m_PictureStatic.SendMessage(STM_SETIMAGE, IMAGE_BITMAP, (LPARAM) m_hPictureBitmap);
 		ATLVERIFY(CenterWindow());
+		return 0;
+	}
+	LRESULT OnDestroy(UINT nMessage, WPARAM wParam, LPARAM lParam, BOOL& bHandled)
+	{
+		ATLVERIFY(DeleteObject(m_hPictureBitmap));
 		return 0;
 	}
 	LRESULT OnCommand(UINT, INT nIdentifier, HWND, BOOL& bHandled)

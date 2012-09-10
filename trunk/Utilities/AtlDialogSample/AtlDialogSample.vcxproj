@@ -140,6 +140,7 @@
     <ResourceCompile Include="AtlDialogSample.rc" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="6uvaguzj.bmp" />
     <None Include="AtlDialogSample.rgs" />
     <None Include="ReadMe.txt" />
   </ItemGroup>
