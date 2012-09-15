@@ -1,0 +1,26 @@
+HKCR
+{
+	AlaxInfo.JsObjectDispatch.Foo.1 = s 'Foo Class'
+	{
+		CLSID = s '{CC9F5D79-1C43-423A-AA22-E2F00C33C970}'
+	}
+	AlaxInfo.JsObjectDispatch.Foo = s 'Foo Class'
+	{		
+		CurVer = s 'AlaxInfo.JsObjectDispatch.Foo.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {CC9F5D79-1C43-423A-AA22-E2F00C33C970} = s 'Foo Class'
+		{
+			ProgID = s 'AlaxInfo.JsObjectDispatch.Foo.1'
+			VersionIndependentProgID = s 'AlaxInfo.JsObjectDispatch.Foo'
+			ForceRemove Programmable
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Apartment'
+			}
+			TypeLib = s '{A8F549B9-EAA9-47DD-B691-DB42D8FEF956}'
+			Version = s '1.0'
+		}
+	}
+}
