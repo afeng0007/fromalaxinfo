@@ -499,8 +499,11 @@ public:
 		{
 			LookupWmIdentifier(nResult, sIdentifier);
 			sTitle = _T("Windows Media");
-		} else if(IsMfResult(nResult, &sMessage) || LookupMfIdentifier(nResult, sIdentifier))
+		} else if(IsMfResult(nResult, &sMessage))
+		{
+			LookupMfIdentifier(nResult, sIdentifier);
 			sTitle = _T("Media Foundation");
+		}
 		////////////////////////////////////////////////////
 		// NOTE: These are perhaps useless in Windows 7, but I am under impression they are helpful in earlier systems
 		else if(IsWs2Result(nResult, &sMessage))
@@ -581,7 +584,7 @@ public:
 		//Process(AtlFormatString(_T("0x%x"), HRESULT_FROM_WIN32(WSAEADDRINUSE))); // WSAEADDRINUSE
 		//Process(AtlFormatString(_T("0x%x"), HRESULT_FROM_WIN32(ERROR_WINHTTP_AUTODETECTION_FAILED))); // ERROR_WINHTTP_AUTODETECTION_FAILED
 		//Process(_T("0x80290208L"));
-		Process(_T("10053"));
+		Process(_T("3222091460"));
 		#endif // defined(_DEBUG)
 		return TRUE;
 	}
