@@ -6,7 +6,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0555 */
-/* at Thu Sep 06 01:20:21 2012
+/* at Sun Sep 16 13:53:37 2012
  */
 /* Compiler settings for ShowHresult.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
