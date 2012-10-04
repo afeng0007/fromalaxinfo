@@ -478,7 +478,7 @@ public:
 				#pragma endregion 
 					return FALSE;
 			} else
-				nLongLongResult = _ttoi64(sText);
+				nLongLongResult = _ttoi64((LPCTSTR) sText + nIndex);
 			if(nIndex)
 				nLongLongResult = -nLongLongResult;
 		}
@@ -584,7 +584,7 @@ public:
 		//Process(AtlFormatString(_T("0x%x"), HRESULT_FROM_WIN32(WSAEADDRINUSE))); // WSAEADDRINUSE
 		//Process(AtlFormatString(_T("0x%x"), HRESULT_FROM_WIN32(ERROR_WINHTTP_AUTODETECTION_FAILED))); // ERROR_WINHTTP_AUTODETECTION_FAILED
 		//Process(_T("0x80290208L"));
-		Process(_T("3222091460"));
+		Process(_T("-2147312566"));
 		#endif // defined(_DEBUG)
 		return TRUE;
 	}
