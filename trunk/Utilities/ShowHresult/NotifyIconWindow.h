@@ -240,13 +240,17 @@ private:
 			}
 		return FALSE;
 	}
-	static BOOL IsD3dResult(HRESULT nResult, CString* psMessage = NULL)
+	static BOOL IsD3dResult(HRESULT nResult, CString* psMessage = NULL, CString* psIdentifier = NULL)
 	{
 		if(HRESULT_FACILITY(nResult) != _FACD3D)
 			return FALSE;
 		psMessage;
 		CString sIdentifier;
-		return LookupD3dIdentifier(nResult, sIdentifier);
+		if(!LookupD3dIdentifier(nResult, sIdentifier))
+			return FALSE;
+		if(psIdentifier)
+			*psIdentifier = sIdentifier;
+		return TRUE;
 	}
 	static BOOL LookupD3dIdentifier(HRESULT nValue, CString& sIdentifier)
 	{
@@ -264,13 +268,17 @@ private:
 			}
 		return FALSE;
 	}
-	static BOOL IsD2dResult(HRESULT nResult, CString* psMessage = NULL)
+	static BOOL IsD2dResult(HRESULT nResult, CString* psMessage = NULL, CString* psIdentifier = NULL)
 	{
 		if(HRESULT_FACILITY(nResult) != FACILITY_D2D)
 			return FALSE;
 		psMessage;
 		CString sIdentifier;
-		return LookupD2dIdentifier(nResult, sIdentifier);
+		if(!LookupD2dIdentifier(nResult, sIdentifier))
+			return FALSE;
+		if(psIdentifier)
+			*psIdentifier = sIdentifier;
+		return TRUE;
 	}
 	static BOOL LookupD2dIdentifier(HRESULT nValue, CString& sIdentifier)
 	{
@@ -288,13 +296,17 @@ private:
 			}
 		return FALSE;
 	}
-	static BOOL IsWicResult(HRESULT nResult, CString* psMessage = NULL)
+	static BOOL IsWicResult(HRESULT nResult, CString* psMessage = NULL, CString* psIdentifier = NULL)
 	{
 		if(HRESULT_FACILITY(nResult) != FACILITY_WINCODEC_ERR)
 			return FALSE;
 		psMessage;
 		CString sIdentifier;
-		return LookupWicIdentifier(nResult, sIdentifier);
+		if(!LookupWicIdentifier(nResult, sIdentifier))
+			return FALSE;
+		if(psIdentifier)
+			*psIdentifier = sIdentifier;
+		return TRUE;
 	}
 	static BOOL LookupWicIdentifier(HRESULT nValue, CString& sIdentifier)
 	{
@@ -312,13 +324,17 @@ private:
 			}
 		return FALSE;
 	}
-	static BOOL IsWiaResult(HRESULT nResult, CString* psMessage = NULL)
+	static BOOL IsWiaResult(HRESULT nResult, CString* psMessage = NULL, CString* psIdentifier = NULL)
 	{
 		if(HRESULT_FACILITY(nResult) != FACILITY_WIA)
 			return FALSE;
 		psMessage;
 		CString sIdentifier;
-		return LookupWiaIdentifier(nResult, sIdentifier);
+		if(!LookupWiaIdentifier(nResult, sIdentifier))
+			return FALSE;
+		if(psIdentifier)
+			*psIdentifier = sIdentifier;
+		return TRUE;
 	}
 	static BOOL LookupWiaIdentifier(HRESULT nValue, CString& sIdentifier)
 	{
@@ -336,13 +352,17 @@ private:
 			}
 		return FALSE;
 	}
-	static BOOL IsUrtResult(HRESULT nResult, CString* psMessage = NULL)
+	static BOOL IsUrtResult(HRESULT nResult, CString* psMessage = NULL, CString* psIdentifier = NULL)
 	{
 		if(HRESULT_FACILITY(nResult) != FACILITY_URT)
 			return FALSE;
 		psMessage;
 		CString sIdentifier;
-		return LookupUrtIdentifier(nResult, sIdentifier);
+		if(!LookupUrtIdentifier(nResult, sIdentifier))
+			return FALSE;
+		if(psIdentifier)
+			*psIdentifier = sIdentifier;
+		return TRUE;
 	}
 	static BOOL LookupUrtIdentifier(HRESULT nValue, CString& sIdentifier)
 	{
@@ -513,15 +533,15 @@ public:
 		else if(IsWinInetResult(nResult, &sMessage))
 			sTitle = _T("WinInet");
 		////////////////////////////////////////////////////
-		else if(IsD3dResult(nResult, &sMessage) || LookupD3dIdentifier(nResult, sIdentifier))
+		else if(IsD3dResult(nResult, &sMessage, &sIdentifier) || LookupD3dIdentifier(nResult, sIdentifier))
 			sTitle = _T("DirectDraw/Direct3D");
-		else if(IsD2dResult(nResult, &sMessage) || LookupD2dIdentifier(nResult, sIdentifier))
+		else if(IsD2dResult(nResult, &sMessage, &sIdentifier) || LookupD2dIdentifier(nResult, sIdentifier))
 			sTitle = _T("Direct2D");
-		else if(IsWicResult(nResult, &sMessage) || LookupWicIdentifier(nResult, sIdentifier))
+		else if(IsWicResult(nResult, &sMessage, &sIdentifier) || LookupWicIdentifier(nResult, sIdentifier))
 			sTitle = _T("WinCodec");
-		else if(IsWiaResult(nResult, &sMessage) || LookupWiaIdentifier(nResult, sIdentifier))
+		else if(IsWiaResult(nResult, &sMessage, &sIdentifier) || LookupWiaIdentifier(nResult, sIdentifier))
 			sTitle = _T("WIA");
-		else if(IsUrtResult(nResult, &sMessage) || LookupUrtIdentifier(nResult, sIdentifier))
+		else if(IsUrtResult(nResult, &sMessage, &sIdentifier) || LookupUrtIdentifier(nResult, sIdentifier))
 			sTitle = _T(".NET");
 		else 
 		{
@@ -583,8 +603,8 @@ public:
 		//Process(_T("0xC00D36B9")); // MF_E_NO_MORE_TYPES)
 		//Process(AtlFormatString(_T("0x%x"), HRESULT_FROM_WIN32(WSAEADDRINUSE))); // WSAEADDRINUSE
 		//Process(AtlFormatString(_T("0x%x"), HRESULT_FROM_WIN32(ERROR_WINHTTP_AUTODETECTION_FAILED))); // ERROR_WINHTTP_AUTODETECTION_FAILED
-		//Process(_T("0x80290208L"));
-		Process(_T("-2147312566"));
+		Process(_T("0x80131029L"));
+		//Process(_T("-2147312566"));
 		#endif // defined(_DEBUG)
 		return TRUE;
 	}

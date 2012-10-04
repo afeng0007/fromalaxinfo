@@ -290,7 +290,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="WmIdentifier.inc" />
+    <None Include="WmIdentifier.inc">
+      <FileType>Document</FileType>
+    </None>
     <None Include="D2dIdentifier.inc">
       <FileType>CppHeader</FileType>
     </None>
