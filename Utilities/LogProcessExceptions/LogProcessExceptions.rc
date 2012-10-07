@@ -49,6 +49,13 @@ END
 
 /////////////////////////////////////////////////////////////////////////////
 //
+// TYPELIB
+//
+
+IDR_EMAILTOOLS          TYPELIB                 "..\\..\\..\\Repository-Private\\Utilities\\EmailTools\\_Bin\\Win32\\Release\\EmailTools\\EmailTools.tlb"
+
+/////////////////////////////////////////////////////////////////////////////
+//
 // Icon
 //
 
@@ -124,7 +131,7 @@ IDD_MAIN_MINIDUMPTYPE DIALOGEX 0, 0, 317, 144
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_SYSMENU
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    LTEXT           "Please choose minidump type using controls below. To proceed and start/continue debug session, click Next.",IDC_STATIC,6,6,306,18
+    LTEXT           "Please choose minidump type using controls below. To proceed to exception filter rules, click Next.",IDC_STATIC,6,6,306,18
     CONTROL         "Data Segments ",IDC_MAIN_MINIDUMPTYPE_DATASEGMENTS,
                     "Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,30,67,10
     CONTROL         "Full Memory ",IDC_MAIN_MINIDUMPTYPE_FULLMEMORY,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,42,56,10
@@ -166,10 +173,44 @@ IDD_MAIN_OPERATION DIALOGEX 0, 0, 317, 144
 STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_SYSMENU
 FONT 8, "MS Shell Dlg", 400, 0, 0x1
 BEGIN
-    LTEXT           "Debug session is in progress. To stop debugging, click Next. To review options without stopping debugging, click Back.",IDC_STATIC,6,6,306,18
-    EDITTEXT        IDC_MAIN_OPERATION_LOG,6,30,306,96,ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_READONLY | WS_VSCROLL | WS_HSCROLL
+    LTEXT           "Debug session is in progress. To stop debugging, click Next. To review options without stopping debugging, click Back.",IDC_STATIC,6,0,306,18
+    EDITTEXT        IDC_MAIN_OPERATION_LOG,6,24,306,102,ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_READONLY | WS_VSCROLL | WS_HSCROLL
     LTEXT           "<A>Write Minidump File Now</A>",IDC_MAIN_OPERATION_WRITEMINIDUMPNOW,6,132,112,8
     LTEXT           "<A>Open Minidump File Directory</A>",IDC_MAIN_OPERATION_OPENMINIDUMPFILEDIRECTORY,108,132,127,8,WS_TABSTOP
+END
+
+IDD_MAIN_FILTER DIALOGEX 0, 0, 317, 144
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_SYSMENU
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Use controls below to provide rules that define whether an exception to occur should be skipped, or a minidump file needs to be created. To proceed to configuring email notifications, click Next.",IDC_STATIC,6,0,306,24
+    EDITTEXT        IDC_MAIN_FILTER_TEXT,6,30,306,96,ES_MULTILINE | ES_AUTOVSCROLL | ES_AUTOHSCROLL | ES_WANTRETURN | WS_VSCROLL | WS_HSCROLL
+    LTEXT           "<A>Reset to Default</A>",IDC_MAIN_FILTER_RESET,6,132,90,8
+    LTEXT           "<A HREF=""http://alax.info/blog/1409"">Help on Filters</A>",IDC_MAIN_FILTER_HELP,114,132,186,8
+END
+
+IDD_MAIN_EMAIL DIALOGEX 0, 0, 317, 144
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD | WS_SYSMENU
+FONT 8, "MS Shell Dlg", 400, 0, 0x1
+BEGIN
+    LTEXT           "Use controls below to enable email notification on exception occurred. To proceed and start/continue debug session, click Next.",IDC_STATIC,6,0,306,18
+    CONTROL         "&Send an email on occurred and logged exception",IDC_MAIN_EMAIL_ENABLED,
+                    "Button",BS_AUTOCHECKBOX | WS_TABSTOP,6,24,300,10
+    LTEXT           "&From: ",IDC_STATIC,12,44,22,8
+    EDITTEXT        IDC_MAIN_EMAIL_FROM,36,42,90,14,ES_AUTOHSCROLL
+    LTEXT           "&To: ",IDC_STATIC,138,44,14,8
+    EDITTEXT        IDC_MAIN_EMAIL_TO,156,42,150,14,ES_AUTOHSCROLL
+    LTEXT           "&Method: ",IDC_STATIC,12,62,30,8
+    COMBOBOX        IDC_MAIN_EMAIL_METHOD,48,60,258,90,CBS_DROPDOWNLIST | WS_VSCROLL | WS_TABSTOP
+    LTEXT           "SMTP S&erver Host and Port: ",IDC_STATIC,24,80,92,8
+    EDITTEXT        IDC_MAIN_EMAIL_HOST,126,78,120,14,ES_AUTOHSCROLL
+    LTEXT           "&Username: ",IDC_STATIC,24,98,38,8
+    EDITTEXT        IDC_MAIN_EMAIL_USERNAME,66,96,90,14,ES_AUTOHSCROLL
+    LTEXT           "P&assword: ",IDC_STATIC,168,98,36,8
+    EDITTEXT        IDC_MAIN_EMAIL_PASSWORD,204,96,90,14,ES_PASSWORD | ES_AUTOHSCROLL
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,12,114,300,20
+    LTEXT           "Ma&ximal Dump File Size to Attach, MB: ",IDC_STATIC,12,122,124,8
+    EDITTEXT        IDC_MAIN_EMAIL_MAXIMALATTACHMENTSIZE,144,120,60,14,ES_AUTOHSCROLL
 END
 
 
@@ -204,6 +245,14 @@ BEGIN
     IDD_MAIN_OPERATION, DIALOG
     BEGIN
     END
+
+    IDD_MAIN_FILTER, DIALOG
+    BEGIN
+    END
+
+    IDD_MAIN_EMAIL, DIALOG
+    BEGIN
+    END
 END
 #endif    // APSTUDIO_INVOKED
 
@@ -214,7 +263,7 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION  1, 0, 0, 226
+ FILEVERSION  1, 0, 0, 269
  PRODUCTVERSION 1,0,0,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
@@ -233,7 +282,7 @@ BEGIN
             VALUE "CompanyName", "Alax.Info"
             VALUE "Created By", "Roman Ryltsov <roman@alax.info>"
             VALUE "FileDescription", "Log Process Exceptions Utility"
-            VALUE "FileVersion",  "1, 0, 0, 226\0"
+            VALUE "FileVersion",  "1, 0, 0, 269\0"
             VALUE "InternalName", "LogProcessExceptions"
             VALUE "LegalCopyright", "Copyright © Alax.Info, Roman Ryltsov, 2008-2012"
             VALUE "OriginalFilename", "LogProcessExceptions.exe"
@@ -360,7 +409,23 @@ END
 
 STRINGTABLE
 BEGIN
+    IDD_MAIN_FILTER         "Exception Filter\nDefine rules to filter out exceptions of interest"
+END
+
+STRINGTABLE
+BEGIN
+    IDD_MAIN_EMAIL          "Email Notification\nConfigure email notifications for detected exceptions"
+END
+
+STRINGTABLE
+BEGIN
+    IDC_MAIN_EMAIL_METHOD   "Google Mail (SMTP, TLS Connection)\nSMTP, TLS Connection, Plain Text Authentication (TLS, PLAIN)\nSMTP, SSL Connection, Plain Text Authentication (SSL, PLAIN)\nSMTP, Digest Authentication (CRAM-MD5)\nSMTP, Plain Text Authentication (PLAIN)\nSMTP, No Authentication\n"
+END
+
+STRINGTABLE
+BEGIN
     IDD_MAIN_OPERATION      "Debug Operation\nReview debug session status and notifications"
+	IDC_MAIN_EMAIL_MAXIMALATTACHMENTSIZE "1, 0xB, , 2, Maximal Attachment Size, ""Maximal minidump file attachment size is a size threshold in megabytes, under which the file is to be attached to the email, and should be a non-negative integer value""\n"
 END
 
 #endif    // English (United States) resources

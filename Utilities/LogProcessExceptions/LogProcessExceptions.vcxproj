@@ -307,6 +307,7 @@
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\..\Repository-Private\Utilities\EmailTools\_Bin\Win32\Release\EmailTools\EmailTools.tlb" />
     <None Include="LogProcessExceptions.ico" />
     <None Include="Module.ico" />
     <None Include="WizardHeader.bmp" />

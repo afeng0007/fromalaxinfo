@@ -46,6 +46,7 @@
     <None Include="WizardWatermark.bmp">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="..\..\..\Repository-Private\Utilities\EmailTools\_Bin\Win32\Release\EmailTools\EmailTools.tlb" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="LogProcessExceptions.rc">
