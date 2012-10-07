@@ -67,7 +67,7 @@ using namespace WTL;
 
 #define SRWLOCK_THROUGH_CRITICALSECTION // Legacy Compatibility
 
-#define REGISTRY_PRODUCTROOT	_T("SOFTWARE\\Alax.Info\\Utilities\\Log Process Exceptions")
+#define REGISTRY_PRODUCTROOT	_T("SOFTWARE\\Alax.Info\\Utility\\LogProcessExceptions")
 #define REGISTRY_FILEROOT		REGISTRY_PRODUCTROOT
 #define REGISTRY_ROOT			REGISTRY_FILEROOT
 

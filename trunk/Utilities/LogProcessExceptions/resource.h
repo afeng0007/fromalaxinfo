@@ -4,11 +4,10 @@
 //
 #define IDI_MODULE                      10
 #define IDS_PROJNAME                    100
+#define IDR_EMAILTOOLS                  101
 #define IDS_MAINWIZARD_CAPTION          1000
 #define IDB_WIZARDWATERMARK             1011
 #define IDB_WIZARDHEADER                1012
-#define IDC_MAIN_OPERATION_OPENMINIDUMPFILEDIRECTORY 1512
-#define IDC_MAIN_OPERATION_WRITEMINIDUMPNOW 1511
 #define IDD_MAIN_INTRODUCTION           1100
 #define IDC_WIZARDINTRODUCTION_TITLE    1110
 #define IDC_WIZARDINTRODUCTION_SKIP     1111
@@ -45,6 +44,23 @@
 #define IDC_MAIN_MINIDUMPTYPE           1450
 #define IDD_MAIN_OPERATION              1500
 #define IDC_MAIN_OPERATION_LOG          1510
+#define IDC_MAIN_OPERATION_WRITEMINIDUMPNOW 1511
+#define IDC_MAIN_OPERATION_OPENMINIDUMPFILEDIRECTORY 1512
+#define IDD_MAIN_FILTER                 1600
+#define IDC_MAIN_FILTER_TEXT            1610
+#define IDC_MAIN_FILTER_HELP            1611
+#define IDC_MAIN_FILTER_RESET           1612
+
+#define IDD_MAIN_EMAIL                  1700
+#define IDC_MAIN_EMAIL_ENABLED          1710
+#define IDC_MAIN_EMAIL_FROM             1712
+#define IDC_MAIN_EMAIL_TO               1713
+#define IDC_MAIN_EMAIL_METHOD           1714
+#define IDC_MAIN_EMAIL_HOST             1715
+#define IDC_MAIN_EMAIL_USERNAME         1716
+#define IDC_MAIN_EMAIL_PASSWORD         1717
+#define IDC_MAIN_EMAIL_MAXIMALATTACHMENTSIZE 1718
+
 #define IDD_ABOUT                       29900
 #define IDC_ABOUT_ICON                  29901
 #define IDC_ABOUT_TITLE                 29902
@@ -64,7 +80,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        202
 #define _APS_NEXT_COMMAND_VALUE         32775
-#define _APS_NEXT_CONTROL_VALUE         1065
+#define _APS_NEXT_CONTROL_VALUE         1072
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

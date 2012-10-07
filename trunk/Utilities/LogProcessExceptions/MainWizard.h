@@ -773,6 +773,9 @@ END_MSG_MAP()
 		}
 		INT OnSetActive() throw()
 		{
+			#if defined(_DEBUG) && FALSE
+				return -1;
+			#endif // defined(_DEBUG)
 			_ATLTRY
 			{
 				UpdateButtons();
@@ -807,10 +810,665 @@ END_MSG_MAP()
 					m_MinidumpType = Type;
 				}
 				if(!m_Wizard.m_ProcessPropertyPage.IsSelectedProcessActive())
+					return CProcessPropertyPage::IDD;
+			}
+			_ATLCATCHALL()
+			{
+				MessageBeep(MB_ICONERROR);
+				return -1;
+			}
+			return 0;
+		}
+	};
+
+	////////////////////////////////////////////////////////
+	// CFilterPropertyPage
+
+	class CFilterPropertyPage :
+		public CWizardPropertyPageT<CFilterPropertyPage>
+	{
+	public:
+		enum { IDD = IDD_MAIN_FILTER };
+
+	BEGIN_MSG_MAP_EX(CFilterPropertyPage)
+		CHAIN_MSG_MAP(CWizardPropertyPageT<CFilterPropertyPage>)
+		MSG_WM_INITDIALOG(OnInitDialog)
+		NOTIFY_HANDLER_EX(IDC_MAIN_FILTER_RESET, CRoHyperStatic::NC_ANCHORCLICKED, OnResetStaticAnchorClicked)
+		//NOTIFY_HANDLER_EX(IDC_MAIN_FILTER_HELP, CRoHyperStatic::NC_ANCHORCLICKED, OnHelpStaticAnchorClicked)
+		REFLECT_NOTIFICATIONS()
+	END_MSG_MAP()
+
+	public:
+
+		////////////////////////////////////////////////////
+		// CFilter
+
+		class CFilter
+		{
+		public:
+
+			////////////////////////////////////////////////
+			// CValueRange
+
+			class CValueRange
+			{
+			public:
+				LONG m_nMinimalValue;
+				LONG m_nMaximalValue;
+			
+			public:
+			// CValueRange
+				VOID Initialize(CString sValue)
 				{
-					UpdateButtons();
-					__C(E_UNNAMED);
+					CRoArrayT<CString> Array;
+					_StringHelper::Split(sValue, _T('-'), Array);
+					__D(!Array.IsEmpty(), E_INVALIDARG);
+					INT nMinimalValue, nMaximalValue;
+					__D(StrToIntEx(Array[0], STIF_SUPPORT_HEX, &nMinimalValue), E_INVALIDARG);
+					if(Array.GetCount() >= 2)
+					{
+						__D(StrToIntEx(Array[1], STIF_SUPPORT_HEX, &nMaximalValue), E_INVALIDARG);
+						if(nMaximalValue < nMinimalValue)
+							SwapMemory(&nMinimalValue, &nMaximalValue);
+					} else
+						nMaximalValue = nMinimalValue;
+					m_nMinimalValue = nMinimalValue;
+					m_nMaximalValue = nMaximalValue;
 				}
+				BOOL Compare(LONG nValue) const throw()
+				{
+					return nValue >= m_nMinimalValue && nValue <= m_nMinimalValue;
+				}
+			};
+
+		public:
+			INT m_nAction;
+			BOOL m_bExceptionCodeAvailable;
+			CValueRange m_ExceptionCode;
+			BOOL m_bNativeExceptionCodeAvailable;
+			CValueRange m_NativeExceptionCode;
+
+		public:
+		// CFilter
+			CFilter() throw() :
+				m_nAction(0),
+				m_bExceptionCodeAvailable(FALSE),
+				m_bNativeExceptionCodeAvailable(FALSE)
+			{
+			}
+			static VOID PreprocessExceptionCode(CString& sValue)
+			{
+				if(sValue.CompareNoCase(_T("*")) == 0)
+					sValue = _T("0x80000000-0x7FFFFFFF");
+				else if(sValue.CompareNoCase(_T("C++")) == 0)
+					sValue = _T("0xE06D7363");
+			}
+			static VOID PreprocessNativeExceptionCode(CString& sValue)
+			{
+				if(sValue.CompareNoCase(_T("*")) == 0)
+					sValue = _T("0x80000000-0x7FFFFFFF");
+			}
+			VOID Initialize(CString sValue)
+			{
+				for(; sValue.Replace(_T("  "), _T(" ")); )
+					;
+				CRoArrayT<CString> Array;
+				_StringHelper::Split(sValue, _T(' '), Array);
+				__D(!Array.IsEmpty(), E_UNNAMED);
+				#pragma region Action
+				__D(!Array[0].IsEmpty(), E_UNNAMED);
+				static LPCTSTR g_ppszActions = _T("-+");
+				LPCTSTR pszAction = _tcschr(g_ppszActions, Array[0][0]);
+				__D(pszAction, E_UNNAMED);
+				m_nAction = (pszAction - g_ppszActions) * 2 - 1;
+				_A(m_nAction == -1 || m_nAction == +1);
+				#pragma endregion 
+				m_bExceptionCodeAvailable = FALSE;
+				m_bNativeExceptionCodeAvailable = FALSE;
+				if(Array.GetCount() >= 2)
+				{
+					CString sExceptionCode = Array[1];
+					PreprocessExceptionCode(sExceptionCode);
+					m_ExceptionCode.Initialize(sExceptionCode);
+					m_bExceptionCodeAvailable = TRUE;
+					if(Array.GetCount() >= 3)
+					{
+						CString sNativeExceptionCode = Array[2];
+						PreprocessNativeExceptionCode(sNativeExceptionCode);
+						m_NativeExceptionCode.Initialize(sNativeExceptionCode);
+						m_bNativeExceptionCodeAvailable = TRUE;
+					}
+				}
+			}
+			BOOL Apply(LONG nExceptionCode, const LONG* pnNativeExceptionCode, INT& nAction) const throw()
+			{
+				if(m_bExceptionCodeAvailable)
+				{
+					if(!m_ExceptionCode.Compare(nExceptionCode))
+						return FALSE; // Exception Code Mismatch
+					if(m_bNativeExceptionCodeAvailable)
+					{
+						if(!pnNativeExceptionCode)
+							return FALSE; // No Native Exception Code
+						if(!m_NativeExceptionCode.Compare(*pnNativeExceptionCode))
+							return FALSE; // Native Exception Code Mismatch
+					}
+				}
+				nAction = m_nAction;
+				return TRUE;
+			}
+			VOID Trace() const
+			{
+				#if defined(_DEBUG)
+					CString sText;
+					if(m_bExceptionCodeAvailable)
+					{
+						if(m_ExceptionCode.m_nMinimalValue < m_ExceptionCode.m_nMaximalValue)
+							sText += AtlFormatString(_T("0x%08X-0x%08X "), m_ExceptionCode.m_nMinimalValue, m_ExceptionCode.m_nMaximalValue);
+						else if(m_ExceptionCode.m_nMinimalValue == 0xE06D7363)
+							sText += _T("C++ ");
+						else
+							sText += AtlFormatString(_T("0x%08X "), m_ExceptionCode.m_nMinimalValue);
+						if(m_bNativeExceptionCodeAvailable)
+						{
+							if(m_NativeExceptionCode.m_nMinimalValue < m_NativeExceptionCode.m_nMaximalValue)
+								sText += AtlFormatString(_T("0x%08X-0x%08X "), m_NativeExceptionCode.m_nMinimalValue, m_NativeExceptionCode.m_nMaximalValue);
+							else
+								sText += AtlFormatString(_T("0x%08X "), m_NativeExceptionCode.m_nMinimalValue);
+						}
+					}
+					_Z4(atlTraceGeneral, 4, _T("m_nAction %d, %s\n"), m_nAction, sText);
+				#endif // defined(_DEBUG)
+			}
+		};
+
+		////////////////////////////////////////////////////
+		// CFilterArray
+
+		class CFilterArray :
+			public CRoAssignableArrayT<CRoArrayT<CFilter> >
+		{
+		public:
+		// CFilterArray
+			CFilterArray()
+			{
+			}
+			CFilterArray(const CString& sValue)
+			{
+				Initialize(sValue);
+			}
+			VOID Initialize(CString sValue)
+			{
+				RemoveAll();
+				sValue.Replace(_T("\r\n"), _T("\n"));
+				sValue.Replace(_T("\t"), _T(" "));
+				CRoArrayT<CString> Array;
+				_StringHelper::Split(sValue, _T('\n'), Array);
+				for(SIZE_T nIndex = 0; nIndex < Array.GetCount(); nIndex++)
+				{
+					CString sLine = Array[nIndex];
+					const INT nPosition = sLine.Find(_T("//"));
+					if(nPosition >= 0)
+						sLine = sLine.Left(nPosition);
+					sLine.Trim();
+					if(sLine.IsEmpty())
+						continue;
+					GetAt(Add()).Initialize(sLine);
+				}
+			}
+			BOOL Apply(LONG nExceptionCode, const LONG* pnNativeExceptionCode, INT& nAction) const throw()
+			{
+				for(SIZE_T nIndex = 0; nIndex < GetCount(); nIndex++)
+					if(GetAt(nIndex).Apply(nExceptionCode, pnNativeExceptionCode, nAction))
+						return TRUE;
+				return FALSE;
+			}
+			VOID Trace() const
+			{
+				#if defined(_DEBUG)
+					_Z4(atlTraceGeneral, 4, _T("GetCount() %d\n"), GetCount());
+					for(SIZE_T nIndex = 0; nIndex < GetCount(); nIndex++)
+						GetAt(nIndex).Trace();
+
+				#endif // defined(_DEBUG)
+			}
+		};
+
+	private:
+		CMainWizard& m_Wizard;
+		BOOL m_bActivating;
+		CRoEdit m_TextEdit;
+		CFont m_TextEditFont;
+		CRoHyperStatic m_ResetStatic;
+		CRoHyperStatic m_HelpStatic;
+		mutable CRoCriticalSection m_DataCriticalSection;
+		CFilterArray m_FilterArray;
+
+		static LPCTSTR GetDefaultText() throw()
+		{
+			return 
+				_T("// Filters are processed top to bottom until a match is found.") _T("\r\n")
+				_T("// One filter per line, syntax: ") _T("\r\n")
+				_T("//   (+ or -) [(Exception Code) [(C++ ATL Exception HRESULT)]]") _T("\r\n")
+				_T("") _T("\r\n")
+				_T("+")
+				_T("");
+		}
+		VOID UpdateButtons() throw()
+		{
+			const BOOL bAllowNext = m_Wizard.m_ProcessPropertyPage.IsSelectedProcessActive();
+			SetWizardButtons(PSWIZB_BACK | (bAllowNext ? PSWIZB_NEXT : 0));
+		}
+
+	public:
+	// CFilterPropertyPage
+		CFilterPropertyPage(CMainWizard* pWizard) throw() :
+			m_Wizard(*pWizard)
+		{
+			SetHeaderTitles();
+		}
+		BOOL ApplyFilters(LONG nExceptionCode, const LONG* pnNativeExceptionCode, INT& nAction) const
+		{
+			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+			return m_FilterArray.Apply(nExceptionCode, pnNativeExceptionCode, nAction);
+		}
+
+	// Window message handlers
+		LRESULT OnInitDialog(HWND, LPARAM)
+		{
+			m_bActivating = TRUE;
+			_ATLTRY
+			{
+				CWaitCursor WaitCursor;
+				m_TextEdit = GetDlgItem(IDC_MAIN_FILTER_TEXT);
+				CLogFont LogFont;
+				LogFont.SetMessageBoxFont();
+				_tcsncpy_s(LogFont.lfFaceName, DIM(LogFont.lfFaceName), _T("Courier New"), _TRUNCATE);
+				m_TextEditFont = LogFont.CreateFontIndirect();
+				m_TextEdit.SetFont(m_TextEditFont);
+				_W(m_ResetStatic.SubclassWindow(GetDlgItem(IDC_MAIN_FILTER_RESET)));
+				_W(m_HelpStatic.SubclassWindow(GetDlgItem(IDC_MAIN_FILTER_HELP)));
+				CRoHyperStatic::SetIdealExtentHorizontally(2, &m_ResetStatic, &m_HelpStatic);
+				#pragma region Initialize from Registry
+				CString sText = GetDefaultText();
+				_RegKeyHelper::QueryStringValue(HKEY_CURRENT_USER, REGISTRY_ROOT, _T("Filter"), sText);
+				m_TextEdit.SetValue(sText);
+				#pragma endregion
+				UpdateButtons();
+				m_bActivating = FALSE;
+			}
+			_ATLCATCHALL()
+			{
+				_Z_EXCEPTION();
+			}
+			return TRUE;
+		}
+		LRESULT OnResetStaticAnchorClicked(NMHDR*)
+		{
+			m_TextEdit.SetValue(GetDefaultText());
+			UpdateButtons();
+			return 0;
+		}
+		INT OnSetActive() throw()
+		{
+			#if defined(_DEBUG) && FALSE
+				return -1;
+			#endif // defined(_DEBUG)
+			_ATLTRY
+			{
+				UpdateButtons();
+			}
+			_ATLCATCHALL()
+			{
+				MessageBeep(MB_ICONERROR);
+				return -1;
+			}
+			return 0;
+		}
+		BOOL OnQueryCancel()
+		{
+			return m_Wizard.m_OperationPropertyPage.OnQueryCancel();
+		}
+		INT OnWizardNext() throw()
+		{
+			_ATLTRY
+			{
+				CString sText = m_TextEdit.GetValue();
+				CFilterArray FilterArray;
+				_ATLTRY
+				{
+					FilterArray.Initialize(sText);
+				}
+				_ATLCATCH(Exception)
+				{
+					_Z_ATLEXCEPTION(Exception);
+					AtlExceptionMessageBox(m_hWnd, Exception);
+					m_TextEdit.SetFocus();
+					return -1;
+				}
+				_RegKeyHelper::SetStringValue(HKEY_CURRENT_USER, REGISTRY_ROOT, _T("Filter"), sText);
+				{
+					CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+					m_FilterArray = FilterArray;
+					m_FilterArray.Trace();
+				}
+				if(!m_Wizard.m_ProcessPropertyPage.IsSelectedProcessActive())
+					return CProcessPropertyPage::IDD;
+			}
+			_ATLCATCHALL()
+			{
+				MessageBeep(MB_ICONERROR);
+				return -1;
+			}
+			return 0;
+		}
+	};
+
+	////////////////////////////////////////////////////////
+	// CEmailPropertyPage
+
+	class CEmailPropertyPage :
+		public CWizardPropertyPageT<CEmailPropertyPage>
+	{
+	public:
+		enum { IDD = IDD_MAIN_EMAIL };
+
+	BEGIN_MSG_MAP_EX(CEmailPropertyPage)
+		CHAIN_MSG_MAP(CWizardPropertyPageT<CEmailPropertyPage>)
+		MSG_WM_INITDIALOG(OnInitDialog)
+		COMMAND_HANDLER_EX(IDC_MAIN_EMAIL_ENABLED, BN_CLICKED, OnEnabledButtonClicked)
+		COMMAND_HANDLER_EX(IDC_MAIN_EMAIL_FROM, EN_CHANGE, OnChanged)
+		COMMAND_HANDLER_EX(IDC_MAIN_EMAIL_TO, EN_CHANGE, OnChanged)
+		COMMAND_HANDLER_EX(IDC_MAIN_EMAIL_METHOD, CBN_SELENDOK, OnChanged)
+		COMMAND_HANDLER_EX(IDC_MAIN_EMAIL_HOST, EN_CHANGE, OnChanged)
+		COMMAND_HANDLER_EX(IDC_MAIN_EMAIL_USERNAME, EN_CHANGE, OnChanged)
+		COMMAND_HANDLER_EX(IDC_MAIN_EMAIL_PASSWORD, EN_CHANGE, OnChanged)
+		NOTIFY_HANDLER_EX(IDC_MAIN_EMAIL_MAXIMALATTACHMENTSIZE, CRoLongEdit::NC_VALUECHANGED, OnChanged)
+		REFLECT_NOTIFICATIONS()
+	END_MSG_MAP()
+
+	public:
+
+	private:
+		CMainWizard& m_Wizard;
+		BOOL m_bActivating;
+		CButton m_EnabledButton;
+		CFont m_BolderFont;
+		CRoEdit m_FromEdit;
+		CRoEdit m_ToEdit;
+		CRoComboBoxT<> m_MethodComboBox;
+		CRoEdit m_HostEdit;
+		CRoEdit m_UsernameEdit;
+		CRoEdit m_PasswordEdit;
+		CRoLongEdit m_MaximalAttachmentSizeEdit;
+		BOOL m_bEnabled;
+		CStringA m_sMessageString;
+		ULONG m_nMaximalAttachmentSize;
+
+		VOID UpdateButtons() throw()
+		{
+			BOOL bAllowNext = m_Wizard.m_ProcessPropertyPage.IsSelectedProcessActive();
+			if(m_EnabledButton.GetCheck())
+			{
+				if(m_ToEdit.GetValue().Trim().IsEmpty())
+					bAllowNext = FALSE;
+				const INT nMethod = m_MethodComboBox.GetCurSel();
+				if(nMethod != 0) // Google Mail
+					if(m_HostEdit.GetValue().Trim().IsEmpty())
+						bAllowNext = FALSE;
+				if(nMethod != 5) // No Authentication
+				{
+					if(m_UsernameEdit.GetValue().Trim().IsEmpty())
+						bAllowNext = FALSE;
+					if(m_PasswordEdit.GetValue().Trim().IsEmpty())
+						bAllowNext = FALSE;
+				}
+			}
+			SetWizardButtons(PSWIZB_BACK | (bAllowNext ? PSWIZB_NEXT : 0));
+		}
+		VOID UpdateControls()
+		{
+			if(m_EnabledButton.GetCheck())
+			{
+				for(CWindow Window = m_EnabledButton.GetWindow(GW_HWNDNEXT); Window; Window = Window.GetWindow(GW_HWNDNEXT))
+					Window.ShowWindow(SW_SHOW);
+				const INT nMethod = m_MethodComboBox.GetCurSel();
+				m_HostEdit.GetWindow(GW_HWNDPREV).EnableWindow(nMethod != 0); // Google Mail
+				m_HostEdit.EnableWindow(nMethod != 0); // Google Mail
+				m_UsernameEdit.GetWindow(GW_HWNDPREV).EnableWindow(nMethod != 5); // No Authentication
+				m_UsernameEdit.EnableWindow(nMethod != 5); // No Authentication
+				m_PasswordEdit.GetWindow(GW_HWNDPREV).EnableWindow(nMethod != 5); // No Authentication
+				m_PasswordEdit.EnableWindow(nMethod != 5); // No Authentication
+			} else
+			{
+				for(CWindow Window = m_EnabledButton.GetWindow(GW_HWNDNEXT); Window; Window = Window.GetWindow(GW_HWNDNEXT))
+					Window.ShowWindow(SW_HIDE);
+			}
+			UpdateButtons();
+		}
+
+	public:
+	// CEmailPropertyPage
+		CEmailPropertyPage(CMainWizard* pWizard) throw() :
+			m_Wizard(*pWizard)
+		{
+			SetHeaderTitles();
+		}
+		CObjectPtr<CMessage> CreateMessage() const
+		{
+			if(!m_bEnabled)
+				return NULL;
+			CObjectPtr<CMessage> pMessage;
+			pMessage.Construct();
+			pMessage->LoadTypeInfo(IDR_EMAILTOOLS);
+			pMessage->SetAsString(m_sMessageString);
+			return pMessage;
+		}
+		ULONG GetMaximalAttachmentSize() const throw()
+		{
+			return m_nMaximalAttachmentSize;
+		}
+
+	// Window message handlers
+		LRESULT OnInitDialog(HWND, LPARAM)
+		{
+			m_bActivating = TRUE;
+			_ATLTRY
+			{
+				CWaitCursor WaitCursor;
+				m_EnabledButton = GetDlgItem(IDC_MAIN_EMAIL_ENABLED);
+				CFontHandle Font(GetFont());
+				if(!m_BolderFont)
+				{
+					CLogFont LogFont;
+					_W(Font.GetLogFont(LogFont));
+					LogFont.SetBold();
+					m_BolderFont = LogFont.CreateFontIndirect();
+				}
+				m_EnabledButton.SetFont(m_BolderFont);
+				m_FromEdit = GetDlgItem(IDC_MAIN_EMAIL_FROM);
+				m_ToEdit = GetDlgItem(IDC_MAIN_EMAIL_TO);
+				m_MethodComboBox.Initialize(GetDlgItem(IDC_MAIN_EMAIL_METHOD));
+				m_MethodComboBox.SetCurSel(0);
+				m_HostEdit = GetDlgItem(IDC_MAIN_EMAIL_HOST);
+				m_UsernameEdit = GetDlgItem(IDC_MAIN_EMAIL_USERNAME);
+				m_PasswordEdit = GetDlgItem(IDC_MAIN_EMAIL_PASSWORD);
+				_W(m_MaximalAttachmentSizeEdit.SubclassWindow(GetDlgItem(IDC_MAIN_EMAIL_MAXIMALATTACHMENTSIZE)));
+				#pragma region Initialize from Registry
+				CRegKey Key;
+				Key.Open(HKEY_CURRENT_USER, REGISTRY_ROOT, KEY_READ);
+				if(Key)
+				{
+					m_EnabledButton.SetCheck(_RegKeyHelper::QueryIntegerValue(Key, _T("Email Enabled")));
+					CString sMessageString = _RegKeyHelper::QueryStringValue(Key, _T("Email Message Template"));
+					if(!sMessageString.IsEmpty())
+						_ATLTRY
+						{
+							CObjectPtr<CMessage> pMessage;
+							pMessage.Construct();
+							pMessage->LoadTypeInfo(IDR_EMAILTOOLS);
+							pMessage->SetAsString(CStringA(sMessageString));
+							#pragma region Sender and Recipients
+							CComBSTR sSender, sToRecipients;
+							__C(pMessage->get_Sender(&sSender));
+							__C(pMessage->get_ToRecipients(&sToRecipients));
+							m_FromEdit.SetValue(CString(sSender));
+							m_ToEdit.SetValue(CString(sToRecipients));
+							#pragma endregion 
+							CComBSTR sAuthMethods;
+							__C(pMessage->get_AuthMethods(&sAuthMethods));
+							VARIANT_BOOL bSecureSocketsLayer, bTransportLayerSecurity;
+							__C(pMessage->get_SecureSocketsLayer(&bSecureSocketsLayer));
+							__C(pMessage->get_TransportLayerSecurity(&bTransportLayerSecurity));
+							#pragma region Host and Port
+							CComBSTR sHost;
+							__C(pMessage->get_ServerHost(&sHost));
+							LONG nPort = 0;
+							__C(pMessage->get_ServerPort(&nPort));
+							CString sHostT(sHost);
+							if(nPort)
+								sHostT += AtlFormatString(_T(":%d"), nPort);
+							m_HostEdit.SetValue(sHostT);
+							#pragma endregion 
+							#pragma region User Name and Password
+							CComBSTR sAuthName, sAuthPassword;
+							__C(pMessage->get_AuthName(&sAuthName));
+							__C(pMessage->get_AuthPassword(&sAuthPassword));
+							m_UsernameEdit.SetValue(CString(sAuthName));
+							m_PasswordEdit.SetValue(CString(sAuthPassword));
+							#pragma endregion 
+							m_MethodComboBox.SetCurSel(0);
+							if(bTransportLayerSecurity != ATL_VARIANT_FALSE && sHostT.CompareNoCase(_T("smtp.gmail.com")) == 0)
+							{
+								//m_MethodComboBox.SetCurSel(0);
+							} else
+							{
+								if(bTransportLayerSecurity != ATL_VARIANT_FALSE)
+									m_MethodComboBox.SetCurSel(1);
+								else if(bSecureSocketsLayer != ATL_VARIANT_FALSE)
+									m_MethodComboBox.SetCurSel(2);
+								else if(CString(sAuthMethods).CompareNoCase(_T("cram-md5")) == 0)
+									m_MethodComboBox.SetCurSel(3);
+								else if(!CString(sAuthName).IsEmpty())
+									m_MethodComboBox.SetCurSel(4);
+								else
+									m_MethodComboBox.SetCurSel(5);
+							}
+						}
+						_ATLCATCHALL()
+						{
+							_Z_EXCEPTION();
+						}
+					const DWORD nMaximalAttachmentSize = _RegKeyHelper::QueryIntegerValue(Key, _T("Email Maximal Attachment Minidump File Size"));
+					if(nMaximalAttachmentSize)
+						m_MaximalAttachmentSizeEdit.SetValue(nMaximalAttachmentSize);
+				}
+				#pragma endregion
+				UpdateControls();
+				UpdateButtons();
+				m_bActivating = FALSE;
+			}
+			_ATLCATCHALL()
+			{
+				_Z_EXCEPTION();
+			}
+			return TRUE;
+		}
+		LRESULT OnEnabledButtonClicked(UINT, INT, HWND)
+		{
+			UpdateControls();
+			return 0;
+		}
+		LRESULT OnChanged(UINT, INT, HWND)
+		{
+			if(!m_bActivating)
+				UpdateControls();
+			return 0;
+		}
+		LRESULT OnChanged(NMHDR*)
+		{
+			if(!m_bActivating)
+				UpdateControls();
+			return 0;
+		}
+		INT OnSetActive() throw()
+		{
+			_ATLTRY
+			{
+				UpdateButtons();
+			}
+			_ATLCATCHALL()
+			{
+				MessageBeep(MB_ICONERROR);
+				return -1;
+			}
+			return 0;
+		}
+		BOOL OnQueryCancel()
+		{
+			return m_Wizard.m_OperationPropertyPage.OnQueryCancel();
+		}
+		INT OnWizardNext() throw()
+		{
+			_ATLTRY
+			{
+				m_bEnabled = m_EnabledButton.GetCheck();
+				_RegKeyHelper::SetIntegerValue(HKEY_CURRENT_USER, REGISTRY_ROOT, _T("Email Enabled"), m_bEnabled);
+				if(m_bEnabled)
+				{
+					CObjectPtr<CMessage> pMessage;
+					pMessage.Construct();
+					pMessage->LoadTypeInfo(IDR_EMAILTOOLS);
+					__C(pMessage->put_Sender(CComBSTR(m_FromEdit.GetValue())));
+					__C(pMessage->put_ToRecipients(CComBSTR(m_ToEdit.GetValue())));
+					// NOTE: 
+					// 0 Google Mail (SMTP, TLS Connection)
+					// 1 SMTP, TLS Connection, Plain Text Authentication (TLS, PLAIN)
+					// 2 SMTP, SSL Connection, Plain Text Authentication (SSL, PLAIN)
+					// 3 SMTP, Digest Authentication (CRAM-MD5)
+					// 4 SMTP, Plain Text Authentication (PLAIN)
+					// 5 SMTP, No Authentication
+					const INT nMethod = m_MethodComboBox.GetCurSel();
+					__C(pMessage->put_SecureSocketsLayer((nMethod == 2) ? ATL_VARIANT_TRUE : ATL_VARIANT_FALSE));
+					__C(pMessage->put_TransportLayerSecurity((nMethod < 2) ? ATL_VARIANT_TRUE : ATL_VARIANT_FALSE));
+					if(nMethod != 5)
+					{
+						__C(pMessage->put_AuthMethods(CComBSTR(_T("plain"))));
+						__C(pMessage->put_AuthName(CComBSTR(m_UsernameEdit.GetValue())));
+						__C(pMessage->put_AuthPassword(CComBSTR(m_PasswordEdit.GetValue())));
+					}
+					switch(nMethod)
+					{
+					case 0:
+						__C(pMessage->put_ServerHost(CComBSTR(_T("smtp.gmail.com"))));
+						break;
+					default:
+						CString sHost = m_HostEdit.GetValue();
+						sHost.Trim();
+						const INT nPortPosition = sHost.Find(_T(":"));
+						if(nPortPosition >= 0)
+						{
+							INT nPort;
+							__D(AtlStringToInteger(sHost.Mid(nPortPosition + 1), nPort), E_UNNAMED);
+							__C(pMessage->put_ServerPort(nPort));
+							sHost = sHost.Left(nPortPosition);
+						}
+						__C(pMessage->put_ServerHost(CComBSTR(sHost)));
+						break;
+					}
+					switch(nMethod)
+					{
+					case 3:
+						__C(pMessage->put_AuthMethods(CComBSTR(_T("cram-md5"))));
+						break;
+					}
+					m_sMessageString = pMessage->GetAsString();
+					m_nMaximalAttachmentSize = (ULONG) m_MaximalAttachmentSizeEdit.GetValue();
+					_RegKeyHelper::SetStringValue(HKEY_CURRENT_USER, REGISTRY_ROOT, _T("Email Message Template"), CString(m_sMessageString));
+					_RegKeyHelper::SetIntegerValue(HKEY_CURRENT_USER, REGISTRY_ROOT, _T("Email Maximal Attachment Minidump File Size"), (DWORD) m_nMaximalAttachmentSize);
+				}
+				if(!m_Wizard.m_ProcessPropertyPage.IsSelectedProcessActive())
+					return CProcessPropertyPage::IDD;
 			}
 			_ATLCATCHALL()
 			{
@@ -922,14 +1580,19 @@ END_MSG_MAP()
 						continue;
 					_Z4(atlTraceGeneral, 4, _T("Debug event, DebugEvent.dwDebugEventCode %d, .dwProcessId %d, .dwThreadId %d\n"), DebugEvent.dwDebugEventCode, DebugEvent.dwProcessId, DebugEvent.dwThreadId);
 					// TODO: Handle load/unload DLL, output debug strings (configurable)
+					CObjectPtr<CMessage> pMessage;
+					CPath sMessageAttachmentPath;
 					BOOL bExitProcess = FALSE;
 					switch(DebugEvent.dwDebugEventCode)
 					{
+					#pragma region CREATE_PROCESS_DEBUG_EVENT
 					case CREATE_PROCESS_DEBUG_EVENT:
 						{
 							const CREATE_PROCESS_DEBUG_INFO& DebugInformation = DebugEvent.u.CreateProcessInfo;
 						}
 						break;
+					#pragma endregion 
+					#pragma region EXIT_PROCESS_DEBUG_EVENT
 					case EXIT_PROCESS_DEBUG_EVENT:
 						{
 							const EXIT_PROCESS_DEBUG_INFO& DebugInformation = DebugEvent.u.ExitProcess;
@@ -937,6 +1600,8 @@ END_MSG_MAP()
 							break;
 						}
 						break;
+					#pragma endregion 
+					#pragma region EXCEPTION_DEBUG_EVENT
 					case EXCEPTION_DEBUG_EVENT:
 						{
 							const EXCEPTION_DEBUG_INFO& DebugInformation = DebugEvent.u.Exception;
@@ -957,36 +1622,27 @@ END_MSG_MAP()
 								break;
 							}
 							#pragma endregion
-							#pragma region Skip C++ Exceptions (Debug)
-							#if _DEVELOPMENT //&& FALSE
-							#if !defined(_WIN64)
-							COMPILER_MESSAGE("Debug: Skip C++ Exceptions")
-							if(DebugInformation.ExceptionRecord.ExceptionCode == 0xE06D7363)
+							#pragma region Apply Exception Filter
+							const LONG nExceptionCode = DebugInformation.ExceptionRecord.ExceptionCode;
+							const LONG* pnNativeExceptionCode = NULL;
+							LONG nNativeExceptionCode;
+							if(nExceptionCode == 0xE06D7363 && DebugInformation.ExceptionRecord.NumberParameters >= 2)
 							{
-								BOOL bSkip = TRUE;
-								if(DebugInformation.ExceptionRecord.NumberParameters >= 2)
-								{
-									HRESULT nNativeExceptionCode = S_OK;
-									SIZE_T nReadDataSize = 0;
-									if(ReadProcessMemory(Process, (const VOID*) DebugInformation.ExceptionRecord.ExceptionInformation[1], &nNativeExceptionCode, sizeof nNativeExceptionCode, &nReadDataSize))
-										if(nReadDataSize == sizeof nNativeExceptionCode)
-										{
-											if((nNativeExceptionCode & 0x0FFF0000) != 0x01390000) // DVRServerStretch
-											{
-												AppendLog(AtlFormatString(_T("Skipping C++ exception (0x%08X, 0x%08X)\r\n"), DebugInformation.ExceptionRecord.ExceptionCode, nNativeExceptionCode));
-												break;
-											} else
-												bSkip = FALSE;
-										}
-								}
-								if(bSkip)
-								{
-									AppendLog(AtlFormatString(_T("Skipping C++ exception (0x%08X)\r\n"), DebugInformation.ExceptionRecord.ExceptionCode));
-									break;
-								}
+								SIZE_T nReadDataSize = 0;
+								if(ReadProcessMemory(Process, (const VOID*) DebugInformation.ExceptionRecord.ExceptionInformation[1], &nNativeExceptionCode, sizeof nNativeExceptionCode, &nReadDataSize))
+									if(nReadDataSize == sizeof nNativeExceptionCode)
+										pnNativeExceptionCode = &nNativeExceptionCode;
 							}
-							#endif // !defined(_WIN64)
-							#endif // _DEVELOPMENT 
+							INT nAction = 1;
+							m_Wizard.m_FilterPropertyPage.ApplyFilters(nExceptionCode, pnNativeExceptionCode, nAction);
+							if(nAction < 1)
+							{
+								if(pnNativeExceptionCode)
+									AppendLog(AtlFormatString(_T("Skipping C++ exception (0x%08X, 0x%08X)\r\n"), nExceptionCode, nNativeExceptionCode));
+								else
+									AppendLog(AtlFormatString(_T("Skipping exception (0x%08X)\r\n"), nExceptionCode));
+								break;
+							}
 							#pragma endregion
 							_ATLTRY
 							{
@@ -1003,6 +1659,7 @@ END_MSG_MAP()
 										ExceptionPointers.ContextRecord = &Context;
 								ExceptionInformation.ExceptionPointers = &ExceptionPointers;
 								ExceptionInformation.ClientPointers = FALSE;
+								#pragma region File Name
 								CString sName;
 								sName.AppendFormat(_T("%s-%d-%03d"), pszProcessFileName, nProcessIdentifier, m_nExceptionIndex++);
 								sName.AppendFormat(_T("-%08x"), DebugInformation.ExceptionRecord.ExceptionCode);
@@ -1017,6 +1674,7 @@ END_MSG_MAP()
 								sName.Append(_T(".dmp"));
 								CPath sPath;
 								sPath.Combine(m_sDataDirectory, sName);
+								#pragma endregion
 								CAtlFile File;
 								__C(File.Create(sPath, GENERIC_WRITE, CREATE_ALWAYS, FILE_SHARE_READ));
 								const MINIDUMP_TYPE Type = m_Wizard.m_MinidumpTypePropertyPage.GetMinidumpType();
@@ -1025,47 +1683,33 @@ END_MSG_MAP()
 								#pragma region Message Notification
 								_ATLTRY
 								{
-									if(!m_pMessageQueue)
-										m_pMessageQueue.Construct();
-									CObjectPtr<CMessage> pMessage;
-									pMessage.Construct();
-									#pragma region Fixed Initialization
-									__C(pMessage->put_ServerHost(CComBSTR(_T("smtp.gmail.com"))));
-									__C(pMessage->put_Sender(CComBSTR(_T("Roman Ryltsov <ryltsov@gmail.com>"))));
-									__C(pMessage->put_ToRecipients(CComBSTR(_T("Roman Ryltsov <ryltsov@gmail.com>"))));
-									__C(pMessage->put_TransportLayerSecurity(ATL_VARIANT_TRUE));
-									__C(pMessage->put_AuthMethods(CComBSTR(_T("login"))));
-									__C(pMessage->put_AuthName(CComBSTR(_T("ryltsov@gmail.com"))));
-									__C(pMessage->put_AuthPassword(CComBSTR(_T(""))));
-									#pragma endregion 
-									TCHAR pszComputerName[MAX_COMPUTERNAME_LENGTH] = { 0 };
-									DWORD nComputerNameLength = DIM(pszComputerName);
-									_W(GetComputerName(pszComputerName, &nComputerNameLength));
-									CString sSubject = AtlFormatString(_T("Exception 0x%08X in %s on %s"), DebugInformation.ExceptionRecord.ExceptionCode, pszProcessFileName, pszComputerName);
-									CString sBody;
-									sBody += _T("Hi,") _T("\r\n")
-										_T("\r\n");
-									sBody += AtlFormatString(_T("This is Log Process Exception notifying on exception occurred:") _T("\r\n")
-										_T("\r\n"), 
-										pszComputerName);
-									sBody += AtlFormatString(_T(" * ") _T("Code: 0x%08X") _T("\r\n"), DebugInformation.ExceptionRecord.ExceptionCode);
-									if(nNativeExceptionCode != S_OK)
-										sBody += AtlFormatString(_T(" * ") _T("Native ATL Code: 0x%08X") _T("\r\n"), nNativeExceptionCode);
-									sBody += AtlFormatString(_T(" * ") _T("Local Time: %s") _T("\r\n"), _StringHelper::FormatDateTime());
-									sBody += AtlFormatString(_T(" * ") _T("Computer Name: %s") _T("\r\n"), pszComputerName);
-									// WARN: Attaching a minidump file requires it being closed by API (should we do ContinueDebugEvent and/or wait?)
-									//sBody += _T("\r\n")
-									//	_T("Minidump attached.") _T("\r\n");
-									__C(pMessage->put_Subject(CComBSTR(sSubject)));
-									__C(pMessage->put_Body(CComBSTR(sBody)));
-									//CObjectPtr<CMessage::CComAttachment> pAttachment = pMessage->GetAttachments()->Add();
-									//__C(pAttachment->put_Name(CComBSTR(sName)));
-									//__C(pAttachment->LoadFromFile(CComBSTR(sPath)));
-									m_pMessageQueue->Add(pMessage);
+									pMessage = m_Wizard.m_EmailPropertyPage.CreateMessage();
+									if(pMessage)
+									{
+										TCHAR pszComputerName[MAX_COMPUTERNAME_LENGTH] = { 0 };
+										DWORD nComputerNameLength = DIM(pszComputerName);
+										_W(GetComputerName(pszComputerName, &nComputerNameLength));
+										CString sSubject = AtlFormatString(_T("Exception 0x%08X in %s on %s"), DebugInformation.ExceptionRecord.ExceptionCode, pszProcessFileName, pszComputerName);
+										CString sBody;
+										sBody += _T("Hi,") _T("\r\n")
+											_T("\r\n");
+										sBody += AtlFormatString(_T("This is Log Process Exceptions notifying on exception occurred:") _T("\r\n")
+											_T("\r\n"), 
+											pszComputerName);
+										sBody += AtlFormatString(_T(" * ") _T("Code: 0x%08X") _T("\r\n"), DebugInformation.ExceptionRecord.ExceptionCode);
+										if(nNativeExceptionCode != S_OK)
+											sBody += AtlFormatString(_T(" * ") _T("Native ATL Code: 0x%08X") _T("\r\n"), nNativeExceptionCode);
+										sBody += AtlFormatString(_T(" * ") _T("Local Time: %s") _T("\r\n"), _StringHelper::FormatDateTime());
+										sBody += AtlFormatString(_T(" * ") _T("Computer Name: %s") _T("\r\n"), pszComputerName);
+										__C(pMessage->put_Subject(CComBSTR(sSubject)));
+										__C(pMessage->put_Body(CComBSTR(sBody)));
+										sMessageAttachmentPath = sPath;
+									}
 								}
 								_ATLCATCHALL()
 								{
 									_Z_EXCEPTION();
+									pMessage.Release();
 								}
 								#pragma endregion 
 							}
@@ -1075,10 +1719,53 @@ END_MSG_MAP()
 							}
 						}
 						break;
+					#pragma endregion
 					}
 					__E(ContinueDebugEvent(DebugEvent.dwProcessId, DebugEvent.dwThreadId, DBG_EXCEPTION_NOT_HANDLED));
+					#pragma region Message Notification (Delivery)
+					if(pMessage)
+						_ATLTRY
+						{
+							// WARN: Attaching a minidump file requires it being closed by API (should we do ContinueDebugEvent and/or wait?)
+							if(_tcslen(sMessageAttachmentPath))
+								_ATLTRY
+								{
+									ULONGLONG nFileSize;
+									{
+										CAtlFile File;
+										__C(File.Create(sMessageAttachmentPath, GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING));
+										__C(File.GetSize(nFileSize));
+									}
+									if((ULONG) (nFileSize >> 20) < m_Wizard.m_EmailPropertyPage.GetMaximalAttachmentSize())
+									{
+										CComBSTR sBody;
+										__C(pMessage->get_Body(&sBody));
+										CString sBodyT(sBody);
+										sBodyT += _T("\r\n")
+											_T("Minidump attached.") _T("\r\n");
+										__C(pMessage->put_Body(CComBSTR(sBodyT)));
+										CObjectPtr<CMessage::CComAttachment> pAttachment = pMessage->GetAttachments()->Add();
+										__C(pAttachment->put_Name(CComBSTR((LPCTSTR) sMessageAttachmentPath + sMessageAttachmentPath.FindFileName())));
+										__C(pAttachment->put_Type(CComBSTR(_T("application/x-mdmp"))));
+										__C(pAttachment->LoadFromFile(CComBSTR(sMessageAttachmentPath)));
+									}
+								}
+								_ATLCATCHALL()
+								{
+									_Z_EXCEPTION();
+								}
+							if(!m_pMessageQueue)
+								m_pMessageQueue.Construct();
+							m_pMessageQueue->Add(pMessage);
+						}
+						_ATLCATCHALL()
+						{
+							_Z_EXCEPTION();
+						}
+					#pragma endregion 
 					if(bExitProcess)
 						break;
+					#pragma endregion 
 				}
 			}
 			_ATLCATCHALL()
@@ -1332,6 +2019,8 @@ private:
 	CIntroductionPropertyPage m_IntroductionPropertyPage;
 	CProcessPropertyPage m_ProcessPropertyPage;
 	CMinidumpTypePropertyPage m_MinidumpTypePropertyPage;
+	CFilterPropertyPage m_FilterPropertyPage;
+	CEmailPropertyPage m_EmailPropertyPage;
 	COperationPropertyPage m_OperationPropertyPage;
 	CCompletionPropertyPage m_CompletionPropertyPage;
 
@@ -1373,6 +2062,8 @@ public:
 		m_IntroductionPropertyPage(this),
 		m_ProcessPropertyPage(this),
 		m_MinidumpTypePropertyPage(this),
+		m_FilterPropertyPage(this),
+		m_EmailPropertyPage(this),
 		m_OperationPropertyPage(this),
 		m_CompletionPropertyPage(this)
 	{
@@ -1383,6 +2074,8 @@ public:
 		AddPage(m_IntroductionPropertyPage);
 		AddPage(m_ProcessPropertyPage);
 		AddPage(m_MinidumpTypePropertyPage);
+		AddPage(m_FilterPropertyPage);
+		AddPage(m_EmailPropertyPage);
 		AddPage(m_OperationPropertyPage);
 		AddPage(m_CompletionPropertyPage);
 	}
