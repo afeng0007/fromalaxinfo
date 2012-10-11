@@ -524,7 +524,7 @@ public:
 			LookupMfIdentifier(nResult, sIdentifier);
 			sTitle = _T("Media Foundation");
 		}
-		////////////////////////////////////////////////////
+		#pragma region Obsolete?
 		// NOTE: These are perhaps useless in Windows 7, but I am under impression they are helpful in earlier systems
 		else if(IsWs2Result(nResult, &sMessage))
 			sTitle = _T("Sockets");
@@ -532,7 +532,17 @@ public:
 			sTitle = _T("WinHTTP");
 		else if(IsWinInetResult(nResult, &sMessage))
 			sTitle = _T("WinInet");
-		////////////////////////////////////////////////////
+		#pragma endregion
+		#pragma region Win32 Priority
+		else if(HRESULT_SEVERITY(nResult) == SEVERITY_ERROR && HRESULT_FACILITY(nResult) == FACILITY_WIN32 && (UINT) HRESULT_CODE(nResult) < 300)
+		{
+			sMessage = AtlFormatSystemMessage(nResult);
+			if(!LookupSystemIdentifier(nResult, sIdentifier))
+				 LookupHresultSystemIdentifier(nResult, sIdentifier);
+			if(!sMessage.IsEmpty() || !sIdentifier.IsEmpty())
+				sTitle = _T("System");
+		}
+		#pragma endregion
 		else if(IsD3dResult(nResult, &sMessage, &sIdentifier) || LookupD3dIdentifier(nResult, sIdentifier))
 			sTitle = _T("DirectDraw/Direct3D");
 		else if(IsD2dResult(nResult, &sMessage, &sIdentifier) || LookupD2dIdentifier(nResult, sIdentifier))
