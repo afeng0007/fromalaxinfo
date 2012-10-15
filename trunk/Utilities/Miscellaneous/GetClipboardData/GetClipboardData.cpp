@@ -168,6 +168,8 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 				}
 				CloseClipboard();
 			}
+			if(hNextClipboardViewerWindow)
+				SendMessage(hNextClipboardViewerWindow, WM_DRAWCLIPBOARD, wParam, lParam);		
 		}
 		break;
 	#pragma endregion
