@@ -298,7 +298,6 @@
   <ItemGroup>
     <None Include="Information.ico" />
     <None Include="Module.ico" />
-    <None Include="ReadMe.txt" />
     <None Include="GpsLocationConverter.rgs" />
   </ItemGroup>
   <ItemGroup>
