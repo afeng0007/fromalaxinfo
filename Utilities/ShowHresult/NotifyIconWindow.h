@@ -624,6 +624,8 @@ public:
 		_W(ChangeClipboardChain(m_NextClipboardViewerWindow));
 		_W(Shell_NotifyIcon(NIM_DELETE, &m_NotifyIconData));
 		m_NotifyIconData.hWnd = NULL;
+		// NOTE: Safety double-posting
+		PostQuitMessage(0);
 		return 0;
 	}
 	LRESULT OnChangeCbChain(CWindow RemovedWindow, CWindow NextWindow)
@@ -655,6 +657,8 @@ public:
 			}
 			_W(CloseClipboard());
 		}
+		if(m_NextClipboardViewerWindow)
+			m_NextClipboardViewerWindow.SendMessage(WM_DRAWCLIPBOARD, m_pCurrentMsg->wParam, m_pCurrentMsg->lParam);
 		return 0;
 	}
 	LRESULT OnMouseMove(UINT, CPoint)

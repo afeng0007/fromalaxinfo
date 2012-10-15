@@ -329,7 +329,6 @@
     <None Include="DsIdentifier.inc">
       <FileType>CppHeader</FileType>
     </None>
-    <None Include="ReadMe.txt" />
     <None Include="Module.rgs" />
     <None Include="SystemIdentifier.inc">
       <FileType>CppHeader</FileType>
