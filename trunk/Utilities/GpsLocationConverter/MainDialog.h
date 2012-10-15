@@ -524,6 +524,8 @@ public:
 			}
 			_W(CloseClipboard());
 		}
+		if(m_NextClipboardViewerWindow)
+			m_NextClipboardViewerWindow.SendMessage(WM_DRAWCLIPBOARD, m_pCurrentMsg->wParam, m_pCurrentMsg->lParam);
 		return 0;
 	}
 	LRESULT OnSysCommand(UINT nCommand, CPoint)
