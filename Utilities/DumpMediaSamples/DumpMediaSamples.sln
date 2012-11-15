@@ -1,0 +1,19 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DumpMediaSamples", "DumpMediaSamples.vcproj", "{1421856B-3882-48ED-8E77-6C302CE9279C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1421856B-3882-48ED-8E77-6C302CE9279C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1421856B-3882-48ED-8E77-6C302CE9279C}.Debug|Win32.Build.0 = Debug|Win32
+		{1421856B-3882-48ED-8E77-6C302CE9279C}.Release|Win32.ActiveCfg = Release|Win32
+		{1421856B-3882-48ED-8E77-6C302CE9279C}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
