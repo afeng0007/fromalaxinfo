@@ -166,6 +166,7 @@ public:
 	END_COM_MAP()
 
 	private:
+		CModule* m_pModule;
 		CString m_sName;
 		CString m_sNamePrefix;
 		mutable CRoCriticalSection m_DataCriticalSection;
@@ -173,6 +174,20 @@ public:
 
 	public:
 	// CSampleGrabberCallback
+		CSampleGrabberCallback() :
+			m_pModule(NULL)
+		{
+			_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		}
+		~CSampleGrabberCallback()
+		{
+			_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		}
+		VOID Initialize(CModule* pModule)
+		{
+			_A(!m_pModule && pModule);
+			m_pModule = pModule;
+		}
 		VOID SetName(const CString& sName)
 		{
 			_A(m_sName.IsEmpty());
@@ -185,9 +200,9 @@ public:
 			PrintMediaType(pMediaType);
 			m_pMediaType = pMediaType;
 		}
-		static VOID PrintMediaType(const CMediaType& pMediaType)
+		VOID PrintMediaType(const CMediaType& pMediaType)
 		{
-			_tprintf(_T("Media Type:\n\n"));
+			_tprintf(_T("%s") _T("Media Type:\n\n"), m_sNamePrefix);
 			_tprintf(_T("majortype %ls, subtype %ls, pUnk 0x%08x\n"), _PersistHelper::StringFromIdentifier(pMediaType->majortype), _PersistHelper::StringFromIdentifier(pMediaType->subtype), (LONG) (LONG_PTR) pMediaType->pUnk);
 			_tprintf(_T("bFixedSizeSamples %d, bTemporalCompression %d, lSampleSize %d\n"), pMediaType->bFixedSizeSamples, pMediaType->bTemporalCompression, pMediaType->lSampleSize);
 			_tprintf(_T("formattype %ls, cbFormat %d, pbFormat 0x%08x\n"), _PersistHelper::StringFromIdentifier(pMediaType->formattype), pMediaType->cbFormat, (UINT) (UINT_PTR) pMediaType->pbFormat);
@@ -240,13 +255,14 @@ public:
 		}
 
 	// ISampleGrabberCB
-        STDMETHOD(SampleCB)(DOUBLE fSampleTime, IMediaSample* pMediaSample) throw()
+        STDMETHOD(SampleCB)(DOUBLE fSampleTime, IMediaSample* pMediaSample)
 		{
 			_A(pMediaSample);
 			_ATLTRY
 			{
 				CMediaSampleProperties Properties(pMediaSample);
 				_A(!Properties.pMediaType);
+				CRoCriticalSectionLock PrintLock(m_pModule->m_PrintCriticalSection);
 				_tprintf(_T("%s") _T("fSampleTime %s, .dwTypeSpecificFlags 0x%08x%s, .dwSampleFlags 0x%08x%s, .tStart %s, .tStop %s, .dwStreamId %d\n"), 
 					m_sNamePrefix,
 					_StringHelper::FormatNumber(fSampleTime, 3),
@@ -282,7 +298,7 @@ public:
 			}
 			return S_OK;
 		}
-        STDMETHOD(BufferCB)(DOUBLE fSampleTime, BYTE* pnBuffer, LONG nBufferSize) throw()
+        STDMETHOD(BufferCB)(DOUBLE fSampleTime, BYTE* pnBuffer, LONG nBufferSize)
 		{
 			return S_OK;
 		}
@@ -293,6 +309,7 @@ private:
 public:
 	CPath m_sPath;
 	BOOL m_bNoReferenceClock;
+	mutable CRoCriticalSection m_PrintCriticalSection;
 
 public:
 // CModule
@@ -318,12 +335,12 @@ public:
 		_W(Combine(pszPath, pszPath, _T("Debug.grf")));
 		return pszPath;
 	}
-	CModule() throw()
+	CModule()
 	{
 		//m_sPath = GetDefaultPath();
 		m_bNoReferenceClock = FALSE;
 	}
-	~CModule() throw()
+	~CModule()
 	{
 	}
 	HRESULT PreMessageLoop(INT nShowCommand)
@@ -348,6 +365,7 @@ public:
 				continue;
 			CObjectPtr<CSampleGrabberCallback> pSampleGrabberCallback;
 			pSampleGrabberCallback.Construct();
+			pSampleGrabberCallback->Initialize(this);
 			if(FilterArray.GetCount() > 1)
 				pSampleGrabberCallback->SetName(AtlFormatString(_T("%c"), 'A' + nSampleGrabberIndex));
 			__C(pSampleGrabber->SetCallback(pSampleGrabberCallback, 0));
