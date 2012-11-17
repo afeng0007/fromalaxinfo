@@ -103,11 +103,11 @@ public:
 	CFilterMapperSpyT() throw() :
 		m_hQuartzModule(NULL)
 	{
-		_Z4(atlTraceRefcount, 4, _T("this 0x%08x\n"), this);
+		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
 	}
 	~CFilterMapperSpyT() throw()
 	{
-		_Z4(atlTraceRefcount, 4, _T("this 0x%08x\n"), this);
+		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
 	}
 	HRESULT FinalConstruct() throw()
 	{
@@ -117,7 +117,7 @@ public:
 			TCHAR pszPath[MAX_PATH] = { 0 };
 			_W(GetModuleFileName(NULL, pszPath, DIM(pszPath)));
 			_Z4(atlTraceRefcount, 4, _T("pszPath \"%s\", this 0x%08x, m_dwRef %d, m_bIsAggregated %d\n"), pszPath, this, m_dwRef, m_bIsAggregated);
-			const HINSTANCE hModule = CoLoadLibrary(_T("quartz.dll"), TRUE);
+			const HINSTANCE hModule = CoLoadLibrary(const_cast<LPOLESTR>((LPCOLESTR) CT2COLE(GetOriginalLibraryName())), TRUE);
 			_ATLTRY
 			{
 				typedef HRESULT (WINAPI *DLLGETCLASSOBJECT)(REFCLSID, REFIID, VOID**);

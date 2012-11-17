@@ -766,6 +766,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\SystemDeviceEnumeratorSpy.h"
+				>
+			</File>
+			<File
 				RelativePath=".\targetver.h"
 				>
 			</File>
@@ -887,10 +891,6 @@
 				>
 			</File>
 		</Filter>
-		<File
-			RelativePath=".\ReadMe.txt"
-			>
-		</File>
 	</Files>
 	<Globals>
 	</Globals>

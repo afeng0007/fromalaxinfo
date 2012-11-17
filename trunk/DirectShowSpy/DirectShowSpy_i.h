@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0500 */
-/* at Wed Aug 22 01:07:15 2012
+/* at Sat Nov 17 01:35:16 2012
  */
 /* Compiler settings for .\DirectShowSpy.idl:
     Oicf, W1, Zp8, env=Win32 (32b run)
@@ -55,6 +55,12 @@ typedef interface ISpy ISpy;
 #define __IFilterMapperSpy_FWD_DEFINED__
 typedef interface IFilterMapperSpy IFilterMapperSpy;
 #endif 	/* __IFilterMapperSpy_FWD_DEFINED__ */
+
+
+#ifndef __ISystemDeviceEnumeratorSpy_FWD_DEFINED__
+#define __ISystemDeviceEnumeratorSpy_FWD_DEFINED__
+typedef interface ISystemDeviceEnumeratorSpy ISystemDeviceEnumeratorSpy;
+#endif 	/* __ISystemDeviceEnumeratorSpy_FWD_DEFINED__ */
 
 
 #ifndef __IFilterGraphAddRemoveHook_FWD_DEFINED__
@@ -109,6 +115,18 @@ typedef struct FilterMapperSpy FilterMapperSpy;
 #endif /* __cplusplus */
 
 #endif 	/* __FilterMapperSpy_FWD_DEFINED__ */
+
+
+#ifndef __SystemDeviceEnumeratorSpy_FWD_DEFINED__
+#define __SystemDeviceEnumeratorSpy_FWD_DEFINED__
+
+#ifdef __cplusplus
+typedef class SystemDeviceEnumeratorSpy SystemDeviceEnumeratorSpy;
+#else
+typedef struct SystemDeviceEnumeratorSpy SystemDeviceEnumeratorSpy;
+#endif /* __cplusplus */
+
+#endif 	/* __SystemDeviceEnumeratorSpy_FWD_DEFINED__ */
 
 
 /* header files for imported files */
@@ -340,6 +358,117 @@ EXTERN_C const IID IID_IFilterMapperSpy;
 
 
 #endif 	/* __IFilterMapperSpy_INTERFACE_DEFINED__ */
+
+
+#ifndef __ISystemDeviceEnumeratorSpy_INTERFACE_DEFINED__
+#define __ISystemDeviceEnumeratorSpy_INTERFACE_DEFINED__
+
+/* interface ISystemDeviceEnumeratorSpy */
+/* [unique][helpstring][nonextensible][oleautomation][dual][uuid][object] */ 
+
+
+EXTERN_C const IID IID_ISystemDeviceEnumeratorSpy;
+
+#if defined(__cplusplus) && !defined(CINTERFACE)
+    
+    MIDL_INTERFACE("14EB119F-25CE-4654-ABE1-E6742AF03F2D")
+    ISystemDeviceEnumeratorSpy : public IDispatch
+    {
+    public:
+    };
+    
+#else 	/* C style interface */
+
+    typedef struct ISystemDeviceEnumeratorSpyVtbl
+    {
+        BEGIN_INTERFACE
+        
+        HRESULT ( STDMETHODCALLTYPE *QueryInterface )( 
+            ISystemDeviceEnumeratorSpy * This,
+            /* [in] */ REFIID riid,
+            /* [iid_is][out] */ 
+            __RPC__deref_out  void **ppvObject);
+        
+        ULONG ( STDMETHODCALLTYPE *AddRef )( 
+            ISystemDeviceEnumeratorSpy * This);
+        
+        ULONG ( STDMETHODCALLTYPE *Release )( 
+            ISystemDeviceEnumeratorSpy * This);
+        
+        HRESULT ( STDMETHODCALLTYPE *GetTypeInfoCount )( 
+            ISystemDeviceEnumeratorSpy * This,
+            /* [out] */ UINT *pctinfo);
+        
+        HRESULT ( STDMETHODCALLTYPE *GetTypeInfo )( 
+            ISystemDeviceEnumeratorSpy * This,
+            /* [in] */ UINT iTInfo,
+            /* [in] */ LCID lcid,
+            /* [out] */ ITypeInfo **ppTInfo);
+        
+        HRESULT ( STDMETHODCALLTYPE *GetIDsOfNames )( 
+            ISystemDeviceEnumeratorSpy * This,
+            /* [in] */ REFIID riid,
+            /* [size_is][in] */ LPOLESTR *rgszNames,
+            /* [range][in] */ UINT cNames,
+            /* [in] */ LCID lcid,
+            /* [size_is][out] */ DISPID *rgDispId);
+        
+        /* [local] */ HRESULT ( STDMETHODCALLTYPE *Invoke )( 
+            ISystemDeviceEnumeratorSpy * This,
+            /* [in] */ DISPID dispIdMember,
+            /* [in] */ REFIID riid,
+            /* [in] */ LCID lcid,
+            /* [in] */ WORD wFlags,
+            /* [out][in] */ DISPPARAMS *pDispParams,
+            /* [out] */ VARIANT *pVarResult,
+            /* [out] */ EXCEPINFO *pExcepInfo,
+            /* [out] */ UINT *puArgErr);
+        
+        END_INTERFACE
+    } ISystemDeviceEnumeratorSpyVtbl;
+
+    interface ISystemDeviceEnumeratorSpy
+    {
+        CONST_VTBL struct ISystemDeviceEnumeratorSpyVtbl *lpVtbl;
+    };
+
+    
+
+#ifdef COBJMACROS
+
+
+#define ISystemDeviceEnumeratorSpy_QueryInterface(This,riid,ppvObject)	\
+    ( (This)->lpVtbl -> QueryInterface(This,riid,ppvObject) ) 
+
+#define ISystemDeviceEnumeratorSpy_AddRef(This)	\
+    ( (This)->lpVtbl -> AddRef(This) ) 
+
+#define ISystemDeviceEnumeratorSpy_Release(This)	\
+    ( (This)->lpVtbl -> Release(This) ) 
+
+
+#define ISystemDeviceEnumeratorSpy_GetTypeInfoCount(This,pctinfo)	\
+    ( (This)->lpVtbl -> GetTypeInfoCount(This,pctinfo) ) 
+
+#define ISystemDeviceEnumeratorSpy_GetTypeInfo(This,iTInfo,lcid,ppTInfo)	\
+    ( (This)->lpVtbl -> GetTypeInfo(This,iTInfo,lcid,ppTInfo) ) 
+
+#define ISystemDeviceEnumeratorSpy_GetIDsOfNames(This,riid,rgszNames,cNames,lcid,rgDispId)	\
+    ( (This)->lpVtbl -> GetIDsOfNames(This,riid,rgszNames,cNames,lcid,rgDispId) ) 
+
+#define ISystemDeviceEnumeratorSpy_Invoke(This,dispIdMember,riid,lcid,wFlags,pDispParams,pVarResult,pExcepInfo,puArgErr)	\
+    ( (This)->lpVtbl -> Invoke(This,dispIdMember,riid,lcid,wFlags,pDispParams,pVarResult,pExcepInfo,puArgErr) ) 
+
+
+#endif /* COBJMACROS */
+
+
+#endif 	/* C style interface */
+
+
+
+
+#endif 	/* __ISystemDeviceEnumeratorSpy_INTERFACE_DEFINED__ */
 
 
 
@@ -763,6 +892,14 @@ EXTERN_C const CLSID CLSID_FilterMapperSpy;
 
 class DECLSPEC_UUID("B6274D9B-1AD3-4c32-83C5-35DC33CAFF47")
 FilterMapperSpy;
+#endif
+
+EXTERN_C const CLSID CLSID_SystemDeviceEnumeratorSpy;
+
+#ifdef __cplusplus
+
+class DECLSPEC_UUID("AD42E3BD-7B9B-4783-9DA2-61A9ACD0D4D2")
+SystemDeviceEnumeratorSpy;
 #endif
 #endif /* __AlaxInfoDirectShowSpy_LIBRARY_DEFINED__ */
 
