@@ -27,11 +27,11 @@ public:
 #endif // defined(_DEBUG)
 		_W(CExceptionFilter::Initialize());
 		TraceModuleVersion();
-		_Z4(atlTraceRefcount, 4, _T("this 0x%08x\n"), this);
+		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
 	}
 	~CDirectShowSpyModule() throw()
 	{
-		_Z4(atlTraceRefcount, 4, _T("this 0x%08x\n"), this);
+		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
 		CExceptionFilter::Terminate();
 	}
 

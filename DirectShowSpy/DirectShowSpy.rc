@@ -61,7 +61,7 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION  1, 0, 0, 647
+ FILEVERSION  1, 0, 0, 708
  PRODUCTVERSION 1,0,0,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
@@ -80,7 +80,7 @@ BEGIN
             VALUE "Comments", "Created by Roman Ryltsov roman@alax.info"
             VALUE "CompanyName", "Roman Ryltsov"
             VALUE "FileDescription", "Alax.Info DirectShow Spy Module"
-            VALUE "FileVersion",  "1, 0, 0, 647\0"
+            VALUE "FileVersion",  "1, 0, 0, 708\0"
             VALUE "InternalName", "DirectShowSpy.dll"
             VALUE "LegalCopyright", "Copyright © Alax.Info, Roman Ryltsov, 2008-2011"
             VALUE "OLESelfRegister", "Yes"
@@ -102,9 +102,10 @@ END
 //
 
 IDR_MODULE              REGISTRY                "DirectShowSpy.rgs"
-IDR_FILTERGRAPHSPY      REGISTRY                "FilterGraphSpy.rgs"
-IDR_NOTHREADFILTERGRAPHSPY REGISTRY                "FilterGraphSpy.rgs"
-IDR_FILTERMAPPERSPY     REGISTRY                "FilterMapperSpy.rgs"
+IDR_FILTERGRAPHSPY      REGISTRY                "GenericClass.rgs"
+IDR_NOTHREADFILTERGRAPHSPY REGISTRY                "GenericClass.rgs"
+IDR_FILTERMAPPERSPY     REGISTRY                "GenericClass.rgs"
+IDR_SYSTEMDEVICEENUMERATORSPY REGISTRY                "GenericClass.rgs"
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -190,6 +191,7 @@ BEGIN
     IDR_NOTHREADFILTERGRAPHSPY 
                             "\n\nAlax.Info DirectShow Filter Graph (No Thread) Spy\n"
     IDR_FILTERMAPPERSPY     "\n\nAlax.Info DirectShow Filter Mapper Spy\n"
+	IDR_SYSTEMDEVICEENUMERATORSPY "\n\nAlax.Info DirectShow System Device Enumerator Spy\n"
 END
 
 STRINGTABLE 

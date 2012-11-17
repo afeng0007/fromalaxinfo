@@ -32,6 +32,18 @@ interface IFilterMapperSpy : IDispatch
 {
 };
 [
+	object,
+	uuid(14EB119F-25CE-4654-ABE1-E6742AF03F2D),
+	dual,
+	oleautomation,
+	nonextensible,
+	helpstring("ISystemDeviceEnumeratorSpy Interface"),
+	pointer_default(unique)
+]
+interface ISystemDeviceEnumeratorSpy : IDispatch
+{
+};
+[
 	uuid(B9EC374B-834B-4DA9-BFB5-C1872CE736FF),
 	version(1.0),
 	helpstring("Alax.Info Filter Graph Spy 1.0 Type Library")
@@ -104,5 +116,13 @@ library AlaxInfoDirectShowSpy
 	coclass FilterMapperSpy
 	{
 		[default] interface IFilterMapperSpy;
+	};
+	[
+		uuid(AD42E3BD-7B9B-4783-9DA2-61A9ACD0D4D2),
+		helpstring("SystemDeviceEnumeratorSpy Class")
+	]
+	coclass SystemDeviceEnumeratorSpy
+	{
+		[default] interface ISystemDeviceEnumeratorSpy;
 	};
 };

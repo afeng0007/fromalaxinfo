@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0500 */
-/* at Wed Aug 22 01:07:15 2012
+/* at Sat Nov 17 01:35:16 2012
  */
 /* Compiler settings for .\DirectShowSpy.idl:
     Oicf, W1, Zp8, env=Win32 (32b run)
@@ -95,6 +95,13 @@ extern const MIDL_STUB_DESC Object_StubDesc;
 
 extern const MIDL_SERVER_INFO IFilterMapperSpy_ServerInfo;
 extern const MIDL_STUBLESS_PROXY_INFO IFilterMapperSpy_ProxyInfo;
+
+
+extern const MIDL_STUB_DESC Object_StubDesc;
+
+
+extern const MIDL_SERVER_INFO ISystemDeviceEnumeratorSpy_ServerInfo;
+extern const MIDL_STUBLESS_PROXY_INFO ISystemDeviceEnumeratorSpy_ProxyInfo;
 
 
 
@@ -269,6 +276,72 @@ CInterfaceStubVtbl _IFilterMapperSpyStubVtbl =
     CStdStubBuffer_DELEGATING_METHODS
 };
 
+
+/* Object interface: ISystemDeviceEnumeratorSpy, ver. 0.0,
+   GUID={0x14EB119F,0x25CE,0x4654,{0xAB,0xE1,0xE6,0x74,0x2A,0xF0,0x3F,0x2D}} */
+
+#pragma code_seg(".orpc")
+static const unsigned short ISystemDeviceEnumeratorSpy_FormatStringOffsetTable[] =
+    {
+    (unsigned short) -1,
+    (unsigned short) -1,
+    (unsigned short) -1,
+    (unsigned short) -1,
+    0
+    };
+
+static const MIDL_STUBLESS_PROXY_INFO ISystemDeviceEnumeratorSpy_ProxyInfo =
+    {
+    &Object_StubDesc,
+    DirectShowSpy__MIDL_ProcFormatString.Format,
+    &ISystemDeviceEnumeratorSpy_FormatStringOffsetTable[-3],
+    0,
+    0,
+    0
+    };
+
+
+static const MIDL_SERVER_INFO ISystemDeviceEnumeratorSpy_ServerInfo = 
+    {
+    &Object_StubDesc,
+    0,
+    DirectShowSpy__MIDL_ProcFormatString.Format,
+    &ISystemDeviceEnumeratorSpy_FormatStringOffsetTable[-3],
+    0,
+    0,
+    0,
+    0};
+CINTERFACE_PROXY_VTABLE(7) _ISystemDeviceEnumeratorSpyProxyVtbl = 
+{
+    0,
+    &IID_ISystemDeviceEnumeratorSpy,
+    IUnknown_QueryInterface_Proxy,
+    IUnknown_AddRef_Proxy,
+    IUnknown_Release_Proxy ,
+    0 /* (void *) (INT_PTR) -1 /* IDispatch::GetTypeInfoCount */ ,
+    0 /* (void *) (INT_PTR) -1 /* IDispatch::GetTypeInfo */ ,
+    0 /* (void *) (INT_PTR) -1 /* IDispatch::GetIDsOfNames */ ,
+    0 /* IDispatch_Invoke_Proxy */
+};
+
+
+static const PRPC_STUB_FUNCTION ISystemDeviceEnumeratorSpy_table[] =
+{
+    STUB_FORWARDING_FUNCTION,
+    STUB_FORWARDING_FUNCTION,
+    STUB_FORWARDING_FUNCTION,
+    STUB_FORWARDING_FUNCTION
+};
+
+CInterfaceStubVtbl _ISystemDeviceEnumeratorSpyStubVtbl =
+{
+    &IID_ISystemDeviceEnumeratorSpy,
+    &ISystemDeviceEnumeratorSpy_ServerInfo,
+    7,
+    &ISystemDeviceEnumeratorSpy_table[-3],
+    CStdStubBuffer_DELEGATING_METHODS
+};
+
 static const MIDL_STUB_DESC Object_StubDesc = 
     {
     0,
@@ -296,6 +369,7 @@ static const MIDL_STUB_DESC Object_StubDesc =
 const CInterfaceProxyVtbl * _DirectShowSpy_ProxyVtblList[] = 
 {
     ( CInterfaceProxyVtbl *) &_ISpyProxyVtbl,
+    ( CInterfaceProxyVtbl *) &_ISystemDeviceEnumeratorSpyProxyVtbl,
     ( CInterfaceProxyVtbl *) &_IFilterMapperSpyProxyVtbl,
     0
 };
@@ -303,6 +377,7 @@ const CInterfaceProxyVtbl * _DirectShowSpy_ProxyVtblList[] =
 const CInterfaceStubVtbl * _DirectShowSpy_StubVtblList[] = 
 {
     ( CInterfaceStubVtbl *) &_ISpyStubVtbl,
+    ( CInterfaceStubVtbl *) &_ISystemDeviceEnumeratorSpyStubVtbl,
     ( CInterfaceStubVtbl *) &_IFilterMapperSpyStubVtbl,
     0
 };
@@ -310,12 +385,14 @@ const CInterfaceStubVtbl * _DirectShowSpy_StubVtblList[] =
 PCInterfaceName const _DirectShowSpy_InterfaceNamesList[] = 
 {
     "ISpy",
+    "ISystemDeviceEnumeratorSpy",
     "IFilterMapperSpy",
     0
 };
 
 const IID *  _DirectShowSpy_BaseIIDList[] = 
 {
+    &IID_IDispatch,
     &IID_IDispatch,
     &IID_IDispatch,
     0
@@ -328,8 +405,9 @@ int __stdcall _DirectShowSpy_IID_Lookup( const IID * pIID, int * pIndex )
 {
     IID_BS_LOOKUP_SETUP
 
-    IID_BS_LOOKUP_INITIAL_TEST( _DirectShowSpy, 2, 1 )
-    IID_BS_LOOKUP_RETURN_RESULT( _DirectShowSpy, 2, *pIndex )
+    IID_BS_LOOKUP_INITIAL_TEST( _DirectShowSpy, 3, 2 )
+    IID_BS_LOOKUP_NEXT_TEST( _DirectShowSpy, 1 )
+    IID_BS_LOOKUP_RETURN_RESULT( _DirectShowSpy, 3, *pIndex )
     
 }
 
@@ -340,7 +418,7 @@ const ExtendedProxyFileInfo DirectShowSpy_ProxyFileInfo =
     (const PCInterfaceName * ) & _DirectShowSpy_InterfaceNamesList,
     (const IID ** ) & _DirectShowSpy_BaseIIDList,
     & _DirectShowSpy_IID_Lookup, 
-    2,
+    3,
     2,
     0, /* table of [async_uuid] interfaces */
     0, /* Filler1 */

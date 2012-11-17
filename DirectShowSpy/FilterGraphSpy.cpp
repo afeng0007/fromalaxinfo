@@ -9,6 +9,7 @@
 #include "FilterGraphSpy.h"
 #include "FilterMapperSpy.h"
 #include "GraphBuilderCallbackPropertySheet.h"
+#include "SystemDeviceEnumeratorSpy.h"
 
 ////////////////////////////////////////////////////////////
 // CGraphBuilderCallbackPropertySheet
