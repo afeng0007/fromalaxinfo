@@ -18,6 +18,7 @@
 #include <wincodec.h> // FACILITY_WINCODEC_ERR
 #include <wia_lh.h> // FACILITY_WIA
 #include <corerror.h> // FACILITY_URT
+#include <audioclient.h> // FACILITY_AUDCLNT
 #include "rowinhttp.h"
 #include "AboutDialog.h"
 
@@ -148,6 +149,34 @@ private:
 		{
 			#define A(x) { x, #x },
 			#include "MfIdentifier.inc"
+			#undef A
+		};
+		for(SIZE_T nIndex = 0; nIndex < DIM(g_pMap); nIndex++)
+			if(g_pMap[nIndex].nValue == nValue)
+			{
+				sIdentifier = CString(g_pMap[nIndex].pszName);
+				return TRUE;
+			}
+		return FALSE;
+	}
+	static BOOL IsAudioClientResult(HRESULT nResult, CString* psMessage = NULL, CString* psIdentifier = NULL)
+	{
+		if(HRESULT_FACILITY(nResult) != FACILITY_AUDCLNT)
+			return FALSE;
+		psMessage;
+		CString sIdentifier;
+		if(!LookupAudioClientIdentifier(nResult, sIdentifier))
+			return FALSE;
+		if(psIdentifier)
+			*psIdentifier = sIdentifier;
+		return TRUE;
+	}
+	static BOOL LookupAudioClientIdentifier(HRESULT nValue, CString& sIdentifier)
+	{
+		static const struct { HRESULT nValue; LPCSTR pszName; } g_pMap[] = 
+		{
+			#define A(x) { x, #x },
+			#include "AudioClientIdentifier.inc"
 			#undef A
 		};
 		for(SIZE_T nIndex = 0; nIndex < DIM(g_pMap); nIndex++)
@@ -523,7 +552,8 @@ public:
 		{
 			LookupMfIdentifier(nResult, sIdentifier);
 			sTitle = _T("Media Foundation");
-		}
+		} else if(IsAudioClientResult(nResult, &sMessage, &sIdentifier) || LookupAudioClientIdentifier(nResult, sIdentifier))
+			sTitle = _T("Audio Client");
 		#pragma region Obsolete?
 		// NOTE: These are perhaps useless in Windows 7, but I am under impression they are helpful in earlier systems
 		else if(IsWs2Result(nResult, &sMessage))
