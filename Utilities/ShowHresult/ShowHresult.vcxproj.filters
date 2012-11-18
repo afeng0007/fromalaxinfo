@@ -94,6 +94,9 @@
     <None Include="WmIdentifier.inc">
       <Filter>Header Files</Filter>
     </None>
+    <None Include="AudioClientIdentifier.inc">
+      <Filter>Header Files\Include Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="ShowHresult.idl">
