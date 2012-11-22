@@ -1330,9 +1330,9 @@ public:
 		{
 			TCHAR pszDirectory[MAX_PATH] = { 0 };
 			_W(GetWindowsDirectory(pszDirectory, DIM(pszDirectory)));
-#if defined(_TRACE) && _TRACE
-			_W(StripToRoot(pszDirectory));
-#endif // defined(_TRACE) && _TRACE
+			#if defined(_TRACE) && _TRACE
+				_W(StripToRoot(pszDirectory));
+			#endif // defined(_TRACE) && _TRACE
 			if(GetOsVersion() >= 0x00060000) // Windows Vista+
 			{
 				_W(SHGetSpecialFolderPath(m_hWnd, pszDirectory, CSIDL_COMMON_APPDATA, FALSE));
@@ -1346,10 +1346,10 @@ public:
 			_Z5(atlTraceGeneral, 5, _T("m_sPath \"%s\"\n"), m_sPath);
 		}
 		#pragma endregion
-#if _DEVELOPMENT && FALSE
-		static LPCTSTR g_pszPath = _T("D:\\Projects\\A&H\\LuxRiot\\_Issues\\45 Sanyo XP Issues\\DirectShowSpy.log");
-		m_sPath = g_pszPath;
-#endif // _DEVELOPMENT
+		#if _DEVELOPMENT && FALSE
+			static LPCTSTR g_pszPath = _T("D:\\Projects\\A&H\\LuxRiot\\_Issues\\45 Sanyo XP Issues\\DirectShowSpy.log");
+			m_sPath = g_pszPath;
+		#endif // _DEVELOPMENT
 		AddPage(m_GraphPropertyPage);
 	}
 	BOOL SetInitialPosition()
@@ -1361,12 +1361,12 @@ public:
 		#pragma region Indication of Bitness
 		CString sCaption;
 		_W(GetWindowText(sCaption));
-#if defined(_WIN64)
-		sCaption.Append(_T(" (64-bit)"));
-#else
-		if(SafeIsWow64Process())
-			sCaption.Append(_T(" (32-bit)"));
-#endif // defined(_WIN64)
+		#if defined(_WIN64)
+			sCaption.Append(_T(" (64-bit)"));
+		#else
+			if(SafeIsWow64Process())
+				sCaption.Append(_T(" (32-bit)"));
+		#endif // defined(_WIN64)
 		_W(SetWindowText(sCaption));
 		#pragma endregion
 		#pragma region System Menu
