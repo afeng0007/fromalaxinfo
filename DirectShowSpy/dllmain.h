@@ -22,12 +22,10 @@ public:
 // CDirectShowSpyModule
 	CDirectShowSpyModule() throw()
 	{
-#if defined(_DEBUG)
-		AtlTraceLoadSettings(NULL);
-#endif // defined(_DEBUG)
-		_W(CExceptionFilter::Initialize());
+		AtlTraceSetDefaultSettings();
 		TraceModuleVersion();
 		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		_W(CExceptionFilter::Initialize());
 	}
 	~CDirectShowSpyModule() throw()
 	{

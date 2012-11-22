@@ -602,6 +602,10 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath=".\Configuration.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\DirectShowSpy.cpp"
 				>
 			</File>
@@ -742,6 +746,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Configuration.h"
+				>
+			</File>
+			<File
 				RelativePath=".\dllmain.h"
 				>
 			</File>
@@ -796,6 +804,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Exclamation.ico"
+				>
+			</File>
+			<File
 				RelativePath=".\Failure.ico"
 				>
 			</File>
@@ -805,6 +817,14 @@
 			</File>
 			<File
 				RelativePath=".\FilterMapperSpy.rgs"
+				>
+			</File>
+			<File
+				RelativePath=".\GenericClass.rgs"
+				>
+			</File>
+			<File
+				RelativePath=".\Information.ico"
 				>
 			</File>
 			<File
