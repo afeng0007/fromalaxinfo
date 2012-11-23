@@ -64,12 +64,6 @@ public:
 		CPath m_sPath;
 		CPath m_sUserPath;
 
-		static BOOL IsAdministrator()
-		{
-			bool bIsMember = FALSE;
-			return CAccessToken().CheckTokenMembership(Sids::Admins(), &bIsMember) && bIsMember;
-		}
-
 	public:
 	// CRegistrationPropertyPage
 		CRegistrationPropertyPage(CRegistrationPropertySheet* pPropertySheet) throw() :
@@ -128,6 +122,9 @@ public:
 					{
 						m_RegisterButton.SetElevationRequiredState(TRUE);
 						m_UnregisterButton.SetElevationRequiredState(TRUE);
+						// NOTE: Even per-user registration needs elevation, since we are hooking COM classes
+						m_UserRegisterButton.SetElevationRequiredState(TRUE);
+						m_UserUnregisterButton.SetElevationRequiredState(TRUE);
 					}
 				}
 				_StringHelper::GetCommaSeparatedItems(AtlLoadString(IDC_REGISTRATION_REGISTRATION_STATUS), m_StatusArray);
@@ -203,7 +200,8 @@ public:
 			{
 				CWaitCursor WaitCursor;
 				const BOOL bSilent = !(GetKeyState(VK_SCROLL) & 1);
-				const DWORD nExitCode = ExecuteWait(AtlFormatString(_T("%s /i:user /n \"%s\""), bSilent ? _T("/s") : _T(""), GetPath()));
+				// NOTE: Even per-user registration needs elevation, since we are hooking COM classes
+				const DWORD nExitCode = ExecuteWait(AtlFormatString(_T("%s /i:user /n \"%s\""), bSilent ? _T("/s") : _T(""), GetPath()), TRUE);
 				if(bSilent)
 					MessageBeep(nExitCode ? MB_ICONERROR : MB_OK);
 				CancelToClose();
@@ -222,7 +220,8 @@ public:
 				CWaitCursor WaitCursor;
 				const BOOL bSilent = !(GetKeyState(VK_SCROLL) & 1);
 				const CPath& sPath = m_sUserPath; //GetPath();
-				const DWORD nExitCode = ExecuteWait(AtlFormatString(_T("%s /i:user /n /u \"%s\""), bSilent ? _T("/s") : _T(""), sPath));
+				// NOTE: Even per-user registration needs elevation, since we are hooking COM classes
+				const DWORD nExitCode = ExecuteWait(AtlFormatString(_T("%s /i:user /n /u \"%s\""), bSilent ? _T("/s") : _T(""), sPath), TRUE);
 				if(bSilent)
 					MessageBeep(nExitCode ? MB_ICONERROR : MB_OK);
 				CancelToClose();
@@ -273,12 +272,6 @@ public:
 		CRoArrayT<CString> m_StatusArray;
 		CPath m_sPath;
 		CPath m_sUserPath;
-
-		static BOOL IsAdministrator()
-		{
-			bool bIsMember = FALSE;
-			return CAccessToken().CheckTokenMembership(Sids::Admins(), &bIsMember) && bIsMember;
-		}
 
 	public:
 	// CProppageRegistrationPropertyPage
@@ -340,9 +333,6 @@ public:
 					{
 						m_RegisterButton.SetElevationRequiredState(TRUE);
 						m_UnregisterButton.SetElevationRequiredState(TRUE);
-						// NOTE: Even per-user registration needs elevation, since we are hooking COM classes
-						m_UserRegisterButton.SetElevationRequiredState(TRUE);
-						m_UserUnregisterButton.SetElevationRequiredState(TRUE);
 					}
 				}
 				_StringHelper::GetCommaSeparatedItems(AtlLoadString(IDC_REGISTRATION_PROPPAGEREGISTRATION_STATUS), m_StatusArray);
@@ -418,8 +408,7 @@ public:
 			{
 				CWaitCursor WaitCursor;
 				const BOOL bSilent = !(GetKeyState(VK_SCROLL) & 1);
-				// NOTE: Even per-user registration needs elevation, since we are hooking COM classes
-				const DWORD nExitCode = ExecuteWait(AtlFormatString(_T("%s /i:user /n \"%s\""), bSilent ? _T("/s") : _T(""), m_PropertySheet.m_sPropPagePath), TRUE);
+				const DWORD nExitCode = ExecuteWait(AtlFormatString(_T("%s /i:user /n \"%s\""), bSilent ? _T("/s") : _T(""), m_PropertySheet.m_sPropPagePath));
 				if(bSilent)
 					MessageBeep(nExitCode ? MB_ICONERROR : MB_OK);
 				CancelToClose();
@@ -437,8 +426,7 @@ public:
 			{
 				CWaitCursor WaitCursor;
 				const BOOL bSilent = !(GetKeyState(VK_SCROLL) & 1);
-				// NOTE: Even per-user registration needs elevation, since we are hooking COM classes
-				const DWORD nExitCode = ExecuteWait(AtlFormatString(_T("%s /i:user /n /u \"%s\""), bSilent ? _T("/s") : _T(""), m_PropertySheet.m_sPropPagePath), TRUE);
+				const DWORD nExitCode = ExecuteWait(AtlFormatString(_T("%s /i:user /n /u \"%s\""), bSilent ? _T("/s") : _T(""), m_PropertySheet.m_sPropPagePath));
 				if(bSilent)
 					MessageBeep(nExitCode ? MB_ICONERROR : MB_OK);
 				CancelToClose();
@@ -527,6 +515,11 @@ public:
 		if(SUCCEEDED(HRESULT_FROM_WIN32(Key.Open(hRootKey, AtlFormatString(_T("Software\\Classes\\CLSID\\%ls\\InProcServer32"), _PersistHelper::StringFromIdentifier(Identifier)), KEY_READ))))
 			sPath = (LPCTSTR) _RegKeyHelper::QueryStringValue(Key);
 		return sPath;
+	}
+	static BOOL IsAdministrator()
+	{
+		bool bIsMember = FALSE;
+		return CAccessToken().CheckTokenMembership(Sids::Admins(), &bIsMember) && bIsMember;
 	}
 	static HANDLE Execute(const CString& sParameters, BOOL bAsAdministrator = FALSE)
 	{
