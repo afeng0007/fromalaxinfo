@@ -79,6 +79,7 @@ public:
 		VOID UpdateControls()
 		{
 			_A(_pAtlModule);
+			const CPath& sLocalPath = GetPath();
 			#pragma region System
 			CPath sPath = FindTypeLibraryPath(HKEY_LOCAL_MACHINE);
 			const BOOL bPathEmpty = _tcslen(sPath) == 0;
@@ -86,7 +87,7 @@ public:
 			m_PathEdit.SetValue(sPath);
 			m_PathEdit.GetWindow(GW_HWNDPREV).EnableWindow(!bPathEmpty);
 			m_PathEdit.EnableWindow(!bPathEmpty);
-			m_RegisterButton.EnableWindow(bPathEmpty);
+			m_RegisterButton.EnableWindow(bPathEmpty || _tcsicmp(sPath, sLocalPath));
 			m_UnregisterButton.EnableWindow(!bPathEmpty);
 			m_sPath = sPath;
 			#pragma endregion 
@@ -97,7 +98,7 @@ public:
 			m_UserPathEdit.SetValue(sUserPath);
 			m_UserPathEdit.GetWindow(GW_HWNDPREV).EnableWindow(!bUserPathEmpty);
 			m_UserPathEdit.EnableWindow(!bUserPathEmpty);
-			m_UserRegisterButton.EnableWindow(bUserPathEmpty);
+			m_UserRegisterButton.EnableWindow(bUserPathEmpty || _tcsicmp(sUserPath, sLocalPath));
 			m_UserUnregisterButton.EnableWindow(!bUserPathEmpty);
 			m_sUserPath = sUserPath;
 			#pragma endregion 
@@ -168,6 +169,7 @@ public:
 				const DWORD nExitCode = ExecuteWait(AtlFormatString(_T("%s \"%s\""), bSilent ? _T("/s") : _T(""), GetPath()), TRUE);
 				if(bSilent)
 					MessageBeep(nExitCode ? MB_ICONERROR : MB_OK);
+				CancelToClose();
 			}
 			_ATLCATCH(Exception)
 			{
@@ -182,9 +184,11 @@ public:
 			{
 				CWaitCursor WaitCursor;
 				const BOOL bSilent = !(GetKeyState(VK_SCROLL) & 1);
-				const DWORD nExitCode = ExecuteWait(AtlFormatString(_T("%s /u \"%s\""), bSilent ? _T("/s") : _T(""), GetPath()), TRUE);
+				const CPath& sPath = m_sPath; //GetPath();
+				const DWORD nExitCode = ExecuteWait(AtlFormatString(_T("%s /u \"%s\""), bSilent ? _T("/s") : _T(""), sPath), TRUE);
 				if(bSilent)
 					MessageBeep(nExitCode ? MB_ICONERROR : MB_OK);
+				CancelToClose();
 			}
 			_ATLCATCH(Exception)
 			{
@@ -202,6 +206,7 @@ public:
 				const DWORD nExitCode = ExecuteWait(AtlFormatString(_T("%s /i:user /n \"%s\""), bSilent ? _T("/s") : _T(""), GetPath()));
 				if(bSilent)
 					MessageBeep(nExitCode ? MB_ICONERROR : MB_OK);
+				CancelToClose();
 			}
 			_ATLCATCH(Exception)
 			{
@@ -216,9 +221,11 @@ public:
 			{
 				CWaitCursor WaitCursor;
 				const BOOL bSilent = !(GetKeyState(VK_SCROLL) & 1);
-				const DWORD nExitCode = ExecuteWait(AtlFormatString(_T("%s /i:user /n /u \"%s\""), bSilent ? _T("/s") : _T(""), GetPath()));
+				const CPath& sPath = m_sUserPath; //GetPath();
+				const DWORD nExitCode = ExecuteWait(AtlFormatString(_T("%s /i:user /n /u \"%s\""), bSilent ? _T("/s") : _T(""), sPath));
 				if(bSilent)
 					MessageBeep(nExitCode ? MB_ICONERROR : MB_OK);
+				CancelToClose();
 			}
 			_ATLCATCH(Exception)
 			{
@@ -283,15 +290,16 @@ public:
 		{
 			class __declspec(uuid("92A3A302-DA7C-4A1F-BA7E-1802BB5D2D02")) PSFactoryBuffer;
 			_A(_pAtlModule);
+			const CPath& sLocalPath = m_PropertySheet.m_sPropPagePath;
 			#pragma region System
-			//CPath sUserPath = FindTypeLibraryPath(HKEY_LOCAL_MACHINE);
+			//CPath sPath = FindTypeLibraryPath(HKEY_LOCAL_MACHINE);
 			CPath sPath = FindClassPath(HKEY_LOCAL_MACHINE, __uuidof(PSFactoryBuffer));
 			const BOOL bPathEmpty = _tcslen(sPath) == 0;
 			m_StatusEdit.SetValue(m_StatusArray[bPathEmpty ? 0 : 1]);
 			m_PathEdit.SetValue(sPath);
 			m_PathEdit.GetWindow(GW_HWNDPREV).EnableWindow(!bPathEmpty);
 			m_PathEdit.EnableWindow(!bPathEmpty);
-			m_RegisterButton.EnableWindow(bPathEmpty);
+			m_RegisterButton.EnableWindow(bPathEmpty || _tcsicmp(sPath, sLocalPath));
 			m_UnregisterButton.EnableWindow(!bPathEmpty);
 			m_sPath = sPath;
 			#pragma endregion 
@@ -332,6 +340,9 @@ public:
 					{
 						m_RegisterButton.SetElevationRequiredState(TRUE);
 						m_UnregisterButton.SetElevationRequiredState(TRUE);
+						// NOTE: Even per-user registration needs elevation, since we are hooking COM classes
+						m_UserRegisterButton.SetElevationRequiredState(TRUE);
+						m_UserUnregisterButton.SetElevationRequiredState(TRUE);
 					}
 				}
 				_StringHelper::GetCommaSeparatedItems(AtlLoadString(IDC_REGISTRATION_PROPPAGEREGISTRATION_STATUS), m_StatusArray);
@@ -373,6 +384,7 @@ public:
 				const DWORD nExitCode = ExecuteWait(AtlFormatString(_T("%s \"%s\""), bSilent ? _T("/s") : _T(""), m_PropertySheet.m_sPropPagePath), TRUE);
 				if(bSilent)
 					MessageBeep(nExitCode ? MB_ICONERROR : MB_OK);
+				CancelToClose();
 			}
 			_ATLCATCH(Exception)
 			{
@@ -391,6 +403,7 @@ public:
 				const DWORD nExitCode = ExecuteWait(AtlFormatString(_T("%s /u \"%s\""), bSilent ? _T("/s") : _T(""), sPath), TRUE);
 				if(bSilent)
 					MessageBeep(nExitCode ? MB_ICONERROR : MB_OK);
+				CancelToClose();
 			}
 			_ATLCATCH(Exception)
 			{
@@ -405,9 +418,11 @@ public:
 			{
 				CWaitCursor WaitCursor;
 				const BOOL bSilent = !(GetKeyState(VK_SCROLL) & 1);
-				const DWORD nExitCode = ExecuteWait(AtlFormatString(_T("%s /i:user /n \"%s\""), bSilent ? _T("/s") : _T(""), m_PropertySheet.m_sPropPagePath));
+				// NOTE: Even per-user registration needs elevation, since we are hooking COM classes
+				const DWORD nExitCode = ExecuteWait(AtlFormatString(_T("%s /i:user /n \"%s\""), bSilent ? _T("/s") : _T(""), m_PropertySheet.m_sPropPagePath), TRUE);
 				if(bSilent)
 					MessageBeep(nExitCode ? MB_ICONERROR : MB_OK);
+				CancelToClose();
 			}
 			_ATLCATCH(Exception)
 			{
@@ -422,9 +437,11 @@ public:
 			{
 				CWaitCursor WaitCursor;
 				const BOOL bSilent = !(GetKeyState(VK_SCROLL) & 1);
-				const DWORD nExitCode = ExecuteWait(AtlFormatString(_T("%s /i:user /n /u \"%s\""), bSilent ? _T("/s") : _T(""), m_PropertySheet.m_sPropPagePath));
+				// NOTE: Even per-user registration needs elevation, since we are hooking COM classes
+				const DWORD nExitCode = ExecuteWait(AtlFormatString(_T("%s /i:user /n /u \"%s\""), bSilent ? _T("/s") : _T(""), m_PropertySheet.m_sPropPagePath), TRUE);
 				if(bSilent)
 					MessageBeep(nExitCode ? MB_ICONERROR : MB_OK);
+				CancelToClose();
 			}
 			_ATLCATCH(Exception)
 			{

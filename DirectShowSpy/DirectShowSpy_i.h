@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0500 */
-/* at Fri Nov 23 00:35:10 2012
+/* at Fri Nov 23 16:34:56 2012
  */
 /* Compiler settings for .\DirectShowSpy.idl:
     Oicf, W1, Zp8, env=Win32 (32b run)
