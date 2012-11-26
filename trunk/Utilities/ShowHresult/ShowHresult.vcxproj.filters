@@ -91,10 +91,13 @@
     <None Include="SystemHresultIdentifier.inc">
       <Filter>Header Files\Include Files</Filter>
     </None>
-    <None Include="WmIdentifier.inc">
-      <Filter>Header Files</Filter>
-    </None>
     <None Include="AudioClientIdentifier.inc">
+      <Filter>Header Files\Include Files</Filter>
+    </None>
+    <None Include="WmIdentifier.inc">
+      <Filter>Header Files\Include Files</Filter>
+    </None>
+    <None Include="P2pIdentifier.inc">
       <Filter>Header Files\Include Files</Filter>
     </None>
   </ItemGroup>

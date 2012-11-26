@@ -290,9 +290,14 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="AudioClientIdentifier.inc" />
+    <None Include="AudioClientIdentifier.inc">
+      <FileType>CppHeader</FileType>
+    </None>
+    <None Include="P2pIdentifier.inc">
+      <FileType>CppHeader</FileType>
+    </None>
     <None Include="WmIdentifier.inc">
-      <FileType>Document</FileType>
+      <FileType>CppHeader</FileType>
     </None>
     <None Include="D2dIdentifier.inc">
       <FileType>CppHeader</FileType>
