@@ -4,12 +4,11 @@
 // 
 // A permission to use the source code is granted as long as reference to 
 // source website http://alax.info is retained.
-// 
-// $Id$
 
 #include "stdafx.h"
 //#include <qedit.h>
 #include "rodshow.h"
+#include "Handler.h"
 
 #pragma region Re-Adding Removed from Windows SDK qedit.h
 
@@ -171,6 +170,7 @@ public:
 		CString m_sNamePrefix;
 		mutable CRoCriticalSection m_DataCriticalSection;
 		CMediaType m_pMediaType;
+		CComPtr<CAbstractHandler> m_pHandler;
 
 	public:
 	// CSampleGrabberCallback
@@ -253,6 +253,11 @@ public:
 				;
 			_tprintf(_T("\n"));
 		}
+		VOID SetHandler(CAbstractHandler* pHandler)
+		{
+			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+			m_pHandler = pHandler;
+		}
 
 	// ISampleGrabberCB
         STDMETHOD(SampleCB)(DOUBLE fSampleTime, IMediaSample* pMediaSample)
@@ -290,6 +295,8 @@ public:
 						sBuffer,
 						0);
 				}
+				if(m_pHandler)
+					m_pHandler->HandleSample(Properties);
 				_tprintf(_T("\n"));
 			}
 			_ATLCATCH(Exception)
@@ -372,6 +379,10 @@ public:
 			nSampleGrabberIndex++;
 			const CMediaType pMediaType = _FilterGraphHelper::GetPinMediaType(_FilterGraphHelper::GetFilterPin(CComQIPtr<IBaseFilter>(pSampleGrabber), PINDIR_INPUT));
 			pSampleGrabberCallback->SetMediaType(pMediaType);
+			//typedef CHdycInterlacingHandler CHandler;
+			//CObjectPtr<CHandler> pHandler;
+			//pHandler.Construct()->Initialize(pMediaType);
+			//pSampleGrabberCallback->SetHandler(pHandler);
 		}
 		#pragma endregion 
 		if(m_bNoReferenceClock)
@@ -504,3 +515,5 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 	return nResult;
 }
+
+
