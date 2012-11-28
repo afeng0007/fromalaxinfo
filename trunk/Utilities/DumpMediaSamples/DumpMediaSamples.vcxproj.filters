@@ -2,15 +2,15 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="Source Files">
-      <UniqueIdentifier>{0399a72a-f850-4b5d-a481-3e32e763561e}</UniqueIdentifier>
+      <UniqueIdentifier>{e1fde5e0-a09a-4951-93e2-27a400c905f6}</UniqueIdentifier>
       <Extensions>cpp;c;cxx;def;odl;idl;hpj;bat;asm</Extensions>
     </Filter>
     <Filter Include="Header Files">
-      <UniqueIdentifier>{16237c05-6860-49ec-a0cf-fa7c9efefbfe}</UniqueIdentifier>
+      <UniqueIdentifier>{7603c873-6ee6-45c2-b9f8-bc4e681f8a2f}</UniqueIdentifier>
       <Extensions>h;hpp;hxx;hm;inl;inc</Extensions>
     </Filter>
     <Filter Include="Resource Files">
-      <UniqueIdentifier>{a7c3bd78-bfbe-4980-8cb7-96c550521289}</UniqueIdentifier>
+      <UniqueIdentifier>{e1bb0791-cbaf-44ca-bed4-6c4a8d169e78}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe</Extensions>
     </Filter>
   </ItemGroup>
@@ -24,6 +24,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Handler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

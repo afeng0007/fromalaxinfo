@@ -1,6 +1,6 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DumpMediaSamples", "DumpMediaSamples.vcproj", "{1421856B-3882-48ED-8E77-6C302CE9279C}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DumpMediaSamples", "DumpMediaSamples.vcxproj", "{1421856B-3882-48ED-8E77-6C302CE9279C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
