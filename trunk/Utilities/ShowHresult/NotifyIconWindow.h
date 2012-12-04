@@ -20,6 +20,7 @@
 #include <corerror.h> // FACILITY_URT
 #include <audioclient.h> // FACILITY_AUDCLNT
 #include <p2p.h> // FACILITY_P2P
+#include <slerror.h> // FACILITY_SL_ITF
 
 #include <adserr.h>
 #include <azroles.h>
@@ -453,6 +454,38 @@ private:
 			}
 		return FALSE;
 	}
+	static BOOL IsSlResult(HRESULT nResult, CString* psMessage = NULL, CString* psIdentifier = NULL)
+	{
+		if(HRESULT_FACILITY(nResult) != FACILITY_SL_ITF)
+			return FALSE;
+		psMessage;
+		const CString sMessage = AtlFormatSystemMessage(CDataLibraryMap::LoadLibrary(_T("slc.dll")), nResult);
+		if(psMessage)
+			*psMessage = sMessage;
+		CString sIdentifier;
+		if(!LookupSlIdentifier(nResult, sIdentifier))
+			if(sMessage.IsEmpty())
+				return FALSE;
+		if(psIdentifier)
+			*psIdentifier = sIdentifier;
+		return TRUE;
+	}
+	static BOOL LookupSlIdentifier(HRESULT nValue, CString& sIdentifier)
+	{
+		static const struct { HRESULT nValue; LPCSTR pszName; } g_pMap[] = 
+		{
+			#define A(x) { x, #x },
+			#include "SlIdentifier.inc"
+			#undef A
+		};
+		for(SIZE_T nIndex = 0; nIndex < DIM(g_pMap); nIndex++)
+			if(g_pMap[nIndex].nValue == nValue)
+			{
+				sIdentifier = CString(g_pMap[nIndex].pszName);
+				return TRUE;
+			}
+		return FALSE;
+	}
 
 public:
 // CNotifyIconWindow
@@ -629,6 +662,8 @@ public:
 			sTitle = _T(".NET");
 		else if(IsP2pResult(nResult, &sMessage, &sIdentifier) || LookupP2pIdentifier(nResult, sIdentifier))
 			sTitle = _T("P2P");
+		else if(IsSlResult(nResult, &sMessage, &sIdentifier) || LookupSlIdentifier(nResult, sIdentifier))
+			sTitle = _T("Software Licensing");
 		else 
 		{
 			sMessage = AtlFormatSystemMessage(nResult);
