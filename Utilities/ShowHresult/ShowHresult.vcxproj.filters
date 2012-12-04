@@ -48,6 +48,9 @@
     <ClInclude Include="NotifyIconWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="SlIdentifier.inc">
+      <Filter>Header Files\Include Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="ShowHresult.rc">
