@@ -12,7 +12,8 @@
 #endif
 #include "winres.h"
 #include "atlres.h"
-#include "rores.rc"
+#include "rores.rc"
+
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
 
@@ -60,7 +61,7 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION  1, 0, 0, 807
+ FILEVERSION  1, 0, 0, 829
  PRODUCTVERSION 1,0,0,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
@@ -79,7 +80,7 @@ BEGIN
             VALUE "Comments", "Created by Roman Ryltsov roman@alax.info"
             VALUE "CompanyName", "Roman Ryltsov"
             VALUE "FileDescription", "Alax.Info DirectShow Spy Module"
-            VALUE "FileVersion",  "1, 0, 0, 807\0"
+            VALUE "FileVersion",  "1, 0, 0, 829\0"
             VALUE "InternalName", "DirectShowSpy.dll"
             VALUE "LegalCopyright", "Copyright © Alax.Info, Roman Ryltsov, 2008-2011"
             VALUE "OLESelfRegister", "Yes"
@@ -208,6 +209,30 @@ BEGIN
     PUSHBUTTON      "Unregister",IDC_REGISTRATION_PROPPAGEREGISTRATION_USERUNREGISTER,102,148,50,14,NOT WS_VISIBLE
 END
 
+IDD_REGISTRATION_EVRPROPREGISTRATION_PROPERTYPAGE DIALOGEX 0, 0, 227, 200
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 400, 0, 0x0
+BEGIN
+    LTEXT           "Use controls below to review current COM registration status of Windows SDK evrprop.dll, and register or unregister the library.",IDC_STATIC,6,6,215,18
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,6,36,216,20
+    LTEXT           "System Registration ",IDC_STATIC,12,32,67,8
+    LTEXT           "Status: ",IDC_STATIC,12,48,26,8
+    EDITTEXT        IDC_REGISTRATION_EVRPROPREGISTRATION_STATUS,48,48,72,12,ES_AUTOHSCROLL | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
+    LTEXT           "Path: ",IDC_STATIC,12,60,20,8
+    EDITTEXT        IDC_REGISTRATION_EVRPROPREGISTRATION_PATH,48,60,174,12,ES_AUTOHSCROLL | ES_READONLY | NOT WS_BORDER | NOT WS_TABSTOP
+    PUSHBUTTON      "&Register",IDC_REGISTRATION_EVRPROPREGISTRATION_REGISTER,48,78,50,14
+    PUSHBUTTON      "&Unregister",IDC_REGISTRATION_EVRPROPREGISTRATION_UNREGISTER,102,78,50,14
+    CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ | NOT WS_VISIBLE,6,106,215,1
+    LTEXT           "Per-User Registration ",IDC_STATIC,12,102,72,8,NOT WS_VISIBLE
+    LTEXT           "Status: ",IDC_STATIC,12,118,26,8,NOT WS_VISIBLE
+    EDITTEXT        IDC_REGISTRATION_EVRPROPREGISTRATION_USERSTATUS,48,118,72,12,ES_AUTOHSCROLL | ES_READONLY | NOT WS_VISIBLE | NOT WS_BORDER | NOT WS_TABSTOP
+    LTEXT           "Path: ",IDC_STATIC,12,130,20,8,NOT WS_VISIBLE
+    EDITTEXT        IDC_REGISTRATION_EVRPROPREGISTRATION_USERPATH,48,130,174,12,ES_AUTOHSCROLL | ES_READONLY | NOT WS_VISIBLE | NOT WS_BORDER | NOT WS_TABSTOP
+    PUSHBUTTON      "Register",IDC_REGISTRATION_EVRPROPREGISTRATION_USERREGISTER,48,148,50,14,NOT WS_VISIBLE
+    PUSHBUTTON      "Unregister",IDC_REGISTRATION_EVRPROPREGISTRATION_USERUNREGISTER,102,148,50,14,NOT WS_VISIBLE
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -261,6 +286,7 @@ END
 STRINGTABLE 
 BEGIN
     IDD_REGISTRATION_PROPPAGEREGISTRATION_PROPERTYPAGE "proppage.dll"
+    IDD_REGISTRATION_EVRPROPREGISTRATION_PROPERTYPAGE "evrprop.dll"
 END
 
 STRINGTABLE 
@@ -271,6 +297,7 @@ END
 STRINGTABLE 
 BEGIN
     IDC_REGISTRATION_PROPPAGEREGISTRATION_STATUS "Not Registered, Registered"
+    IDC_REGISTRATION_EVRPROPREGISTRATION_STATUS "Not Registered, Registered"
 END
 
 STRINGTABLE 
@@ -308,7 +335,8 @@ END
 //
 // Generated from the TEXTINCLUDE 3 resource.
 //
-1 TYPELIB "DirectShowSpy.tlb"
+1 TYPELIB "DirectShowSpy.tlb"
+
 /////////////////////////////////////////////////////////////////////////////
 #endif    // not APSTUDIO_INVOKED
 

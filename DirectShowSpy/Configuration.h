@@ -236,29 +236,52 @@ public:
 	};
 
 	////////////////////////////////////////////////////////
-	// CProppageRegistrationPropertyPage
+	// CModuleRegisrtationPropertyPageT
 
-	class CProppageRegistrationPropertyPage :
-		public CPropertyPageT<CProppageRegistrationPropertyPage>,
-		//public CDialogResize<CProppageRegistrationPropertyPage>,
-		public CWindowWithPrivateMessagesT<CProppageRegistrationPropertyPage>
+	template <typename T>
+	class CModuleRegisrtationPropertyPageT :
+		public CPropertyPageT<T>,
+		//public CDialogResize<T>,
+		public CWindowWithPrivateMessagesT<T>
 	{
-	public:
-		enum { IDD = IDD_REGISTRATION_PROPPAGEREGISTRATION_PROPERTYPAGE };
+	protected:
+		typedef CModuleRegisrtationPropertyPageT<T> CModuleRegisrtationPropertyPage;
 
-	BEGIN_MSG_MAP_EX(CProppageRegistrationPropertyPage)
+	public:
+
+	BEGIN_MSG_MAP_EX(CProppageRegistrationPropertyPagCModuleRegisrtationPropertyPage)
 		CHAIN_MSG_MAP(CPropertyPage)
-		//CHAIN_MSG_MAP(CDialogResize<CProppageRegistrationPropertyPage>)
+		//CHAIN_MSG_MAP(CDialogResize<T>)
 		CHAIN_MSG_MAP(CWindowWithPrivateMessages)
 		MSG_WM_INITDIALOG(OnInitDialog)
-		COMMAND_ID_HANDLER_EX(IDC_REGISTRATION_PROPPAGEREGISTRATION_REGISTER, OnRegister)
-		COMMAND_ID_HANDLER_EX(IDC_REGISTRATION_PROPPAGEREGISTRATION_UNREGISTER, OnUnregister)
-		COMMAND_ID_HANDLER_EX(IDC_REGISTRATION_PROPPAGEREGISTRATION_USERREGISTER, OnUserRegister)
-		COMMAND_ID_HANDLER_EX(IDC_REGISTRATION_PROPPAGEREGISTRATION_USERUNREGISTER, OnUserUnregister)
+		COMMAND_ID_HANDLER_EX(T::IDD + IDC_REGISTER, OnRegister)
+		COMMAND_ID_HANDLER_EX(T::IDD + IDC_UNREGISTER, OnUnregister)
+		COMMAND_ID_HANDLER_EX(T::IDD + IDC_USERREGISTER, OnUserRegister)
+		COMMAND_ID_HANDLER_EX(T::IDD + IDC_USERUNREGISTER, OnUserUnregister)
 		REFLECT_NOTIFICATIONS()
 	END_MSG_MAP()
 
+	public:
+
+		////////////////////////////////////////////////////
+		// Resource Identifiers
+
+		enum
+		{
+			//IDD_PROPERTYPAGE,
+			IDC_STATUS = 10,
+			IDC_PATH = 11,
+			IDC_REGISTER = 12,
+			IDC_UNREGISTER = 13,
+			IDC_USERSTATUS = 14,
+			IDC_USERPATH = 21,
+			IDC_USERREGISTER = 22,
+			IDC_USERUNREGISTER = 23,
+			IDC_USERNOTE = 24,
+		};
+
 	private:
+		CPath m_sLocalPath;
 		CRegistrationPropertySheet& m_PropertySheet;
 		CRoEdit m_StatusEdit;
 		CRoEdit m_PathEdit;
@@ -274,19 +297,25 @@ public:
 		CPath m_sUserPath;
 
 	public:
-	// CProppageRegistrationPropertyPage
-		CProppageRegistrationPropertyPage(CRegistrationPropertySheet* pPropertySheet) throw() :
+	// CModuleRegisrtationPropertyPageT
+		CModuleRegisrtationPropertyPageT(CRegistrationPropertySheet* pPropertySheet) throw() :
 			m_PropertySheet(*pPropertySheet)
 		{
 		}
+		VOID SetLocalPath(const CPath& sLocalPath)
+		{
+			_A(!_tcslen(m_sLocalPath) && _tcslen(sLocalPath));
+			m_sLocalPath = sLocalPath;
+		}
 		VOID UpdateControls()
 		{
-			class __declspec(uuid("92A3A302-DA7C-4A1F-BA7E-1802BB5D2D02")) PSFactoryBuffer;
 			_A(_pAtlModule);
-			const CPath& sLocalPath = m_PropertySheet.m_sPropPagePath;
+			const CPath& sLocalPath = m_sLocalPath;
+			_A(_tcslen(m_sLocalPath));
+			_A(m_sLocalPath.FileExists());
 			#pragma region System
 			//CPath sPath = FindTypeLibraryPath(HKEY_LOCAL_MACHINE);
-			CPath sPath = FindClassPath(HKEY_LOCAL_MACHINE, __uuidof(PSFactoryBuffer));
+			CPath sPath = FindClassPath(HKEY_LOCAL_MACHINE, T::GetSampleClassIdentifier());
 			const BOOL bPathEmpty = _tcslen(sPath) == 0;
 			m_StatusEdit.SetValue(m_StatusArray[bPathEmpty ? 0 : 1]);
 			m_PathEdit.SetValue(sPath);
@@ -317,15 +346,15 @@ public:
 			_ATLTRY
 			{
 				CWaitCursor WaitCursor;
-				m_StatusEdit = GetDlgItem(IDC_REGISTRATION_PROPPAGEREGISTRATION_STATUS);
-				m_PathEdit = GetDlgItem(IDC_REGISTRATION_PROPPAGEREGISTRATION_PATH);
-				m_RegisterButton = GetDlgItem(IDC_REGISTRATION_PROPPAGEREGISTRATION_REGISTER);
-				m_UnregisterButton = GetDlgItem(IDC_REGISTRATION_PROPPAGEREGISTRATION_UNREGISTER);
-				m_UserStatusEdit = GetDlgItem(IDC_REGISTRATION_PROPPAGEREGISTRATION_USERSTATUS);
-				m_UserPathEdit = GetDlgItem(IDC_REGISTRATION_PROPPAGEREGISTRATION_USERPATH);
-				m_UserRegisterButton = GetDlgItem(IDC_REGISTRATION_PROPPAGEREGISTRATION_USERREGISTER);
-				m_UserUnregisterButton = GetDlgItem(IDC_REGISTRATION_PROPPAGEREGISTRATION_USERUNREGISTER);
-				//_W(m_UserNoteStatic.SubclassWindow(GetDlgItem(IDC_REGISTRATION_PROPPAGEREGISTRATION_USERNOTE)));
+				m_StatusEdit = GetDlgItem(T::IDD + IDC_STATUS);
+				m_PathEdit = GetDlgItem(T::IDD + IDC_PATH);
+				m_RegisterButton = GetDlgItem(T::IDD + IDC_REGISTER);
+				m_UnregisterButton = GetDlgItem(T::IDD + IDC_UNREGISTER);
+				m_UserStatusEdit = GetDlgItem(T::IDD + IDC_USERSTATUS);
+				m_UserPathEdit = GetDlgItem(T::IDD + IDC_USERPATH);
+				m_UserRegisterButton = GetDlgItem(T::IDD + IDC_USERREGISTER);
+				m_UserUnregisterButton = GetDlgItem(T::IDD + IDC_USERUNREGISTER);
+				//_W(m_UserNoteStatic.SubclassWindow(GetDlgItem(T::IDD + IDC_USERNOTE)));
 				//m_UserNoteStatic.SetIdealHeight();
 				if(GetOsVersion() >= 0x00060000) // Windows Vista or Windows Server 2008
 				{
@@ -335,7 +364,7 @@ public:
 						m_UnregisterButton.SetElevationRequiredState(TRUE);
 					}
 				}
-				_StringHelper::GetCommaSeparatedItems(AtlLoadString(IDC_REGISTRATION_PROPPAGEREGISTRATION_STATUS), m_StatusArray);
+				_StringHelper::GetCommaSeparatedItems(AtlLoadString(T::IDD + IDC_STATUS), m_StatusArray);
 				_A(m_StatusArray.GetCount() == 2);
 				UpdateControls();
 			}
@@ -371,7 +400,7 @@ public:
 			{
 				CWaitCursor WaitCursor;
 				const BOOL bSilent = !(GetKeyState(VK_SCROLL) & 1);
-				const DWORD nExitCode = ExecuteWait(AtlFormatString(_T("%s \"%s\""), bSilent ? _T("/s") : _T(""), m_PropertySheet.m_sPropPagePath), TRUE);
+				const DWORD nExitCode = ExecuteWait(AtlFormatString(_T("%s \"%s\""), bSilent ? _T("/s") : _T(""), m_sLocalPath), TRUE);
 				if(bSilent)
 					MessageBeep(nExitCode ? MB_ICONERROR : MB_OK);
 				CancelToClose();
@@ -389,7 +418,7 @@ public:
 			{
 				CWaitCursor WaitCursor;
 				const BOOL bSilent = !(GetKeyState(VK_SCROLL) & 1);
-				const CPath& sPath = m_sPath; //m_PropertySheet.m_sPropPagePath
+				const CPath& sPath = m_sPath; //m_sLocalPath
 				const DWORD nExitCode = ExecuteWait(AtlFormatString(_T("%s /u \"%s\""), bSilent ? _T("/s") : _T(""), sPath), TRUE);
 				if(bSilent)
 					MessageBeep(nExitCode ? MB_ICONERROR : MB_OK);
@@ -408,7 +437,7 @@ public:
 			{
 				CWaitCursor WaitCursor;
 				const BOOL bSilent = !(GetKeyState(VK_SCROLL) & 1);
-				const DWORD nExitCode = ExecuteWait(AtlFormatString(_T("%s /i:user /n \"%s\""), bSilent ? _T("/s") : _T(""), m_PropertySheet.m_sPropPagePath));
+				const DWORD nExitCode = ExecuteWait(AtlFormatString(_T("%s /i:user /n \"%s\""), bSilent ? _T("/s") : _T(""), m_sLocalPath));
 				if(bSilent)
 					MessageBeep(nExitCode ? MB_ICONERROR : MB_OK);
 				CancelToClose();
@@ -426,7 +455,7 @@ public:
 			{
 				CWaitCursor WaitCursor;
 				const BOOL bSilent = !(GetKeyState(VK_SCROLL) & 1);
-				const DWORD nExitCode = ExecuteWait(AtlFormatString(_T("%s /i:user /n /u \"%s\""), bSilent ? _T("/s") : _T(""), m_PropertySheet.m_sPropPagePath));
+				const DWORD nExitCode = ExecuteWait(AtlFormatString(_T("%s /i:user /n /u \"%s\""), bSilent ? _T("/s") : _T(""), m_sLocalPath));
 				if(bSilent)
 					MessageBeep(nExitCode ? MB_ICONERROR : MB_OK);
 				CancelToClose();
@@ -440,24 +469,92 @@ public:
 		}
 	};
 
+	////////////////////////////////////////////////////////
+	// CProppageRegistrationPropertyPage
+
+	class CProppageRegistrationPropertyPage :
+		public CModuleRegisrtationPropertyPageT<CProppageRegistrationPropertyPage>
+	{
+	public:
+		enum { IDD = IDD_REGISTRATION_PROPPAGEREGISTRATION_PROPERTYPAGE };
+
+	BEGIN_MSG_MAP_EX(CProppageRegistrationPropertyPage)
+		CHAIN_MSG_MAP(CModuleRegisrtationPropertyPage)
+	END_MSG_MAP()
+
+	public:
+	// CProppageRegistrationPropertyPage
+		CProppageRegistrationPropertyPage(CRegistrationPropertySheet* pPropertySheet) throw() :
+			CModuleRegisrtationPropertyPageT<CProppageRegistrationPropertyPage>(pPropertySheet)
+		{
+		}
+		static CLSID GetSampleClassIdentifier() throw()
+		{
+			class __declspec(uuid("92A3A302-DA7C-4A1F-BA7E-1802BB5D2D02")) PSFactoryBuffer;
+			return __uuidof(PSFactoryBuffer);
+		}
+
+	// Window message handlers
+	};
+
+	////////////////////////////////////////////////////////
+	// CEvrpropRegistrationPropertyPage
+
+	class CEvrpropRegistrationPropertyPage :
+		public CModuleRegisrtationPropertyPageT<CEvrpropRegistrationPropertyPage>
+	{
+	public:
+		enum { IDD = IDD_REGISTRATION_EVRPROPREGISTRATION_PROPERTYPAGE };
+
+	BEGIN_MSG_MAP_EX(CEvrpropRegistrationPropertyPage)
+		CHAIN_MSG_MAP(CModuleRegisrtationPropertyPage)
+	END_MSG_MAP()
+
+	public:
+	// CEvrpropRegistrationPropertyPage
+		CEvrpropRegistrationPropertyPage(CRegistrationPropertySheet* pPropertySheet) throw() :
+			CModuleRegisrtationPropertyPageT<CEvrpropRegistrationPropertyPage>(pPropertySheet)
+		{
+		}
+		static CLSID GetSampleClassIdentifier() throw()
+		{
+			class __declspec(uuid("7C737B87-2760-4183-B5B4-ACA7C64DD720")) EvrMixerControl;
+			return __uuidof(EvrMixerControl);
+		}
+
+	// Window message handlers
+	};
+
 private:
 	CRegistrationPropertyPage m_RegistrationPropertyPage;
 	CProppageRegistrationPropertyPage m_ProppageRegistrationPropertyPage;
-	CPath m_sPropPagePath;
+	CEvrpropRegistrationPropertyPage m_EvrpropRegistrationPropertyPage;
+	CPath m_sProppagePath;
+	CPath m_sEvrpropPath;
 
 public:
 // CRegistrationPropertySheet
 	CRegistrationPropertySheet() :
 		CPropertySheetT<CRegistrationPropertySheet>(IDS_REGISTRATION_PROPERTYSHEETCAPTION),
 		m_RegistrationPropertyPage(this),
-		m_ProppageRegistrationPropertyPage(this)
+		m_ProppageRegistrationPropertyPage(this),
+		m_EvrpropRegistrationPropertyPage(this)
 	{
 		AddPage(m_RegistrationPropertyPage);
 		CPath sDirectory = GetPath();
 		sDirectory.RemoveFileSpec();
-		m_sPropPagePath.Combine(sDirectory, _T("proppage.dll"));
-		if(m_sPropPagePath.FileExists())
+		m_sProppagePath.Combine(sDirectory, _T("proppage.dll"));
+		if(m_sProppagePath.FileExists())
+		{
+			m_ProppageRegistrationPropertyPage.SetLocalPath(m_sProppagePath);
 			AddPage(m_ProppageRegistrationPropertyPage);
+		}
+		m_sEvrpropPath.Combine(sDirectory, _T("evrprop.dll"));
+		if(m_sEvrpropPath.FileExists())
+		{
+			m_EvrpropRegistrationPropertyPage.SetLocalPath(m_sEvrpropPath);
+			AddPage(m_EvrpropRegistrationPropertyPage);
+		}
 	}
 	BOOL SetInitialPosition()
 	{
