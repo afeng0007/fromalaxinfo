@@ -186,6 +186,7 @@ private:
 	CComPtr<IMediaEventSink> m_pInnerMediaEventSink;
 	CComPtr<IMediaEventEx> m_pInnerMediaEventEx;
 	_FilterGraphHelper::CRotRunningFilterGraph m_RunningFilterGraph;
+	INT m_nRunningFilterGraphReference;
 	CComPtr<IUnknown> m_pTemporaryUnknown;
 	CObjectPtr<CAmGraphBuilderCallback> m_pPrivateAmGraphBuilderCallback;
 	mutable CRoCriticalSection m_DataCriticalSection;
@@ -207,6 +208,9 @@ private:
 		if(m_RunningFilterGraph.GetCookie())
 			return;
 		_Z4(atlTraceRefcount, 4, _T("this 0x%p, m_dwRef %d\n"), this, m_dwRef);
+		m_nRunningFilterGraphReference = 0;
+		CInterlockedLong& nReferenceCount = reinterpret_cast<CInterlockedLong&>(m_dwRef);
+		const LONG nBeforeReferenceCount = m_dwRef;
 		static CConstIntegerRegistryValue g_nEnableRotMonikerItemNameSuffix(_T("Enable ROT Moniker Item Name Suffix")); // 0 Default (Enabled), 1 Disabled, 2 Enabled
 		if(g_nEnableRotMonikerItemNameSuffix != 1)
 		{
@@ -219,14 +223,26 @@ private:
 			m_RunningFilterGraph.SetFilterGraph(GetControllingUnknown(), CStringW(sItemName));
 		} else
 			m_RunningFilterGraph.SetFilterGraph(GetControllingUnknown());
-		_Z4(atlTraceRefcount, 4, _T("this 0x%p, m_dwRef %d\n"), this, m_dwRef);
+		_Z4(atlTraceRefcount, 4, _T("this 0x%p, m_bIsAggregated %d, m_dwRef %d\n"), this, m_bIsAggregated, m_dwRef);
+		if(!m_bIsAggregated)
+		{
+			m_nRunningFilterGraphReference++;
+			const LONG nAfterReferenceCount = m_dwRef;
+			if(nBeforeReferenceCount == nAfterReferenceCount)
+			{
+				// NOTE: Putting onto Running Object Table succeeded, however no external reference detected which we need to compensate by self-releasing
+				m_nRunningFilterGraphReference++;
+				return;
+			}
+		}
 		Release();
 	}
 	VOID ResetRunningFilterGraph() throw()
 	{
 		if(!m_RunningFilterGraph.GetCookie())
 			return;
-		AddRef();
+		if(m_nRunningFilterGraphReference != 2)
+			AddRef();
 		_Z4(atlTraceRefcount, 4, _T("this 0x%p, m_dwRef 0x%x\n"), this, m_dwRef);
 		m_RunningFilterGraph.SetFilterGraph(NULL);
 		_Z4(atlTraceRefcount, 4, _T("this 0x%p, m_dwRef 0x%x\n"), this, m_dwRef);
@@ -370,13 +386,13 @@ public:
 				CoFreeLibrary(hModule);
 				_ATLRETHROW;
 			}
-#if defined(_DEBUG) && FALSE
-			typedef HRESULT (WINAPI *DLLCANUNLOADNOW)();
-			DLLCANUNLOADNOW DllCanUnloadNow = (DLLCANUNLOADNOW) GetProcAddress(hModule, "DllCanUnloadNow");
-			__E(DllCanUnloadNow);
-			const HRESULT nDllCanUnloadNowResult = DllCanUnloadNow();
-			_Z4(atlTraceRefcount, 4, _T("nDllCanUnloadNowResult 0x%08x\n"), nDllCanUnloadNowResult); 
-#endif // defined(_DEBUG)
+			#if defined(_DEBUG) && FALSE
+				typedef HRESULT (WINAPI *DLLCANUNLOADNOW)();
+				DLLCANUNLOADNOW DllCanUnloadNow = (DLLCANUNLOADNOW) GetProcAddress(hModule, "DllCanUnloadNow");
+				__E(DllCanUnloadNow);
+				const HRESULT nDllCanUnloadNowResult = DllCanUnloadNow();
+				_Z4(atlTraceRefcount, 4, _T("nDllCanUnloadNowResult 0x%08x\n"), nDllCanUnloadNowResult); 
+			#endif // defined(_DEBUG)
 			_A(!m_hQuartzModule);
 			m_hQuartzModule = hModule;
 			#pragma region Extra Reference
