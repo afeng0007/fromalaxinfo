@@ -1,0 +1,61 @@
+Windows version 6.1, Build 7600
+
+CSIDL paths:
+CSIDL_DESKTOP: C:\Users\John Doe\Desktop
+CSIDL_INTERNET not found
+CSIDL_PROGRAMS: C:\Users\John Doe\AppData\Roaming\Microsoft\Windows\Start Menu\Programs
+CSIDL_CONTROLS not found
+CSIDL_PRINTERS not found
+CSIDL_PERSONAL: C:\Users\John Doe\Documents
+CSIDL_FAVORITES: C:\Users\John Doe\Favorites
+CSIDL_STARTUP: C:\Users\John Doe\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup
+CSIDL_RECENT: C:\Users\John Doe\AppData\Roaming\Microsoft\Windows\Recent
+CSIDL_SENDTO: C:\Users\John Doe\AppData\Roaming\Microsoft\Windows\SendTo
+CSIDL_BITBUCKET not found
+CSIDL_STARTMENU: C:\Users\John Doe\AppData\Roaming\Microsoft\Windows\Start Menu
+CSIDL_MYDOCUMENTS: C:\Users\John Doe\Documents
+CSIDL_MYMUSIC: C:\Users\John Doe\Music
+CSIDL_MYVIDEO: C:\Users\John Doe\Videos
+CSIDL_DESKTOPDIRECTORY: C:\Users\John Doe\Desktop
+CSIDL_DRIVES not found
+CSIDL_NETWORK not found
+CSIDL_NETHOOD: C:\Users\John Doe\AppData\Roaming\Microsoft\Windows\Network Shortcuts
+CSIDL_FONTS: C:\Windows\Fonts
+CSIDL_TEMPLATES: C:\Users\John Doe\AppData\Roaming\Microsoft\Windows\Templates
+CSIDL_COMMON_STARTMENU: C:\ProgramData\Microsoft\Windows\Start Menu
+CSIDL_COMMON_PROGRAMS: C:\ProgramData\Microsoft\Windows\Start Menu\Programs
+CSIDL_COMMON_STARTUP: C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup
+CSIDL_COMMON_DESKTOPDIRECTORY: C:\Users\Public\Desktop
+CSIDL_APPDATA: C:\Users\John Doe\AppData\Roaming
+CSIDL_PRINTHOOD: C:\Users\John Doe\AppData\Roaming\Microsoft\Windows\Printer Shortcuts
+CSIDL_LOCAL_APPDATA: C:\Users\John Doe\AppData\Local
+CSIDL_ALTSTARTUP: C:\Users\John Doe\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup
+CSIDL_COMMON_ALTSTARTUP: C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup
+CSIDL_COMMON_FAVORITES: C:\Users\John Doe\Favorites
+CSIDL_INTERNET_CACHE: C:\Users\John Doe\AppData\Local\Microsoft\Windows\Temporary Internet Files
+CSIDL_COOKIES: C:\Users\John Doe\AppData\Roaming\Microsoft\Windows\Cookies
+CSIDL_HISTORY: C:\Users\John Doe\AppData\Local\Microsoft\Windows\History
+CSIDL_COMMON_APPDATA: C:\ProgramData
+CSIDL_WINDOWS: C:\Windows
+CSIDL_SYSTEM: C:\Windows\system32
+CSIDL_PROGRAM_FILES: C:\Program Files (x86)
+CSIDL_MYPICTURES: C:\Users\John Doe\Pictures
+CSIDL_PROFILE: C:\Users\John Doe
+CSIDL_SYSTEMX86: C:\Windows\SysWOW64
+CSIDL_PROGRAM_FILESX86: C:\Program Files (x86)
+CSIDL_PROGRAM_FILES_COMMON: C:\Program Files (x86)\Common Files
+CSIDL_PROGRAM_FILES_COMMONX86: C:\Program Files (x86)\Common Files
+CSIDL_COMMON_TEMPLATES: C:\ProgramData\Microsoft\Windows\Templates
+CSIDL_COMMON_DOCUMENTS: C:\Users\Public\Documents
+CSIDL_COMMON_ADMINTOOLS: C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Administrative Tools
+CSIDL_ADMINTOOLS: C:\Users\John Doe\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Administrative Tools
+CSIDL_CONNECTIONS not found
+CSIDL_COMMON_MUSIC: C:\Users\Public\Music
+CSIDL_COMMON_PICTURES: C:\Users\Public\Pictures
+CSIDL_COMMON_VIDEO: C:\Users\Public\Videos
+CSIDL_RESOURCES: C:\Windows\resources
+CSIDL_RESOURCES_LOCALIZED not found
+CSIDL_COMMON_OEM_LINKS not found
+CSIDL_CDBURN_AREA: C:\Users\John Doe\AppData\Local\Microsoft\Windows\Burn\Burn
+CSIDL_COMPUTERSNEARME not found
+
