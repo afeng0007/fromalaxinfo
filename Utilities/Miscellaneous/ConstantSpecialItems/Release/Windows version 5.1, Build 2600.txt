@@ -1,0 +1,61 @@
+Windows version 5.1, Build 2600
+
+CSIDL paths:
+CSIDL_DESKTOP: C:\Documents and Settings\John Doe\Desktop
+CSIDL_INTERNET not found
+CSIDL_PROGRAMS: C:\Documents and Settings\John Doe\Start Menu\Programs
+CSIDL_CONTROLS not found
+CSIDL_PRINTERS not found
+CSIDL_PERSONAL: C:\Documents and Settings\John Doe\My Documents
+CSIDL_FAVORITES: C:\Documents and Settings\John Doe\Favorites
+CSIDL_STARTUP: C:\Documents and Settings\John Doe\Start Menu\Programs\Startup
+CSIDL_RECENT: C:\Documents and Settings\John Doe\Recent
+CSIDL_SENDTO: C:\Documents and Settings\John Doe\SendTo
+CSIDL_BITBUCKET not found
+CSIDL_STARTMENU: C:\Documents and Settings\John Doe\Start Menu
+CSIDL_MYDOCUMENTS: C:\Documents and Settings\John Doe\My Documents
+CSIDL_MYMUSIC: C:\Documents and Settings\John Doe\My Documents\My Music
+CSIDL_MYVIDEO: C:\Documents and Settings\John Doe\My Documents\My Videos
+CSIDL_DESKTOPDIRECTORY: C:\Documents and Settings\John Doe\Desktop
+CSIDL_DRIVES not found
+CSIDL_NETWORK not found
+CSIDL_NETHOOD: C:\Documents and Settings\John Doe\NetHood
+CSIDL_FONTS: C:\WINDOWS\Fonts
+CSIDL_TEMPLATES: C:\Documents and Settings\John Doe\Templates
+CSIDL_COMMON_STARTMENU: C:\Documents and Settings\All Users\Start Menu
+CSIDL_COMMON_PROGRAMS: C:\Documents and Settings\All Users\Start Menu\Programs
+CSIDL_COMMON_STARTUP: C:\Documents and Settings\All Users\Start Menu\Programs\Startup
+CSIDL_COMMON_DESKTOPDIRECTORY: C:\Documents and Settings\All Users\Desktop
+CSIDL_APPDATA: C:\Documents and Settings\John Doe\Application Data
+CSIDL_PRINTHOOD: C:\Documents and Settings\John Doe\PrintHood
+CSIDL_LOCAL_APPDATA: C:\Documents and Settings\John Doe\Local Settings\Application Data
+CSIDL_ALTSTARTUP not found
+CSIDL_COMMON_ALTSTARTUP not found
+CSIDL_COMMON_FAVORITES: C:\Documents and Settings\All Users\Favorites
+CSIDL_INTERNET_CACHE: C:\Documents and Settings\John Doe\Local Settings\Temporary Internet Files
+CSIDL_COOKIES: C:\Documents and Settings\John Doe\Cookies
+CSIDL_HISTORY: C:\Documents and Settings\John Doe\Local Settings\History
+CSIDL_COMMON_APPDATA: C:\Documents and Settings\All Users\Application Data
+CSIDL_WINDOWS: C:\WINDOWS
+CSIDL_SYSTEM: C:\WINDOWS\system32
+CSIDL_PROGRAM_FILES: C:\Program Files
+CSIDL_MYPICTURES: C:\Documents and Settings\John Doe\My Documents\My Pictures
+CSIDL_PROFILE: C:\Documents and Settings\John Doe
+CSIDL_SYSTEMX86: C:\WINDOWS\system32
+CSIDL_PROGRAM_FILESX86 not found
+CSIDL_PROGRAM_FILES_COMMON: C:\Program Files\Common Files
+CSIDL_PROGRAM_FILES_COMMONX86 not found
+CSIDL_COMMON_TEMPLATES: C:\Documents and Settings\All Users\Templates
+CSIDL_COMMON_DOCUMENTS: C:\Documents and Settings\All Users\Documents
+CSIDL_COMMON_ADMINTOOLS: C:\Documents and Settings\All Users\Start Menu\Programs\Administrative Tools
+CSIDL_ADMINTOOLS: C:\Documents and Settings\John Doe\Start Menu\Programs\Administrative Tools
+CSIDL_CONNECTIONS not found
+CSIDL_COMMON_MUSIC: C:\Documents and Settings\All Users\Documents\My Music
+CSIDL_COMMON_PICTURES: C:\Documents and Settings\All Users\Documents\My Pictures
+CSIDL_COMMON_VIDEO: C:\Documents and Settings\All Users\Documents\My Videos
+CSIDL_RESOURCES: C:\WINDOWS\resources
+CSIDL_RESOURCES_LOCALIZED not found
+CSIDL_COMMON_OEM_LINKS not found
+CSIDL_CDBURN_AREA: C:\Documents and Settings\John Doe\Local Settings\Application Data\Microsoft\CD Burning
+CSIDL_COMPUTERSNEARME not found
+
