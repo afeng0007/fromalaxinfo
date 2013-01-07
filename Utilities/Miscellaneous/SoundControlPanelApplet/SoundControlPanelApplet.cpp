@@ -44,12 +44,19 @@ int _tmain(int argc, _TCHAR* argv[])
 		#pragma endregion
 		OSVERSIONINFOEX VersionInformation = { sizeof VersionInformation };
 		GetVersionEx((OSVERSIONINFO*) &VersionInformation);
+		_tprintf(_T("GetVersionEx: %d.%d\n"), VersionInformation.dwMajorVersion, VersionInformation.dwMinorVersion);
 		if(VersionInformation.dwMajorVersion >= 6)
 		{
 			LPCTSTR g_pszParameters = _T("recording");
 			pCplApplet(GetActiveWindow(), CPL_STARTWPARMS, nAppletIndex, (LPARAM) g_pszParameters);
 		} else
-			pCplApplet(GetActiveWindow(), CPL_DBLCLK, nAppletIndex, 2);
+		{
+			//HINSTANCE hModule = LoadLibrary(_T("shell32.dll"));
+			//typedef VOID (CALLBACK *CONTROL_RUNDLL)(HWND hParentWinow, HINSTANCE hInstance, LPWSTR pszCommandLine, INT nShowCommand);
+			//CONTROL_RUNDLL pControlRunDll = (CONTROL_RUNDLL)GetProcAddress(hModule, "Control_RunDLLW");
+			//pControlRunDll(GetActiveWindow(), NULL, _T("mmsys.cpl,,2"), SW_SHOWNORMAL);
+			pCplApplet(GetActiveWindow(), CPL_DBLCLK, nAppletIndex, (LPARAM) Information.lData);
+		}
 		pCplApplet(GetActiveWindow(), CPL_EXIT, 0, 0);
 	} else
 		_tprintf(_T("CPL_INIT Failure: %d\n"), nResult);
