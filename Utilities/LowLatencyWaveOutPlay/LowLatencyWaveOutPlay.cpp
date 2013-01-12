@@ -31,7 +31,7 @@ VOID Generate(WAVEHDR& WaveHeader)
 	SIZE_T nDataCount = WaveHeader.dwBufferLength / sizeof *pnData;
 	for(SIZE_T nIndex = 0; nIndex < nDataCount; nIndex++)
 		pnData[nIndex] = (SHORT) (32000 * sin(1.0 * (g_nSampleIndex + nIndex) / g_WaveFormatEx.nSamplesPerSec * g_nFrequency * 2 * M_PI));
-	g_nSampleIndex += nDataCount;
+	g_nSampleIndex += (ULONG) nDataCount;
 }
 VOID CALLBACK waveOutProc(HWAVEOUT hWaveOut, UINT nMessage, DWORD_PTR nInstance, DWORD_PTR nParameter1, DWORD_PTR nParameter2)
 {
