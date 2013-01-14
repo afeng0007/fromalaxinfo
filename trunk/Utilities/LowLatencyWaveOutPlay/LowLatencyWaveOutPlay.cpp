@@ -56,7 +56,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	#endif // defined(_DEBUG)
 	if(argc <= 3)
 	{
-		_tprintf(_T("Syntax: LowLatencyWaveOutPlay <sampling-rate> <buffer-count> <buffer-length>\n"));
+		_tprintf(_T("Syntax: LowLatencyWaveOutPlay <sampling-rate> <buffer-count> <buffer-length> [<signal-frequency>]\n"));
 		_tprintf(_T("        Run 'LowLatencyWaveOutPlay 22050 8 5' to play 1000 Hz signal using 5 buffers, 8 ms long each via default audio output device (at 22050 Hz sampling rate)\n"));
 		return 1;
 	}
@@ -70,6 +70,8 @@ int _tmain(int argc, _TCHAR* argv[])
 	_tprintf(_T("Format: %d Hz, %d channels, %d bits per sample\n"), g_WaveFormatEx.nSamplesPerSec, g_WaveFormatEx.nChannels, g_WaveFormatEx.wBitsPerSample);
 	g_nBufferCount = _ttoi(argv[2]);
 	g_nBufferLength = _ttoi(argv[3]);
+	if(argc > 4)
+		g_nFrequency = _ttoi(argv[4]);
 	HWAVEOUT hWaveOut = NULL;
 	Check(waveOutOpen(&hWaveOut, WAVE_MAPPER, &g_WaveFormatEx, (DWORD_PTR) &waveOutProc, NULL, CALLBACK_FUNCTION));
 	ATLASSERT(hWaveOut);
