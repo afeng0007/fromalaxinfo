@@ -1,8 +1,6 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2008-2012
+// Copyright (C) Roman Ryltsov, 2008-2013
 // Created by Roman Ryltsov roman@alax.info
-// 
-// $Id$
 
 #pragma once
 
@@ -42,6 +40,41 @@ public:
 	static CLSID GetRendererClassIdentifier() throw()
 	{
 		return CLSID_EnhancedVideoRenderer;
+	}
+	static CComPtr<IBaseFilter> CoCreateBaseFilterInstance()
+	{
+		CComPtr<IBaseFilter> pBaseFilter;
+		HRESULT nCoCreateInstanceResult = pBaseFilter.CoCreateInstance(GetRendererClassIdentifier());
+		_Z45_HRESULT(nCoCreateInstanceResult);
+		if(nCoCreateInstanceResult == REGDB_E_CLASSNOTREG)
+		{
+			#pragma region Windows XP Second Chance Instantiation
+			HINSTANCE hInstance = CoLoadLibrary(CT2OLE(_T("evr.dll")), TRUE);
+			if(hInstance)
+			{
+				_ATLTRY
+				{
+					typedef HRESULT (STDMETHODCALLTYPE *DLLGETCLASSOBJECT)(REFCLSID ClassIdentifier, REFIID InterfaceIdentifier, LPVOID* ppvObject);
+					DLLGETCLASSOBJECT pDllGetClassObject = (DLLGETCLASSOBJECT) GetProcAddress(hInstance, "DllGetClassObject");
+					__E(pDllGetClassObject);
+					CComPtr<IClassFactory> pClassFactory;
+					__C((pDllGetClassObject)(GetRendererClassIdentifier(), __uuidof(IClassFactory), (VOID**) &pClassFactory));
+					_A(pClassFactory);
+					const HRESULT nCreateInstanceResult = pClassFactory->CreateInstance(NULL, __uuidof(IBaseFilter), (VOID**) &pBaseFilter);
+					_Z45_HRESULT(nCreateInstanceResult);
+					if(SUCCEEDED(nCreateInstanceResult))
+						nCoCreateInstanceResult = nCreateInstanceResult;
+				}
+				_ATLCATCHALL()
+				{
+					_Z_EXCEPTION();
+				}
+				//CoFreeLibrary(hInstance);
+			}
+			#pragma endregion 
+		}
+		__C(nCoCreateInstanceResult);
+		return pBaseFilter;
 	}
 	VOID Initialize(IBaseFilter* pBaseFilter)
 	{
@@ -449,8 +482,7 @@ public:
 		for(SIZE_T nIndex = 0; nIndex < nCount; nIndex++)
 		{
 			CEvrWindow& EvrWindow = m_EvrWindowArray[m_EvrWindowArray.Add()];
-			CComPtr<IBaseFilter> pBaseFilter;
-			__C(pBaseFilter.CoCreateInstance(CEvrWindow::GetRendererClassIdentifier()));
+			CComPtr<IBaseFilter> pBaseFilter = CEvrWindow::CoCreateBaseFilterInstance();
 			__C(m_FilterGraph->AddFilter(pBaseFilter, CT2CW(AtlFormatString(_T("Renderer %02d"), nIndex + 1))));
 			EvrWindow.Create(m_hWnd);
 			EvrWindow.ShowWindow(SW_SHOWNORMAL);
@@ -620,17 +652,21 @@ public:
 		CButton(GetDlgItem(IDC_LAYOUT_9)).SetCheck(TRUE);
 		#pragma region DXGI
 		m_DxgiEdit = GetDlgItem(IDC_DXGI);
-		_ATLTRY
+		if(GetOsVersion() >= 0x00060000) // Windows Vista+
 		{
-			__C(CreateDXGIFactory(__uuidof(IDXGIFactory), (VOID**) &m_pDxgiFactory));
-			SetTimer(TIMER_UPDATEADAPTERS, 5 * 1000); // 5 seconds
-			_W(PostMessage(WM_TIMER, TIMER_UPDATEADAPTERS));
-		}
-		_ATLCATCH(Exception)
-		{
-			_Z_ATLEXCEPTION(Exception);
-			m_DxgiEdit.SetValue(AtlFormatString(_T("Failed to initialize with DXGI: %s."), AtlFormatSystemMessage(Exception).TrimRight(_T("\t\n\r ."))));
-		}
+			_ATLTRY
+			{
+				__C(CreateDXGIFactory(__uuidof(IDXGIFactory), (VOID**) &m_pDxgiFactory));
+				SetTimer(TIMER_UPDATEADAPTERS, 5 * 1000); // 5 seconds
+				_W(PostMessage(WM_TIMER, TIMER_UPDATEADAPTERS));
+			}
+			_ATLCATCH(Exception)
+			{
+				_Z_ATLEXCEPTION(Exception);
+				m_DxgiEdit.SetValue(AtlFormatString(_T("Failed to initialize with DXGI: %s."), AtlFormatSystemMessage(Exception).TrimRight(_T("\t\n\r ."))));
+			}
+		} else
+			m_DxgiEdit.SetValue(_T("DXGI is not available."));
 		#pragma endregion 
 		_W(GetWindowRect(m_DefaultPosition));
 		GetDlgItem(IDC_CREATE).SetFocus();

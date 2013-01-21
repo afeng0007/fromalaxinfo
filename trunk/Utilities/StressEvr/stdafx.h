@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////
+// Copyright (C) Roman Ryltsov, 2008-2013
 // Created by Roman Ryltsov roman@alax.info
-// $Id$
 
 #pragma once
 
@@ -66,7 +66,7 @@ using namespace WTL;
 ////////////////////////////////////////////////////////////
 // Alax.Info ATL/WTL
 
-#define REGISTRY_PRODUCTROOT	_T("SOFTWARE\\Alax.Info\\Utilities\\RTSP RTMP Streamer")
+#define REGISTRY_PRODUCTROOT	_T("SOFTWARE\\Alax.Info\\Utility\\StressEvr")
 #define REGISTRY_FILEROOT		REGISTRY_PRODUCTROOT
 #define REGISTRY_ROOT			REGISTRY_FILEROOT
 

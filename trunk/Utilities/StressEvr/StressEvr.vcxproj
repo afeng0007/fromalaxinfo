@@ -198,6 +198,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LargeAddressAware>true</LargeAddressAware>
+      <DelayLoadDLLs>dbghelp.dll;dxgi.dll</DelayLoadDLLs>
     </Link>
     <PostBuildEvent>
       <Message>Performing registration</Message>
@@ -231,6 +232,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <LargeAddressAware>true</LargeAddressAware>
+      <DelayLoadDLLs>dbghelp.dll;dxgi.dll</DelayLoadDLLs>
     </Link>
     <PostBuildEvent>
       <Message>Performing registration</Message>
@@ -276,7 +278,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <DelayLoadDLLs>dbghelp.dll</DelayLoadDLLs>
+      <DelayLoadDLLs>dbghelp.dll;dxgi.dll</DelayLoadDLLs>
       <LargeAddressAware>true</LargeAddressAware>
     </Link>
     <PostBuildEvent>
@@ -321,7 +323,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <DelayLoadDLLs>dbghelp.dll</DelayLoadDLLs>
+      <DelayLoadDLLs>dbghelp.dll;dxgi.dll</DelayLoadDLLs>
       <LargeAddressAware>true</LargeAddressAware>
     </Link>
     <PostBuildEvent>
@@ -368,7 +370,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <DelayLoadDLLs>dbghelp.dll</DelayLoadDLLs>
+      <DelayLoadDLLs>dbghelp.dll;dxgi.dll</DelayLoadDLLs>
       <LargeAddressAware>true</LargeAddressAware>
     </Link>
     <PostBuildEvent>
@@ -413,7 +415,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <DelayLoadDLLs>dbghelp.dll</DelayLoadDLLs>
+      <DelayLoadDLLs>dbghelp.dll;dxgi.dll</DelayLoadDLLs>
       <LargeAddressAware>true</LargeAddressAware>
     </Link>
     <PostBuildEvent>
@@ -460,7 +462,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <DelayLoadDLLs>dbghelp.dll</DelayLoadDLLs>
+      <DelayLoadDLLs>dbghelp.dll;dxgi.dll</DelayLoadDLLs>
       <LargeAddressAware>true</LargeAddressAware>
     </Link>
     <PostBuildEvent>
@@ -505,7 +507,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <DelayLoadDLLs>dbghelp.dll</DelayLoadDLLs>
+      <DelayLoadDLLs>dbghelp.dll;dxgi.dll</DelayLoadDLLs>
       <LargeAddressAware>true</LargeAddressAware>
     </Link>
     <PostBuildEvent>
@@ -565,7 +567,6 @@
   <ItemGroup>
     <None Include="Information.ico" />
     <None Include="Module.ico" />
-    <None Include="ReadMe.txt" />
     <None Include="StressEvr.rgs" />
   </ItemGroup>
   <ItemGroup>

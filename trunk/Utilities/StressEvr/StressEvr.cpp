@@ -1,8 +1,6 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2008-2012
+// Copyright (C) Roman Ryltsov, 2008-2013
 // Created by Roman Ryltsov roman@alax.info
-// 
-// $Id$
 
 #include "stdafx.h"
 #include "resource.h"
@@ -26,9 +24,7 @@ public:
 // CStressEvrModule
 	CStressEvrModule() throw()
 	{
-		#if defined(_DEBUG)
-		AtlTraceLoadSettings(NULL);
-		#endif // defined(_DEBUG)
+		AtlTraceSetDefaultSettings();
 		_W(CExceptionFilter::Initialize());
 		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
 	}
