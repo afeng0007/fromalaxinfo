@@ -52,7 +52,6 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ReadMe.txt" />
     <None Include="StressEvr.rgs">
       <Filter>Resource Files</Filter>
     </None>

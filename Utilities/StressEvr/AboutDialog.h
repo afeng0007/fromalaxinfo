@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2008-2011
+// Copyright (C) Roman Ryltsov, 2009-2012
 // Created by Roman Ryltsov roman@alax.info
 // 
 // $Id$
@@ -70,11 +70,11 @@ public:
 	LRESULT OnInitDialog(HWND, LPARAM)
 	{
 		CStatic(GetDlgItem(IDC_ABOUT_ICON)).SetIcon(AtlLoadIconImage(IDI_MODULE, LR_DEFAULTCOLOR, 48, 48));
-		#pragma region Create and apply title font
+		#pragma region Title Font
 		m_TitleFont = CreateTitleFont();
 		CStatic(GetDlgItem(IDC_ABOUT_TITLE)).SetFont(m_TitleFont);
 		#pragma endregion 
-		#pragma region Create and apply disclaimer font
+		#pragma region Disclaimer Font
 		{
 			m_DisclaimerFont = CreateDisclaimerFont();
 			CStatic CopyrightWarningText = GetDlgItem(IDC_ABOUT_COPYRIGHTWARNING);
@@ -99,7 +99,7 @@ public:
 			}
 		}
 		#pragma endregion 
-		#pragma region Update version text
+		#pragma region Version Text
 		CStatic ProductVersionStatic = GetDlgItem(IDC_ABOUT_PRODUCTVERSION), FileVersionStatic = GetDlgItem(IDC_ABOUT_FILEVERSION);
 		CString sProductVersionFormat, sFileVersionFormat;
 		ProductVersionStatic.GetWindowText(sProductVersionFormat);
@@ -108,25 +108,28 @@ public:
 		ProductVersionStatic.SetWindowText(_VersionInfoHelper::GetVersionString(_VersionInfoHelper::GetProductVersion(sModulePath), sProductVersionFormat));
 		FileVersionStatic.SetWindowText(_VersionInfoHelper::GetVersionString(_VersionInfoHelper::GetFileVersion(sModulePath), sFileVersionFormat));
 		#pragma endregion 
-		#pragma region Update hyperlinks
+		#pragma region Hyperlinks
 		_W(m_WebsiteHyperStatic.SubclassWindow(GetDlgItem(IDC_ABOUT_WEBSITE)));
 		_W(m_EmailHyperStatic.SubclassWindow(GetDlgItem(IDC_ABOUT_EMAIL)));
 		#pragma endregion 
-		#pragma region Update caption
+		#pragma region Caption
 		{
-#if _TRACE
+			#if _TRACE || defined(_WIN64)
 			CString sCaption;
 			_W(GetWindowText(sCaption));
 			sCaption.Append(_T(" // "));
-#if _DEVELOPMENT
+			#if _DEVELOPMENT
 			sCaption.Append(_T("Dev "));
-#endif // _DEVELOPMENT
+			#endif // _DEVELOPMENT
 			sCaption.Append(_VersionInfoHelper::GetVersionString(_VersionInfoHelper::GetFileVersion(_VersionInfoHelper::GetModulePath())));
+			#if defined(_WIN64)
+			sCaption.Append(_T(" (x64)"));
+			#endif // defined(_WIN64)
 			_W(SetWindowText(sCaption));
-#endif // _TRACE
+			#endif // _TRACE || defined(_WIN64)
 		}
 		#pragma endregion 
-		#pragma region Update window position and focus
+		#pragma region Window Position and Focus
 		_W(CenterWindow(GetParent()));
 		GetDlgItem(IDOK).SetFocus();
 		#pragma endregion 

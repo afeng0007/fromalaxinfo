@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0555 */
-/* at Sat Mar 03 16:39:52 2012
+/* at Mon Jan 21 21:25:14 2013
  */
 /* Compiler settings for StressEvr.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
