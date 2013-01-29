@@ -293,6 +293,9 @@
     <None Include="AudioClientIdentifier.inc">
       <FileType>CppHeader</FileType>
     </None>
+    <None Include="AviIdentifier.inc">
+      <FileType>CppHeader</FileType>
+    </None>
     <None Include="P2pIdentifier.inc">
       <FileType>CppHeader</FileType>
     </None>
@@ -305,7 +308,9 @@
     <ClInclude Include="NotifyIconWindow.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="ShowHresult_i.h" />
-    <ClInclude Include="SlIdentifier.inc" />
+    <ClInclude Include="SlIdentifier.inc">
+      <FileType>CppHeader</FileType>
+    </ClInclude>
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <None Include="SystemHresultIdentifier.inc">

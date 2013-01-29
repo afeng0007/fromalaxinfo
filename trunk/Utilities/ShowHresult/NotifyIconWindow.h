@@ -7,6 +7,7 @@
 #pragma once
 
 #include <vfwmsgs.h>
+#include <vfw.h> // FACILITY_ITF, AVIERR_
 #include <asferr.h> // FACILITY_NS
 #include <nserror.h> // FACILITY_NS
 #include <mferror.h> // FACILITY_MF
@@ -486,6 +487,34 @@ private:
 			}
 		return FALSE;
 	}
+	static BOOL IsAviResult(HRESULT nResult, CString* psMessage = NULL, CString* psIdentifier = NULL)
+	{
+		if(HRESULT_FACILITY(nResult) != FACILITY_ITF && HRESULT_CODE(nResult) - (0x4000 + 100) < 100)
+			return FALSE;
+		psMessage;
+		CString sIdentifier;
+		if(!LookupAviIdentifier(nResult, sIdentifier))
+			return FALSE;
+		if(psIdentifier)
+			*psIdentifier = sIdentifier;
+		return TRUE;
+	}
+	static BOOL LookupAviIdentifier(HRESULT nValue, CString& sIdentifier)
+	{
+		static const struct { HRESULT nValue; LPCSTR pszName; } g_pMap[] = 
+		{
+			#define A(x) { x, #x },
+			#include "AviIdentifier.inc"
+			#undef A
+		};
+		for(SIZE_T nIndex = 0; nIndex < DIM(g_pMap); nIndex++)
+			if(g_pMap[nIndex].nValue == nValue)
+			{
+				sIdentifier = CString(g_pMap[nIndex].pszName);
+				return TRUE;
+			}
+		return FALSE;
+	}
 
 public:
 // CNotifyIconWindow
@@ -664,6 +693,8 @@ public:
 			sTitle = _T("P2P");
 		else if(IsSlResult(nResult, &sMessage, &sIdentifier) || LookupSlIdentifier(nResult, sIdentifier))
 			sTitle = _T("Software Licensing");
+		else if(IsAviResult(nResult, &sMessage, &sIdentifier) || LookupAviIdentifier(nResult, sIdentifier))
+			sTitle = _T("AVI");
 		else 
 		{
 			sMessage = AtlFormatSystemMessage(nResult);
@@ -724,7 +755,7 @@ public:
 		//Process(_T("0xC00D36B9")); // MF_E_NO_MORE_TYPES)
 		//Process(AtlFormatString(_T("0x%x"), HRESULT_FROM_WIN32(WSAEADDRINUSE))); // WSAEADDRINUSE
 		//Process(AtlFormatString(_T("0x%x"), HRESULT_FROM_WIN32(ERROR_WINHTTP_AUTODETECTION_FAILED))); // ERROR_WINHTTP_AUTODETECTION_FAILED
-		Process(_T("0x80131029L"));
+		Process(_T("0x8004406a"));
 		//Process(_T("-2147312566"));
 		#endif // defined(_DEBUG)
 		return TRUE;
