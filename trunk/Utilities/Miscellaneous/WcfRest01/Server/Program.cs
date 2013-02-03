@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.ServiceModel;
 using System.ServiceModel.Description;
+using System.ServiceModel.Web;
 
 namespace Server
 {
@@ -13,6 +14,7 @@ namespace Server
     public interface IService
     {
         [OperationContract]
+        [WebGet(UriTemplate = "/Method?input={input}", BodyStyle = WebMessageBodyStyle.Bare, RequestFormat = WebMessageFormat.Xml, ResponseFormat = WebMessageFormat.Xml)]
         string Method(string input);
     }
 

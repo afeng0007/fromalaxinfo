@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Server", "Server\Server.csproj", "{CA3B4729-47B2-419C-9EF0-146539E3CAC6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Client", "Client\Client.csproj", "{E9D0A60F-B9D3-4C07-931E-FCBBE5057DFB}"
+	ProjectSection(ProjectDependencies) = postProject
+		{CA3B4729-47B2-419C-9EF0-146539E3CAC6} = {CA3B4729-47B2-419C-9EF0-146539E3CAC6}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
