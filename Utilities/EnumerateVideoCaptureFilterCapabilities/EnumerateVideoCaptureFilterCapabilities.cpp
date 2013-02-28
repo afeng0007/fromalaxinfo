@@ -96,13 +96,63 @@ int _tmain(int argc, _TCHAR* argv[])
 					{
 						_ATLTRY
 						{
-							CComQIPtr<IAMStreamConfig> pAmStreamConfig = pPin;
+							PIN_INFO PinInformation;
+							__C(pPin->QueryPinInfo(&PinInformation));
+							reinterpret_cast<CComPtr<IBaseFilter>&>(PinInformation.pFilter) = NULL;
+							_tprintf(_T("  Pin: %s\n"), CString(PinInformation.achName));
+							#pragma region pKsPropertySet
+							const CComQIPtr<IKsPropertySet> pKsPropertySet = pPin;
+							if(pKsPropertySet)
+							{
+								GUID Category;
+								DWORD nCategorySize;
+								const HRESULT nGetResult = pKsPropertySet->Get(AMPROPSETID_Pin, AMPROPERTY_PIN_CATEGORY, NULL, 0, &Category, sizeof Category, &nCategorySize);
+								if(SUCCEEDED(nGetResult))
+								{
+									if(nCategorySize == sizeof Category)
+									{
+										// NOTE: Pin Property Set (Windows) http://msdn.microsoft.com/en-us/library/windows/desktop/dd377429%28v=vs.85%29.aspx
+										static const struct 
+										{ 
+											const GUID* pCategory; 
+											LPCSTR pszName; 
+										} g_pMap[] = 
+										{
+											#define A(x) { &x, #x },
+											A(PIN_CATEGORY_CAPTURE)
+											A(PIN_CATEGORY_PREVIEW)
+											A(PIN_CATEGORY_ANALOGVIDEOIN)
+											A(PIN_CATEGORY_VBI)
+											A(PIN_CATEGORY_VIDEOPORT)
+											A(PIN_CATEGORY_NABTS)
+											A(PIN_CATEGORY_EDS)
+											A(PIN_CATEGORY_TELETEXT)
+											A(PIN_CATEGORY_CC)
+											A(PIN_CATEGORY_STILL)
+											A(PIN_CATEGORY_TIMECODE)
+											A(PIN_CATEGORY_VIDEOPORT_VBI)
+											#undef A
+										};
+										OLECHAR pszCategory[64] = { 0 };
+										ATLVERIFY(StringFromGUID2(Category, pszCategory, _countof(pszCategory)));
+										CString sCategory(pszCategory);
+										for(SIZE_T nIndex = 0; nIndex < _countof(g_pMap); nIndex++)
+											if(*g_pMap[nIndex].pCategory == Category)
+											{
+												sCategory.AppendFormat(_T(" %hs"), g_pMap[nIndex].pszName);
+												break;
+											}
+										_tprintf(_T("    AMPROPSETID_Pin, AMPROPERTY_PIN_CATEGORY: %s\n"), sCategory);
+									} else
+										_tprintf(_T("    AMPROPSETID_Pin, AMPROPERTY_PIN_CATEGORY: Failed to Get Pin Category 0x%08x, %d (expected %d)\n"), nGetResult, nCategorySize, sizeof Category);
+								} else
+									_tprintf(_T("    AMPROPSETID_Pin, AMPROPERTY_PIN_CATEGORY: Failed to Get Pin Category 0x%08x\n"), nGetResult);
+							}
+							#pragma endregion
+							#pragma region IAMStreamConfig
+							const CComQIPtr<IAMStreamConfig> pAmStreamConfig = pPin;
 							if(pAmStreamConfig)
 							{
-								PIN_INFO PinInformation;
-								__C(pPin->QueryPinInfo(&PinInformation));
-								reinterpret_cast<CComPtr<IBaseFilter>&>(PinInformation.pFilter) = NULL;
-								_tprintf(_T("  Pin: %s\n"), CString(PinInformation.achName));
 								INT nCapabilityCount = 0;
 								INT nSize = 0;
 								__C(pAmStreamConfig->GetNumberOfCapabilities(&nCapabilityCount, &nSize));
@@ -204,6 +254,7 @@ int _tmain(int argc, _TCHAR* argv[])
 									_tprintf(_T("      .MaxBitsPerSecond: %d\n"), pCapability->MaxBitsPerSecond);
 								}
 							}
+							#pragma endregion
 						}
 						_ATLCATCHALL()
 						{
