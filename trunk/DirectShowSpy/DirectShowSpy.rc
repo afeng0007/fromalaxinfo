@@ -61,7 +61,7 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION  1, 0, 0, 829
+ FILEVERSION  1, 0, 0, 831
  PRODUCTVERSION 1,0,0,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
@@ -80,7 +80,7 @@ BEGIN
             VALUE "Comments", "Created by Roman Ryltsov roman@alax.info"
             VALUE "CompanyName", "Roman Ryltsov"
             VALUE "FileDescription", "Alax.Info DirectShow Spy Module"
-            VALUE "FileVersion",  "1, 0, 0, 829\0"
+            VALUE "FileVersion",  "1, 0, 0, 831\0"
             VALUE "InternalName", "DirectShowSpy.dll"
             VALUE "LegalCopyright", "Copyright © Alax.Info, Roman Ryltsov, 2008-2011"
             VALUE "OLESelfRegister", "Yes"
