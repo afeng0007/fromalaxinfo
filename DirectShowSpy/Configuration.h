@@ -624,7 +624,7 @@ public:
 		ZeroMemory(&Information, sizeof Information);
 		Information.cbSize = sizeof Information;
 		Information.fMask = SEE_MASK_NOCLOSEPROCESS;  
-		if(bAsAdministrator)
+		if(bAsAdministrator && GetOsVersion() >= 0x00060000) // Windows Vista or Windows Server 2008
 			Information.lpVerb = _T("runas");
 		Information.lpFile = _T("regsvr32.exe");
 		Information.nShow = SW_SHOWNORMAL;  
