@@ -16,6 +16,117 @@
 #pragma comment(lib, "dxgi.lib")
 
 ////////////////////////////////////////////////////////////
+// CVmr7Window
+
+class CVmr7Window :
+	public CControlWindowT<CVmr7Window>
+{
+public:
+
+BEGIN_MSG_MAP_EX(CVmr7Window)
+	//CHAIN_MSG_MAP(CControlWindowT<CVmr7Window>)
+	MSG_WM_ERASEBKGND(OnEraseBkgnd)
+	MSG_WM_PAINT(OnPaint)
+	MSG_WM_DISPLAYCHANGE(OnDisplayChange)
+	MSG_WM_SIZE(OnSize)
+	MSG_WM_LBUTTONDBLCLK(OnLButtonDblClk)
+END_MSG_MAP()
+
+public:
+	CComPtr<IBaseFilter> m_pBaseFilter;
+	CComPtr<IVMRWindowlessControl> m_pVmrWindowlessControl;
+
+public:
+// CVmr7Window
+	static CLSID GetRendererClassIdentifier() throw()
+	{
+		return CLSID_VideoMixingRenderer;
+	}
+	static CComPtr<IBaseFilter> CoCreateBaseFilterInstance()
+	{
+		CComPtr<IBaseFilter> pBaseFilter;
+		__C(pBaseFilter.CoCreateInstance(GetRendererClassIdentifier()));
+		return pBaseFilter;
+	}
+	VOID Initialize(IBaseFilter* pBaseFilter)
+	{
+		_A(pBaseFilter);
+		_A(!m_pBaseFilter && !m_pVmrWindowlessControl);
+		m_pBaseFilter = pBaseFilter;
+		const CComQIPtr<IVMRFilterConfig> pVmrFilterConfig = pBaseFilter;
+		__D(pVmrFilterConfig, E_NOINTERFACE);
+		__C(pVmrFilterConfig->SetRenderingMode(VMRMode_Windowless));
+		m_pVmrWindowlessControl = CComQIPtr<IVMRWindowlessControl>(m_pBaseFilter);
+		__D(m_pVmrWindowlessControl, E_NOINTERFACE);
+		__C(m_pVmrWindowlessControl->SetVideoClippingWindow(m_hWnd));
+		CRect VideoPosition = GetVideoPosition();
+		_Z4(atlTraceGeneral, 4, _T(".m_pVmrWindowlessControl 0x%p, VideoPosition at (%d, %d) size (%d, %d)\n"), m_pVmrWindowlessControl, VideoPosition.left, VideoPosition.top, VideoPosition.Width(), VideoPosition.Height());
+		__C(m_pVmrWindowlessControl->SetVideoPosition(NULL, VideoPosition));
+	}
+	VOID Terminate() throw()
+	{
+		m_pBaseFilter = NULL;
+		m_pVmrWindowlessControl = NULL;
+	}
+	CRect GetVideoPosition() const throw()
+	{
+		CRect Position;
+		_W(GetClientRect(Position));
+		return Position;
+	}
+
+// Window Message Handlers
+	LRESULT OnEraseBkgnd(CDCHandle Dc)
+	{
+		Dc;
+		if(m_pVmrWindowlessControl)
+		{
+			return TRUE;
+		} else
+			SetMsgHandled(FALSE);
+		return 0;
+	}
+	LRESULT OnPaint(CDCHandle)
+	{
+		if(m_pVmrWindowlessControl)
+		{
+			CPaintDC Dc(m_hWnd);
+			const HRESULT nRepaintVideoResult = m_pVmrWindowlessControl->RepaintVideo(m_hWnd, Dc);
+			_Z45_HRESULT(nRepaintVideoResult);
+		} else
+			SetMsgHandled(FALSE);
+		return 0;
+	}
+	LRESULT OnDisplayChange(UINT nDepth, CSize Extent)
+	{
+		if(m_pVmrWindowlessControl)
+		{
+			const HRESULT nDisplayModeChangedResult = m_pVmrWindowlessControl->DisplayModeChanged();
+			_Z45_HRESULT(nDisplayModeChangedResult);
+		}
+		return 0;
+	}
+	LRESULT OnSize(UINT nType, CSize)
+	{
+		if(nType != SIZE_MINIMIZED)
+			if(m_pVmrWindowlessControl)
+			{
+				CRect VideoPosition = GetVideoPosition();
+				const HRESULT nSetVideoPositionResult = m_pVmrWindowlessControl->SetVideoPosition(NULL, &VideoPosition);
+				_Z45_HRESULT(nSetVideoPositionResult);
+			}
+		return 0;
+	}
+	LRESULT OnLButtonDblClk(UINT, CPoint)
+	{
+		COlePropertyFrameDialog Dialog(m_pBaseFilter, _T("VMR-7"));
+		Dialog.SetObjectPages();
+		Dialog.DoModal(m_hWnd);
+		return 0;
+	}
+};
+
+////////////////////////////////////////////////////////////
 // CEvrWindow
 
 class CEvrWindow :
@@ -139,8 +250,7 @@ public:
 	}
 	LRESULT OnLButtonDblClk(UINT, CPoint Position)
 	{
-		COlePropertyFrameDialog Dialog;
-		Dialog.SetObject(m_pBaseFilter);
+		COlePropertyFrameDialog Dialog(m_pBaseFilter, _T("EVR"));
 		Dialog.SetObjectPages();
 		Dialog.DoModal(m_hWnd);
 		return 0;
@@ -148,18 +258,36 @@ public:
 };
 
 ////////////////////////////////////////////////////////////
-// CVideoDialog
+// CBaseVideoDialog
 
-class CVideoDialog : 
-	public CDialogImpl<CVideoDialog>,
-	public CDialogResize<CVideoDialog>
+class CBaseVideoDialog
 {
+public:
+// CBaseVideoDialog
+	virtual HWND Create(HWND hParentWindow) = 0;
+	virtual BOOL DestroyWindow() = 0;
+	virtual BOOL IsWindow() = 0;
+	virtual BOOL MoveWindow(const CRect& Position) = 0;
+	virtual INT ShowWindow(INT nShowCommand) = 0;
+};
+
+////////////////////////////////////////////////////////////
+// CVideoDialogT
+
+template <typename T, typename CVrWindow, LPCTSTR* t_ppszType>
+class CVideoDialogT : 
+	public CDialogImpl<T>,
+	public CDialogResize<T>,
+	public CBaseVideoDialog
+{
+	typedef CVideoDialogT<T, CVrWindow, t_ppszType> CVideoDialog;
+
 public:
 	enum { IDD = IDD_VIDEO };
 
 BEGIN_MSG_MAP_EX(CVideoDialog)
 	//CHAIN_MSG_MAP(CDialogImpl<CVideoDialog>)
-	CHAIN_MSG_MAP(CDialogResize<CVideoDialog>)
+	CHAIN_MSG_MAP(CDialogResize<T>)
 	MSG_WM_INITDIALOG(OnInitDialog)
 	MSG_WM_DESTROY(OnDestroy)
 	COMMAND_ID_HANDLER_EX(IDCANCEL, OnCommand)
@@ -378,7 +506,7 @@ private:
 	SIZE_T m_nLayout;
 	CStatic m_AreaStatic;
 	CGenericFilterGraph m_FilterGraph;
-	CRoArrayT<CEvrWindow> m_EvrWindowArray;
+	CRoArrayT<CVrWindow> m_VrWindowArray;
 	CButton m_RunButton;
 	CButton m_PauseButton;
 	CButton m_StopButton;
@@ -440,15 +568,44 @@ private:
 
 public:
 // CVideoDialog
-	CVideoDialog(const CMediaType& pMediaType, SIZE_T nLayout) :
+	CVideoDialogT(const CMediaType& pMediaType, SIZE_T nLayout) :
 		m_pMediaType(pMediaType),
 		m_nLayout(nLayout)
 	{
 		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
 	}
-	~CVideoDialog() throw()
+	~CVideoDialogT() throw()
 	{
 		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+	}
+
+// CDialogImpl
+	VOID OnFinalMessage(HWND)
+	{
+		T* pT = static_cast<T*>(this);
+		delete pT;
+	}
+
+// CBaseVideoDialog
+	HWND Create(HWND hParentWindow)
+	{
+		return CDialogImpl<T>::Create(hParentWindow);
+	}
+	BOOL DestroyWindow()
+	{
+		return CDialogImpl<T>::DestroyWindow();
+	}
+	BOOL IsWindow()
+	{
+		return CDialogImpl<T>::IsWindow();
+	}
+	BOOL MoveWindow(const CRect& Position)
+	{
+		return CDialogImpl<T>::MoveWindow(Position);
+	}
+	INT ShowWindow(INT nShowCommand)
+	{
+		return CDialogImpl<T>::ShowWindow(nShowCommand);
 	}
 
 // CDialogResize
@@ -459,9 +616,9 @@ public:
 		_W(m_AreaStatic.GetWindowRect(Position));
 		_W(ScreenToClient(Position));
 		CDeferWindowPos DeferWindowPos;
-		_W(DeferWindowPos.Begin((INT) m_EvrWindowArray.GetCount()));
-		for(SIZE_T nIndex = 0; nIndex < m_EvrWindowArray.GetCount(); nIndex++)
-			_W(DeferWindowPos.SetWindowPos(m_EvrWindowArray[nIndex], NULL, GetVideoPosition(Position, nIndex), SWP_NOZORDER | SWP_NOACTIVATE));
+		_W(DeferWindowPos.Begin((INT) m_VrWindowArray.GetCount()));
+		for(SIZE_T nIndex = 0; nIndex < m_VrWindowArray.GetCount(); nIndex++)
+			_W(DeferWindowPos.SetWindowPos(m_VrWindowArray[nIndex], NULL, GetVideoPosition(Position, nIndex), SWP_NOZORDER | SWP_NOACTIVATE));
 		_W(DeferWindowPos.End());
 	}
 
@@ -477,20 +634,20 @@ public:
 		UpdateControls();
 		m_FilterGraph.CoCreateInstance();
 		const SIZE_T nCount = (m_nLayout + 1) * (m_nLayout + 1); // 1, 4, 9, 16, ...
-		_A(m_EvrWindowArray.IsEmpty());
-		_W(m_EvrWindowArray.SetCount(0, (INT) nCount));
+		_A(m_VrWindowArray.IsEmpty());
+		_W(m_VrWindowArray.SetCount(0, (INT) nCount));
 		for(SIZE_T nIndex = 0; nIndex < nCount; nIndex++)
 		{
-			CEvrWindow& EvrWindow = m_EvrWindowArray[m_EvrWindowArray.Add()];
-			CComPtr<IBaseFilter> pBaseFilter = CEvrWindow::CoCreateBaseFilterInstance();
+			CVrWindow& VrWindow = m_VrWindowArray[m_VrWindowArray.Add()];
+			CComPtr<IBaseFilter> pBaseFilter = CVrWindow::CoCreateBaseFilterInstance();
 			__C(m_FilterGraph->AddFilter(pBaseFilter, CT2CW(AtlFormatString(_T("Renderer %02d"), nIndex + 1))));
-			EvrWindow.Create(m_hWnd);
-			EvrWindow.ShowWindow(SW_SHOWNORMAL);
-			EvrWindow.Initialize(pBaseFilter);
+			VrWindow.Create(m_hWnd);
+			VrWindow.ShowWindow(SW_SHOWNORMAL);
+			VrWindow.Initialize(pBaseFilter);
 			CObjectPtr<CSourceFilter> pSourceFilter;
 			pSourceFilter.Construct()->Initialize(m_pMediaType);
 			__C(m_FilterGraph->AddFilter(pSourceFilter, CT2CW(AtlFormatString(_T("Source %02d"), nIndex + 1))));
-			m_FilterGraph->Connect(pSourceFilter->GetOutputPin(), _FilterGraphHelper::GetFilterPin(EvrWindow.m_pBaseFilter));
+			m_FilterGraph->Connect(pSourceFilter->GetOutputPin(), _FilterGraphHelper::GetFilterPin(VrWindow.m_pBaseFilter));
 		}
 		__C(m_FilterGraph.m_pMediaEventEx->SetNotifyWindow((OAHWND) m_hWnd, WM_FILTERGRAPHEVENT, (LONG_PTR) this));
 		UpdateControls();
@@ -500,16 +657,19 @@ public:
 		CString sCaption;
 		GetWindowText(sCaption);
 		const CSize Extent = m_pMediaType.GetCompatibleVideoInfoHeader().GetExtent();
-		SetWindowText(AtlFormatString(sCaption, nCount, Extent.cx, Extent.cy));
+		SetWindowText(AtlFormatString(sCaption, nCount, *t_ppszType, Extent.cx, Extent.cy));
 		return 0;
 	}
 	LRESULT OnDestroy() throw()
 	{
 		if(m_FilterGraph.m_pMediaControl)
 			_V(m_FilterGraph.m_pMediaControl->Stop());
-		for(SIZE_T nIndex = 0; nIndex < m_EvrWindowArray.GetCount(); nIndex++)
-			m_EvrWindowArray[nIndex].Terminate();
+		for(SIZE_T nIndex = 0; nIndex < m_VrWindowArray.GetCount(); nIndex++)
+			m_VrWindowArray[nIndex].Terminate();
 		m_FilterGraph.Release();
+		CWindow OwnerWindow = GetWindow(GW_OWNER);
+		if(OwnerWindow.IsWindow())
+			OwnerWindow.SendMessage(WM_COMMAND, 'CL', (LPARAM) (CBaseVideoDialog*) this);
 		return 0;
 	}
 	LRESULT OnCommand(UINT, INT nIdentifier, HWND)
@@ -585,6 +745,35 @@ public:
 };
 
 ////////////////////////////////////////////////////////////
+// CVmr7VideoDialog, CEvrVideoDialog
+
+LPCTSTR g_pszVmr7 = _T("VMR-7");
+
+class CVmr7VideoDialog :
+	public CVideoDialogT<CVmr7VideoDialog, CVmr7Window, &g_pszVmr7>
+{
+public:
+// CVmr7VideoDialog
+	CVmr7VideoDialog(const CMediaType& pMediaType, SIZE_T nLayout) :
+		CVideoDialogT<CVmr7VideoDialog, CVmr7Window, &g_pszVmr7>(pMediaType, nLayout)
+	{
+	}
+};
+
+LPCTSTR g_pszEvr = _T("EVR");
+
+class CEvrVideoDialog :
+	public CVideoDialogT<CEvrVideoDialog, CEvrWindow, &g_pszEvr>
+{
+public:
+// CEvrVideoDialog
+	CEvrVideoDialog(const CMediaType& pMediaType, SIZE_T nLayout) :
+		CVideoDialogT<CEvrVideoDialog, CEvrWindow, &g_pszEvr>(pMediaType, nLayout)
+	{
+	}
+};
+
+////////////////////////////////////////////////////////////
 // CMainDialog
 
 class CMainDialog : 
@@ -601,6 +790,7 @@ BEGIN_MSG_MAP_EX(CMainDialog)
 	MSG_WM_SYSCOMMAND(OnSysCommand)
 	COMMAND_ID_HANDLER_EX(IDCANCEL, OnCommand)
 	COMMAND_ID_HANDLER_EX(IDC_CREATE, OnCreateButtonClicked)
+	COMMAND_ID_HANDLER_EX('CL', OnCloseVideoDialog)
 	REFLECT_NOTIFICATIONS()
 END_MSG_MAP()
 
@@ -619,7 +809,7 @@ private:
 	CRoEdit m_DxgiEdit;
 	CComPtr<IDXGIFactory> m_pDxgiFactory;
 	CRect m_DefaultPosition;
-	CRoListT<CAutoPtr<CVideoDialog>> m_VideoDialogList;
+	CRoListT<CBaseVideoDialog*> m_VideoDialogList;
 
 public:
 // CMainDialog
@@ -639,14 +829,15 @@ public:
 			CString sCaption;
 			GetWindowText(sCaption);
 			#if defined(_WIN64)
-			sCaption.Append(_T(" (64-bit)"));
+				sCaption.Append(_T(" (64-bit)"));
 			#else
-			if(SafeIsWow64Process())
-				sCaption.Append(_T(" (32-bit)"));
+				if(SafeIsWow64Process())
+					sCaption.Append(_T(" (32-bit)"));
 			#endif // defined(_WIN64)
 			SetWindowText(sCaption);
 		}
 		_W(CenterWindow());
+		CButton(GetDlgItem(IDC_TYPE_EVR)).SetCheck(TRUE);
 		CButton(GetDlgItem(IDC_RESOLUTION_19201080)).SetCheck(TRUE);
 		CButton(GetDlgItem(IDC_PIXELFORMAT_NV12)).SetCheck(TRUE);
 		CButton(GetDlgItem(IDC_LAYOUT_9)).SetCheck(TRUE);
@@ -676,7 +867,7 @@ public:
 	{
 		for(POSITION Position = m_VideoDialogList.GetHeadPosition(); Position; m_VideoDialogList.GetNext(Position))
 		{
-			CAutoPtr<CVideoDialog>& pVideoDialog = m_VideoDialogList.GetAt(Position);
+			CBaseVideoDialog* pVideoDialog = m_VideoDialogList.GetAt(Position);
 			_A(pVideoDialog);
 			if(pVideoDialog->IsWindow())
 				_W(pVideoDialog->DestroyWindow());
@@ -762,6 +953,13 @@ public:
 	{
 		CWaitCursor WaitCursor;
 		#pragma region Query Controls
+		SIZE_T nType;
+		for(INT nIdentifier = IDC_TYPE_VMR7; nIdentifier <= IDC_TYPE_EVR; nIdentifier++)
+			if(IsDlgButtonChecked(nIdentifier))
+			{
+				nType = nIdentifier - IDC_TYPE_VMR7;
+				break;
+			}
 		SIZE_T nResolution;
 		for(INT nIdentifier = IDC_RESOLUTION_720576; nIdentifier <= IDC_RESOLUTION_19201080; nIdentifier++)
 			if(IsDlgButtonChecked(nIdentifier))
@@ -789,7 +987,18 @@ public:
 		static const WORD g_pnBitCounts[] = { 12, 16, 24, 32 };
 		CMediaType pMediaType;
 		pMediaType.AllocateVideoInfo(g_pExtents[nResolution], g_pnBitCounts[nPixelFormat], g_pnCompressions[nPixelFormat]);
-		CVideoDialog* pVideoDialog = new CVideoDialog(pMediaType, nLayout);
+		CBaseVideoDialog* pVideoDialog;
+		switch(nType)
+		{
+		case 0: // IDC_TYPE_VMR7
+			pVideoDialog = new CVmr7VideoDialog(pMediaType, nLayout);
+			break;
+		case 1: // IDC_TYPE_EVR
+			pVideoDialog = new CEvrVideoDialog(pMediaType, nLayout);
+			break;
+		default:
+			__C(E_NOTIMPL);
+		}
 		_ATLTRY
 		{
 			pVideoDialog->Create(m_hWnd);
@@ -807,7 +1016,7 @@ public:
 				Position.OffsetRect(nOffset * (INT) m_VideoDialogList.GetCount(), nOffset * (INT) m_VideoDialogList.GetCount());
 				_W(pVideoDialog->MoveWindow(Position));
 				pVideoDialog->ShowWindow(SW_SHOWNORMAL);
-				m_VideoDialogList.GetAt(m_VideoDialogList.AddTail()).Attach(pVideoDialog);
+				m_VideoDialogList.AddTail(pVideoDialog);
 			}
 			_ATLCATCHALL()
 			{
@@ -820,6 +1029,14 @@ public:
 			delete pVideoDialog;
 			_ATLRETHROW;
 		}
+		return 0;
+	}
+	LRESULT OnCloseVideoDialog(UINT, INT, HWND hWindow)
+	{
+		CBaseVideoDialog* pBaseVideoDialog = (CBaseVideoDialog*) hWindow;
+		POSITION Position;
+		if(m_VideoDialogList.FindFirst(pBaseVideoDialog, &Position))
+			m_VideoDialogList.RemoveAt(Position);
 		return 0;
 	}
 };
