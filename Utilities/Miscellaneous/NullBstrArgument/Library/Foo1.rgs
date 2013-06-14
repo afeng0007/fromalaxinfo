@@ -1,0 +1,16 @@
+HKCR
+{
+	NoRemove CLSID
+	{
+		ForceRemove {4343C7C2-CA6E-4988-9373-FA5B3892EC6F} = s 'Foo Class'
+		{
+			ForceRemove Programmable
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Free'
+			}
+			TypeLib = s '{376B7D27-4AD3-47F6-AC02-D2DDE9E5A9B6}'
+			Version = s '1.0'
+		}
+	}
+}
