@@ -8,19 +8,34 @@
       <UniqueIdentifier>{b9b5ed5e-6789-4dd7-8d7f-448b3cd4d27e}</UniqueIdentifier>
       <SourceControlFiles>False</SourceControlFiles>
     </Filter>
+    <Filter Include="Generated Files\x64">
+      <UniqueIdentifier>{2b7d08ea-c975-4261-a83b-f645c765e8f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Generated Files\Win32">
+      <UniqueIdentifier>{b7d7de73-72be-4d61-8580-3bc8cac5cf76}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="Libraryps.def" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Library_i.c">
-      <Filter>Generated Files</Filter>
+    <ClCompile Include="x64\dlldata.c">
+      <Filter>Generated Files\x64</Filter>
     </ClCompile>
-    <ClCompile Include="Library_p.c">
-      <Filter>Generated Files</Filter>
+    <ClCompile Include="x64\Library_i.c">
+      <Filter>Generated Files\x64</Filter>
     </ClCompile>
-    <ClCompile Include="dlldata.c">
-      <Filter>Generated Files</Filter>
+    <ClCompile Include="x64\Library_p.c">
+      <Filter>Generated Files\x64</Filter>
+    </ClCompile>
+    <ClCompile Include="Win32\dlldata.c">
+      <Filter>Generated Files\Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="Win32\Library_i.c">
+      <Filter>Generated Files\Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="Win32\Library_p.c">
+      <Filter>Generated Files\Win32</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

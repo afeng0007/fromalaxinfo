@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0555 */
-/* at Sat Jun 15 02:01:32 2013
+/* at Sun Jun 16 11:06:26 2013
  */
 /* Compiler settings for Library.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
@@ -76,7 +76,7 @@ extern "C"{
 #define __IFoo_INTERFACE_DEFINED__
 
 /* interface IFoo */
-/* [unique][dual][uuid][object] */ 
+/* [unique][nonextensible][uuid][object] */ 
 
 
 EXTERN_C const IID IID_IFoo;

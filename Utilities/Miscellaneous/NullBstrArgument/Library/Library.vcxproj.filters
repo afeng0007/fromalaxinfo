@@ -17,6 +17,12 @@
       <UniqueIdentifier>{f1f0288b-91f5-4b95-808d-a6f2ca0103d8}</UniqueIdentifier>
       <SourceControlFiles>False</SourceControlFiles>
     </Filter>
+    <Filter Include="Generated Files\x64">
+      <UniqueIdentifier>{0607d9c8-95c9-4c03-907b-7a9a9e3de226}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Generated Files\Win32">
+      <UniqueIdentifier>{b7c20917-d804-4dcd-a53b-c700a69ac4b6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -28,11 +34,14 @@
     <ClCompile Include="dllmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Library_i.c">
-      <Filter>Generated Files</Filter>
-    </ClCompile>
     <ClCompile Include="Foo.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="x64\Library_i.c">
+      <Filter>Generated Files\x64</Filter>
+    </ClCompile>
+    <ClCompile Include="Win32\Library_i.c">
+      <Filter>Generated Files\Win32</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -48,11 +57,14 @@
     <ClInclude Include="dllmain.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Library_i.h">
-      <Filter>Generated Files</Filter>
-    </ClInclude>
     <ClInclude Include="Foo.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="x64\Library_i.h">
+      <Filter>Generated Files\x64</Filter>
+    </ClInclude>
+    <ClInclude Include="Win32\Library_i.h">
+      <Filter>Generated Files\Win32</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -67,7 +79,7 @@
     <None Include="Library.def">
       <Filter>Source Files</Filter>
     </None>
-    <None Include="Foo1.rgs">
+    <None Include="Foo.rgs">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

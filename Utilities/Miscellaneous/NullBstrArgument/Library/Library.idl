@@ -8,9 +8,9 @@ import "ocidl.idl";
 [
 	object,
 	uuid(955C1132-96DC-4221-86A3-BE4C8CEB698C),
-	dual,
+	//dual,
 	//oleautomation,
-	//nonextensible,
+	nonextensible,
 	pointer_default(unique)
 ]
 interface IFoo : IDispatch
