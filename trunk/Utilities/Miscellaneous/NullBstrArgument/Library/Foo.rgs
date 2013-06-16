@@ -4,6 +4,7 @@ HKCR
 	{
 		ForceRemove {4343C7C2-CA6E-4988-9373-FA5B3892EC6F} = s 'Foo Class'
 		{
+			val AppID = s '{376B7D27-4AD3-47F6-AC02-D2DDE9E5A9B6}'
 			ForceRemove Programmable
 			InprocServer32 = s '%MODULE%'
 			{

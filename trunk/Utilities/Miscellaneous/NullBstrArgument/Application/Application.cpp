@@ -13,7 +13,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	A(CoInitialize(NULL));
 	{
 		CComPtr<IFoo> pFoo;
-		A(pFoo.CoCreateInstance(__uuidof(Foo)));
+		A(pFoo.CoCreateInstance(__uuidof(Foo), NULL, CLSCTX_LOCAL_SERVER));
 		CComBSTR sValue;
 		sValue = "Application";
 		A(pFoo->Bar1(&sValue));

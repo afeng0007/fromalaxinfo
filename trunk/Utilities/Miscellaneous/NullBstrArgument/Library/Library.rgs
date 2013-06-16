@@ -1,3 +1,10 @@
 HKCR
 {
+	NoRemove AppID
+	{
+		ForceRemove {376B7D27-4AD3-47F6-AC02-D2DDE9E5A9B6} = s 'NULL BSTR Foo Class App'
+		{
+			val DLLSurrogate = s ''
+		}
+	}
 }
