@@ -1,0 +1,36 @@
+// Host.idl : IDL source for Host
+//
+
+// This file will be processed by the MIDL tool to
+// produce the type library (Host.tlb) and marshalling code.
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	object,
+	uuid(D22A348B-2542-4618-AD41-00EE1EDBAFB7),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IFoo : IDispatch
+{
+	[id(1)] HRESULT Bar();
+};
+[
+	uuid(8BF3E10F-0C46-4BB4-917C-E5AF9BE9D21E),
+	version(1.0),
+]
+library HostLib
+{
+	importlib("stdole2.tlb");
+	[
+		uuid(D2ACAB10-7550-4726-9535-B7EFACAE9202)		
+	]
+	coclass Foo
+	{
+		[default] interface IFoo;
+	};
+};
+
