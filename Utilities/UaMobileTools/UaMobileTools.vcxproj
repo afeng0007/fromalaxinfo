@@ -436,7 +436,6 @@
     <None Include="UaMobileTools.def" />
     <None Include="Module.rgs" />
     <None Include="GenericClass.rgs" />
-    <None Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="UaMobileTools.idl" />

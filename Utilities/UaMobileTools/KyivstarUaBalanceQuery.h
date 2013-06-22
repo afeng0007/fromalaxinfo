@@ -1,8 +1,6 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2008-2012
+// Copyright (C) Roman Ryltsov, 2008-2013
 // Created by Roman Ryltsov roman@alax.info
-// 
-// $Id$
 
 #pragma once
 
@@ -59,7 +57,7 @@ private:
 			nContentDataCapacity = nContentLength + 1 + 1; // Zero and Safety 
 		pszContentData.Allocate(nContentDataCapacity);
 		DWORD nContentDataLength = 0;
-		__E(Request.ReadData(pszContentData, nContentDataCapacity - 1, &nContentDataLength));
+		__E(Request.ReadData(pszContentData, (DWORD) nContentDataCapacity - 1, &nContentDataLength));
 		_A(nContentDataLength < g_nContentDataCapacity - 1);
 		pszContentData[nContentDataLength] = 0;
 		_A(strlen(pszContentData) == nContentDataLength);
@@ -157,15 +155,15 @@ public:
 					"value=\"{[^\"]+}\"", 
 					FALSE);
 				CRoReMatchContextA MatchContext;
-				__D(g_TokenExpression.Match(pszContentData, &MatchContext), E_UNNAMED);
-				sToken = MatchContext.GetMatchString(0);
+				//__D(g_TokenExpression.Match(pszContentData, &MatchContext), E_UNNAMED);
+				//sToken = MatchContext.GetMatchString(0);
 			}
 			#pragma endregion 
 			#pragma region Login and Read Home Page
 			CString sBalance;
 			{
 				CWinHttpPostData PostData;
-				PostData.AddValue("org.apache.struts.taglib.html.TOKEN", sToken);
+				//PostData.AddValue("org.apache.struts.taglib.html.TOKEN", sToken);
 				PostData.AddValue("isSubmitted", "false");
 				PostData.AddValue("user", CStringA(sNumber));
 				PostData.AddValue("password", CStringA(sPassword));

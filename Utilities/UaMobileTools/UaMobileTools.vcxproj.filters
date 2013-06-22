@@ -61,7 +61,6 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="ReadMe.txt" />
     <None Include="UaMobileTools.def">
       <Filter>Source Files</Filter>
     </None>
