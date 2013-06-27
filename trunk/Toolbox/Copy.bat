@@ -15,6 +15,9 @@ copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.%C%" .
 copy /b /y "%A%\Utilities\%B%\_Bin\%B%-Win32.%C%" .
 copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.%C%" .
 
+@set B=BuildOutputHelper
+copy /b /y "%A%\Utilities\%B%\_Bin\Win32\Development Release Trace\%B%.exe" .
+
 @set A=..\..\Repository-Public
 
 @set B=LogProcessExceptions
