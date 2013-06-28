@@ -493,6 +493,7 @@ public:
 						A(IWMStreamConfig2)
 						A(IWMStreamConfig3)
 						A(IWMVideoMediaProps)
+						A(IWMPropertyVault)
 						#undef A
 					};
 					for(SIZE_T nIndex = 0; nIndex < DIM(g_pMap); nIndex++)
@@ -749,6 +750,86 @@ public:
 						sText.AppendFormat(_T("  ") _T("MaxKeyFrameSpacing: %s") _T("\r\n"), _FilterGraphHelper::FormatReferenceTime(nMaximalKeyFrameIntervalTime));
 						sText.AppendFormat(_T("  ") _T("Quality: %d") _T("\r\n"), nQuality);
 						sText.Append(_T("\r\n"));
+					}
+					_ATLCATCHALL()
+					{
+						_Z_EXCEPTION();
+					}
+				#pragma endregion 
+				#pragma region IWMPropertyVault
+				const CComQIPtr<IWMPropertyVault> pWmPropertyVault = m_pCodecFormatData->m_pWmStreamConfig;
+				if(pWmPropertyVault)
+					_ATLTRY
+					{
+						DWORD nPropertyCount = 0;
+						__C(pWmPropertyVault->GetPropertyCount(&nPropertyCount));
+						CRoArrayT<CString> PropertyArray;
+						for(DWORD nPropertyIndex = 0; nPropertyIndex < nPropertyCount; nPropertyIndex++)
+						{
+							DWORD nNameLength = 0;
+							WMT_ATTR_DATATYPE nType;
+							DWORD nValueDataSize = 0;
+							pWmPropertyVault->GetPropertyByIndex(nPropertyIndex, NULL, &nNameLength, &nType, NULL, &nValueDataSize);
+							CTempBufferT<WCHAR> pszName(nNameLength + 1);
+							CTempBufferT<BYTE> pnValueData(nValueDataSize + 2);
+							__C(pWmPropertyVault->GetPropertyByIndex(nPropertyIndex, pszName, &nNameLength, &nType, pnValueData, &nValueDataSize));
+							CString sProperty;
+							BOOL bHandled = FALSE;
+							switch(nType)
+							{
+							case WMT_TYPE_DWORD:
+								if(nValueDataSize && !(nValueDataSize % sizeof (DWORD)))
+								{
+									const DWORD* pnValues = (const DWORD*) (const BYTE*) pnValueData;
+									const SIZE_T nValueCount = nValueDataSize / sizeof (DWORD);
+									if(nValueCount == 1)
+										sProperty = AtlFormatString(_T("%d 0x%02X"), pnValues[0], pnValues[0]);
+									else
+										sProperty = AtlFormatString(_T("0x%02X, ..."), pnValues[0]);
+									bHandled = TRUE;
+								}
+								break;
+							case WMT_TYPE_STRING:
+								// TODO: ...
+								break;
+							case WMT_TYPE_BINARY:
+								// TODO: ...
+								break;
+							case WMT_TYPE_BOOL:
+								if(nValueDataSize && !(nValueDataSize % sizeof (BOOL)))
+								{
+									const BOOL* pnValues = (const BOOL*) (const BYTE*) pnValueData;
+									const SIZE_T nValueCount = nValueDataSize / sizeof (BOOL);
+									if(nValueCount == 1)
+										sProperty = AtlFormatString(_T("%d"), pnValues[0]);
+									else
+										sProperty = AtlFormatString(_T("%d, ..."), pnValues[0]);
+									bHandled = TRUE;
+								}
+								break;
+							case WMT_TYPE_QWORD:
+								// TODO: ...
+								break;
+							case WMT_TYPE_WORD:
+								// TODO: ...
+								break;
+							case WMT_TYPE_GUID:
+								// TODO: ...
+								break;
+							}
+							if(!bHandled)
+								sProperty = _T("???");
+							sProperty += AtlFormatString(_T(" (Type %d, Size %d)"), nType, nValueDataSize);
+							_W(PropertyArray.Add(AtlFormatString(_T("%ls: %s"), (LPCWSTR) pszName, sProperty)) >= 0);
+						}
+						if(nPropertyCount)
+						{
+							sText.Append(_T("IWMPropertyVault:\r\n"));
+							sText.AppendFormat(_T("  ") _T("PropertyCount: %d") _T("\r\n"), nPropertyCount);
+							for(SIZE_T nIndex = 0; nIndex < PropertyArray.GetCount(); nIndex++)
+								sText.AppendFormat(_T("    ") _T("%s") _T("\r\n"), PropertyArray[nIndex]);
+							sText.Append(_T("\r\n"));
+						}
 					}
 					_ATLCATCHALL()
 					{
