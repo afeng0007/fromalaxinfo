@@ -1,8 +1,6 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2009-2012
+// Copyright (C) Roman Ryltsov, 2008-2013
 // Created by Roman Ryltsov roman@alax.info
-// 
-// $Id$
 
 #pragma once
 
@@ -475,10 +473,41 @@ public:
 			if(m_pCodecFormatData)
 			{
 				if(!m_pCodecFormatData->m_sDescription.IsEmpty())
+				{
 					sText.AppendFormat(_T("Description: %ls\r\n"), m_pCodecFormatData->m_sDescription);
+					sText.Append(_T("\r\n"));
+				}
+				#pragma region Interfaces
+				if(m_pCodecFormatData->m_pWmStreamConfig)
+				{
+					sText += AtlFormatString(_T("Interfaces:") _T("\r\n"));
+					static const struct 
+					{
+						const IID* pIdentifier;
+						LPCSTR pszName;
+					} g_pMap[] = 
+					{
+						#define A(x) { &__uuidof(x), #x },
+						A(IWMMediaProps)
+						A(IWMStreamConfig)
+						A(IWMStreamConfig2)
+						A(IWMStreamConfig3)
+						A(IWMVideoMediaProps)
+						#undef A
+					};
+					for(SIZE_T nIndex = 0; nIndex < DIM(g_pMap); nIndex++)
+					{
+						CComPtr<IUnknown> pUnknown;
+						m_pCodecFormatData->m_pWmStreamConfig->QueryInterface(*g_pMap[nIndex].pIdentifier, (VOID**) &pUnknown);
+						if(pUnknown)
+							sText += AtlFormatString(_T("  ") _T("%hs") _T("\r\n"), g_pMap[nIndex].pszName);
+					}
+					sText.Append(_T("\r\n"));
+				}
+				#pragma endregion 
+				#pragma region Media Type
 				if(m_pCodecFormatData->m_pMediaType)
 				{
-					sText.Append(_T("\r\n"));
 					sText.Append(_T("AM_MEDIA_TYPE:\r\n"));
 					const CMediaType& pMediaType = reinterpret_cast<const CMediaType&>(m_pCodecFormatData->m_pMediaType);
 					//sText.AppendFormat(_T("  ...\r\n"), pMediaType->majortype);
@@ -513,6 +542,7 @@ public:
 						sText.AppendFormat(_T("  formattype: %ls\r\n"), _PersistHelper::StringFromIdentifier(pMediaType->formattype));
 					#pragma endregion
 					sText.AppendFormat(_T("  cbFormat: %s\r\n"), _StringHelper::FormatNumber((LONG) pMediaType->cbFormat));
+					#pragma region FORMAT_VideoInfo
 					if(pMediaType->formattype == FORMAT_VideoInfo)
 					{
 						sText.Append(_T("\r\n"));
@@ -537,7 +567,11 @@ public:
 						//biYPelsPerMeter;
 						//biClrUsed;
 						//biClrImportant;
+						sText.Append(_T("\r\n"));
+
 					} else
+					#pragma endregion 
+					#pragma region FORMAT_VideoInfo2
 					if(pMediaType->formattype == FORMAT_VideoInfo2)
 					{
 						sText.Append(_T("\r\n"));
@@ -571,6 +605,8 @@ public:
 						//biClrUsed;
 						//biClrImportant;
 					} else
+					#pragma endregion 
+					#pragma region FORMAT_WaveFormatEx
 					if(pMediaType->formattype == FORMAT_WaveFormatEx)
 					{
 						sText.Append(_T("\r\n"));
@@ -595,7 +631,130 @@ public:
 							if(pWaveFormatEx->cbSize)
 								sText.AppendFormat(_T("  %s\r\n"), StringFromData((const BYTE*) (pWaveFormatEx + 1), pWaveFormatEx->cbSize));
 					}
+					#pragma endregion 
 				}
+				#pragma endregion
+				#pragma region IWMMediaProps
+				const CComQIPtr<IWMMediaProps> pWmMediaProps = m_pCodecFormatData->m_pWmStreamConfig;
+				if(pWmMediaProps)
+					_ATLTRY
+					{
+						GUID Type = GUID_NULL;
+						__C(pWmMediaProps->GetType(&Type));
+						sText.Append(_T("IWMMediaProps:\r\n"));
+						sText.AppendFormat(_T("  ") _T("Type: %ls") _T("\r\n"), _FilterGraphHelper::FormatMajorType(Type));
+						sText.Append(_T("\r\n"));
+					}
+					_ATLCATCHALL()
+					{
+						_Z_EXCEPTION();
+					}
+				#pragma endregion 
+				#pragma region IWMStreamConfig
+				const CComQIPtr<IWMStreamConfig> pWmStreamConfig = m_pCodecFormatData->m_pWmStreamConfig;
+				if(pWmStreamConfig)
+					_ATLTRY
+					{
+						GUID StreamType = GUID_NULL;
+						__C(pWmStreamConfig->GetStreamType(&StreamType));
+						WORD nStreamNumber = 0;
+						__C(pWmStreamConfig->GetStreamNumber(&nStreamNumber));
+						WORD nStreamNameLength = 0;
+						pWmStreamConfig->GetStreamName(NULL, &nStreamNameLength);
+						CTempBufferT<WCHAR> pszStreamName(nStreamNameLength + 1);
+						__C(pWmStreamConfig->GetStreamName(pszStreamName, &nStreamNameLength));
+						WORD nConnectionNameLength = 0;
+						pWmStreamConfig->GetConnectionName(NULL, &nConnectionNameLength);
+						CTempBufferT<WCHAR> pszConnectionName(nConnectionNameLength + 1);
+						__C(pWmStreamConfig->GetConnectionName(pszConnectionName, &nConnectionNameLength));
+						DWORD nBitrate = 0;
+						__C(pWmStreamConfig->GetBitrate(&nBitrate));
+						DWORD nBufferWindow = 0;
+						__C(pWmStreamConfig->GetBufferWindow(&nBufferWindow));
+						sText.Append(_T("IWMStreamConfig:\r\n"));
+						sText.AppendFormat(_T("  ") _T("StreamType: %ls") _T("\r\n"), _FilterGraphHelper::FormatMajorType(StreamType));
+						sText.AppendFormat(_T("  ") _T("StreamNumber: %d") _T("\r\n"), nStreamNumber);
+						if(wcslen(pszStreamName))
+							sText.AppendFormat(_T("  ") _T("StreamName: %ls") _T("\r\n"), (LPCWSTR) pszStreamName);
+						if(wcslen(pszConnectionName))
+							sText.AppendFormat(_T("  ") _T("ConnectionName: %ls") _T("\r\n"), (LPCWSTR) pszConnectionName);
+						sText.AppendFormat(_T("  ") _T("Bitrate: %d") _T("\r\n"), nBitrate);
+						sText.AppendFormat(_T("  ") _T("BufferWindow: %d") _T("\r\n"), nBufferWindow);
+						sText.Append(_T("\r\n"));
+					}
+					_ATLCATCHALL()
+					{
+						_Z_EXCEPTION();
+					}
+				#pragma endregion 
+				#pragma region IWMStreamConfig2
+				const CComQIPtr<IWMStreamConfig2> pWmStreamConfig2 = m_pCodecFormatData->m_pWmStreamConfig;
+				if(pWmStreamConfig2)
+					_ATLTRY
+					{
+						WMT_TRANSPORT_TYPE TransportType;
+						__C(pWmStreamConfig2->GetTransportType(&TransportType));
+						WORD nDataUnitExtensionCount = 0;
+						pWmStreamConfig2->GetDataUnitExtensionCount(&nDataUnitExtensionCount);
+						for(WORD nDataUnitExtensionIndex = 0; nDataUnitExtensionIndex < nDataUnitExtensionCount; nDataUnitExtensionIndex++)
+						{
+							GUID Identifier = GUID_NULL;
+							WORD nSize = 0;
+							DWORD nInformationSize = 0;
+							__C(pWmStreamConfig2->GetDataUnitExtension(nDataUnitExtensionIndex, &Identifier, &nSize, NULL, &nInformationSize));
+						}
+						sText.Append(_T("IWMStreamConfig2:\r\n"));
+						sText.AppendFormat(_T("  ") _T("TransportType: %d") _T("\r\n"), TransportType);
+						if(nDataUnitExtensionCount)
+							sText.AppendFormat(_T("  ") _T("DataUnitExtensionCount: %d") _T("\r\n"), nDataUnitExtensionCount);
+						sText.Append(_T("\r\n"));
+					}
+					_ATLCATCHALL()
+					{
+						_Z_EXCEPTION();
+					}
+				#pragma endregion 
+				#pragma region IWMStreamConfig3
+				const CComQIPtr<IWMStreamConfig3> pWmStreamConfig3 = m_pCodecFormatData->m_pWmStreamConfig;
+				if(pWmStreamConfig3)
+					_ATLTRY
+					{
+						WORD nLanguageStringLength = 0;
+						pWmStreamConfig3->GetLanguage(NULL, &nLanguageStringLength);
+						CTempBufferT<WCHAR> pszLanguageString(nLanguageStringLength + 1);
+						__C(pWmStreamConfig3->GetLanguage(pszLanguageString, &nLanguageStringLength));
+						if(wcslen(pszLanguageString))
+						{
+							sText.Append(_T("IWMStreamConfig3:\r\n"));
+							if(wcslen(pszLanguageString))
+								sText.AppendFormat(_T("  ") _T("Language: %ls") _T("\r\n"), (LPCWSTR) pszLanguageString);
+							sText.Append(_T("\r\n"));
+						}
+					}
+					_ATLCATCHALL()
+					{
+						_Z_EXCEPTION();
+					}
+				#pragma endregion 
+				#pragma region IWMVideoMediaProps
+				const CComQIPtr<IWMVideoMediaProps> pWmVideoMediaProps = m_pCodecFormatData->m_pWmStreamConfig;
+				if(pWmVideoMediaProps)
+					_ATLTRY
+					{
+						LONGLONG nMaximalKeyFrameIntervalTime = 0;
+						__C(pWmVideoMediaProps->GetMaxKeyFrameSpacing(&nMaximalKeyFrameIntervalTime));
+						DWORD nQuality = 0;
+						__C(pWmVideoMediaProps->GetQuality(&nQuality));
+						sText.Append(_T("IWMVideoMediaProps:\r\n"));
+						sText.AppendFormat(_T("  ") _T("MaxKeyFrameSpacing: %s") _T("\r\n"), _FilterGraphHelper::FormatReferenceTime(nMaximalKeyFrameIntervalTime));
+						sText.AppendFormat(_T("  ") _T("Quality: %d") _T("\r\n"), nQuality);
+						sText.Append(_T("\r\n"));
+					}
+					_ATLCATCHALL()
+					{
+						_Z_EXCEPTION();
+					}
+				#pragma endregion 
 			}
 			sText.Trim(_T("\t\n\r ."));
 			return sText;
@@ -1025,31 +1184,16 @@ public:
 	}
 	LRESULT OnCopyButtonClicked(UINT, INT, HWND)
 	{
-		CStringW sText(GetSubmissionText());
-		__E(OpenClipboard());
-		_ATLTRY
-		{
-			__E(EmptyClipboard());
-			CGlobalMemoryHandle TextHandle;
-			TextHandle.Alloc((sText.GetLength() + 1) * sizeof (WCHAR), GMEM_MOVEABLE | GMEM_SHARE);
-			wcscpy_s(CGlobalMemoryHandle::CLockT<WCHAR>(TextHandle), sText.GetLength() + 1, sText);
-			__E(SetClipboardData(CF_UNICODETEXT, TextHandle));
-			TextHandle.Detach();
-			MessageBeep(MB_OK);
-		}
-		_ATLCATCHALL()
-		{
-			_W(CloseClipboard());
-			_ATLRETHROW;
-		}
-		_W(CloseClipboard());
+		SetClipboardText(m_hWnd, GetSubmissionText());
+		MessageBeep(MB_OK);
 		return 0;
 	}
 	LRESULT OnSubmitButtonClicked(UINT, INT, HWND)
 	{
 		CWaitCursor WaitCursor;
+		const CString sFileDescription = _VersionInfoHelper::GetString(_VersionInfoHelper::GetModulePath(), _T("FileDescription"));
 		CWinHttpPostData PostData;
-		PostData.AddValue(_T("subj"), _T("Alax.Info Windows Media Codec List"));
+		PostData.AddValue(_T("subj"), sFileDescription);
 		CStringA sTextA = Utf8StringFromString(GetSubmissionText());
 		PostData.AddValue(_T("body"), _Base64Helper::Encode<CString>((const BYTE*) (LPCSTR) sTextA, sTextA.GetLength(), _Base64Helper::FLAG_NOPAD | _Base64Helper::FLAG_NOCRLF));
 		CWinHttpSessionHandle Session = OpenWinHttpSessionHandle(AtlLoadString(IDS_PROJNAME));
@@ -1064,7 +1208,7 @@ public:
 		__E(Request.ReceiveResponse());
 		DWORD nStatusCode = 0;
 		__E(Request.QueryNumberHeader(WINHTTP_QUERY_STATUS_CODE | WINHTTP_QUERY_FLAG_NUMBER, nStatusCode));
-		__D(nStatusCode == HTTP_STATUS_OK, MAKE_HRESULT(SEVERITY_ERROR, FACILITY_HTTP, nStatusCode));
+		__D(nStatusCode / 100 == HTTP_STATUS_OK / 100, MAKE_HRESULT(SEVERITY_ERROR, FACILITY_HTTP, nStatusCode));
 		AtlMessageBoxEx(m_hWnd, _T("Submission complete, thank you!"), IDS_INFORMATION, MB_ICONINFORMATION | MB_OK);
 		return 0;
 	}

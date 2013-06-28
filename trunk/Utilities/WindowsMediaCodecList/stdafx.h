@@ -1,8 +1,6 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2008-2012
+// Copyright (C) Roman Ryltsov, 2008-2013
 // Created by Roman Ryltsov roman@alax.info
-// 
-// $Id$
 
 #pragma once
 
@@ -70,7 +68,7 @@ using namespace WTL;
 ////////////////////////////////////////////////////////////
 // Alax.Info ATL/WTL
 
-#define REGISTRY_PRODUCTROOT	_T("SOFTWARE\\Alax.Info\\Utilities")
+#define REGISTRY_PRODUCTROOT	_T("SOFTWARE\\Alax.Info\\Utility") _T("\\") _T("WindowsMediaCodecList")
 #define REGISTRY_FILEROOT		REGISTRY_PRODUCTROOT
 #define REGISTRY_ROOT			REGISTRY_FILEROOT
 

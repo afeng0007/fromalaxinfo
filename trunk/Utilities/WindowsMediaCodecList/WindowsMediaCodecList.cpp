@@ -1,8 +1,6 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2009-2012
+// Copyright (C) Roman Ryltsov, 2008-2013
 // Created by Roman Ryltsov roman@alax.info
-// 
-// $Id$
 
 #include "stdafx.h"
 #include "resource.h"
@@ -21,9 +19,7 @@ public:
 // CModule
 	CModule() throw()
 	{
-#if defined(_DEBUG)
-		AtlTraceLoadSettings(NULL);
-#endif // defined(_DEBUG)
+		AtlTraceSetDefaultSettings();
 	}
 	HRESULT PreMessageLoop(INT nShowCommand) throw()
 	{
