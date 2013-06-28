@@ -1,8 +1,6 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2009-2012
+// Copyright (C) Roman Ryltsov, 2008-2013
 // Created by Roman Ryltsov roman@alax.info
-// 
-// $Id$
 
 #pragma once
 
@@ -113,21 +111,21 @@ public:
 		_W(m_EmailHyperStatic.SubclassWindow(GetDlgItem(IDC_ABOUT_EMAIL)));
 		#pragma endregion 
 		#pragma region Caption
-		{
-			#if _TRACE || defined(_WIN64)
-			CString sCaption;
-			_W(GetWindowText(sCaption));
-			sCaption.Append(_T(" // "));
-			#if _DEVELOPMENT
-			sCaption.Append(_T("Dev "));
-			#endif // _DEVELOPMENT
-			sCaption.Append(_VersionInfoHelper::GetVersionString(_VersionInfoHelper::GetFileVersion(_VersionInfoHelper::GetModulePath())));
-			#if defined(_WIN64)
-			sCaption.Append(_T(" (x64)"));
-			#endif // defined(_WIN64)
-			_W(SetWindowText(sCaption));
-			#endif // _TRACE || defined(_WIN64)
-		}
+		#if _TRACE || defined(_WIN64)
+			{
+				CString sCaption;
+				_W(GetWindowText(sCaption));
+				sCaption.Append(_T(" // "));
+				#if _DEVELOPMENT
+					sCaption.Append(_T("Dev "));
+				#endif // _DEVELOPMENT
+				sCaption.Append(_VersionInfoHelper::GetVersionString(_VersionInfoHelper::GetFileVersion(_VersionInfoHelper::GetModulePath())));
+				#if defined(_WIN64)
+					sCaption.Append(_T(" (x64)"));
+				#endif // defined(_WIN64)
+				_W(SetWindowText(sCaption));
+			}
+		#endif // _TRACE || defined(_WIN64)
 		#pragma endregion 
 		#pragma region Window Position and Focus
 		_W(CenterWindow(GetParent()));

@@ -1,7 +1,5 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2008-2012
+// Copyright (C) Roman Ryltsov, 2008-2013
 // Created by Roman Ryltsov roman@alax.info
-// 
-// $Id$
 
 #include "stdafx.h"

@@ -89,7 +89,7 @@ BEGIN
     LTEXT           "<A HREF=""http://alax.info/"">http://alax.info/</A>",IDC_ABOUT_WEBSITE,108,60,162,8,NOT WS_GROUP | WS_TABSTOP
     LTEXT           "Email:",IDC_ABOUT_EMAILTITLE,60,72,20,8
     LTEXT           "<A HREF=""mailto:support@alax.info"">support@alax.info</A>",IDC_ABOUT_EMAIL,108,72,162,8,NOT WS_GROUP | WS_TABSTOP
-    LTEXT           "Copyright © Alax.Info, Roman Ryltsov, 2009-2012",IDC_ABOUT_COPYRIGHT,60,84,210,8,SS_NOPREFIX
+    LTEXT           "Copyright © Alax.Info, Roman Ryltsov, 2008-2013",IDC_ABOUT_COPYRIGHT,60,84,210,8,SS_NOPREFIX
     DEFPUSHBUTTON   "OK",1,220,102,50,14
     CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,6,122,267,1
     LTEXT           "Warning: ...",IDC_ABOUT_COPYRIGHTWARNING,6,130,268,18
@@ -121,7 +121,7 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION  1, 0, 0, 205
+ FILEVERSION  1, 0, 0, 223
  PRODUCTVERSION 1,0,0,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
@@ -140,9 +140,9 @@ BEGIN
             VALUE "CompanyName", "Alax.Info"
             VALUE "Created By", "Roman Ryltsov <roman@alax.info>"
             VALUE "FileDescription", "Windows Media Codec List Utility"
-            VALUE "FileVersion",  "1, 0, 0, 205\0"
+            VALUE "FileVersion",  "1, 0, 0, 223\0"
             VALUE "InternalName", "WindowsMediaCodecList"
-            VALUE "LegalCopyright", "Copyright © Alax.Info, Roman Ryltsov, 2009-2012"
+            VALUE "LegalCopyright", "Copyright © Alax.Info, Roman Ryltsov, 2008-2013"
             VALUE "OriginalFilename", "WindowsMediaCodecList.exe"
             VALUE "ProductName", "Windows Media Codec List Utility"
             VALUE "ProductVersion", "1, 0, 0, 1"
