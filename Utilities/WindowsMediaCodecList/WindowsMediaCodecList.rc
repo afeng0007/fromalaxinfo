@@ -121,7 +121,7 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION  1, 0, 0, 223
+ FILEVERSION  1, 0, 0, 228
  PRODUCTVERSION 1,0,0,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
@@ -140,7 +140,7 @@ BEGIN
             VALUE "CompanyName", "Alax.Info"
             VALUE "Created By", "Roman Ryltsov <roman@alax.info>"
             VALUE "FileDescription", "Windows Media Codec List Utility"
-            VALUE "FileVersion",  "1, 0, 0, 223\0"
+            VALUE "FileVersion",  "1, 0, 0, 228\0"
             VALUE "InternalName", "WindowsMediaCodecList"
             VALUE "LegalCopyright", "Copyright © Alax.Info, Roman Ryltsov, 2008-2013"
             VALUE "OriginalFilename", "WindowsMediaCodecList.exe"
