@@ -20,59 +20,59 @@ public:
 	////////////////////////////////////////////////////////
 	// CGenericFilterGraph
 
-	class CGenericFilterGraph
-	{
-	public:
-#if _DEVELOPMENT
-		BOOL m_bShowDestructorMessageBox;
-#endif // _DEVELOPMENT
-		CComPtr<IFilterGraph2> m_pFilterGraph;
-		CComPtr<IMediaControl> m_pMediaControl;
-		CComPtr<IMediaEventEx> m_pMediaEventEx;
-		CComPtr<IMediaFilter> m_pMediaFilter;
-		CComPtr<IMediaPosition> m_pMediaPosition;
+	//class CGenericFilterGraph
+	//{
+	//public:
+	//	#if _DEVELOPMENT
+	//		BOOL m_bShowDestructorMessageBox;
+	//	#endif // _DEVELOPMENT
+	//	CComPtr<IFilterGraph2> m_pFilterGraph;
+	//	CComPtr<IMediaControl> m_pMediaControl;
+	//	CComPtr<IMediaEventEx> m_pMediaEventEx;
+	//	CComPtr<IMediaFilter> m_pMediaFilter;
+	//	CComPtr<IMediaPosition> m_pMediaPosition;
 
-	public:
-	// CGenericFilterGraph
-		CGenericFilterGraph(BOOL bShowDestructorMessageBox = FALSE) throw()
-		{
-			bShowDestructorMessageBox;
-#if _DEVELOPMENT
-			m_bShowDestructorMessageBox = bShowDestructorMessageBox;
-#endif // _DEVELOPMENT
-		}
-		~CGenericFilterGraph() throw()
-		{
-#if _DEVELOPMENT
-			if(m_pFilterGraph && m_bShowDestructorMessageBox)
-				AtlMessageBox(GetActiveWindow(), _T("DirectShow Filter Graph is about to be Released - Break In"), _T("Debug"), MB_ICONWARNING | MB_OK);
-#endif // _DEVELOPMENT
-		}
-		VOID CoCreateInstance(const CLSID& ClassIdentifier = CLSID_FilterGraph)
-		{
-			__C(m_pFilterGraph.CoCreateInstance(ClassIdentifier));
-			m_pMediaControl = CComQIPtr<IMediaControl>(m_pFilterGraph);
-			m_pMediaEventEx = CComQIPtr<IMediaEventEx>(m_pFilterGraph);
-			m_pMediaFilter = CComQIPtr<IMediaFilter>(m_pFilterGraph);
-			m_pMediaPosition = CComQIPtr<IMediaPosition>(m_pFilterGraph);
-			__D(m_pMediaControl && m_pMediaEventEx && m_pMediaFilter && m_pMediaPosition, E_NOINTERFACE);
-		}
-		VOID SetShowDestructorMessageBox(BOOL bShowDestructorMessageBox = TRUE)
-		{
-			bShowDestructorMessageBox;
-#if _DEVELOPMENT
-			m_bShowDestructorMessageBox = bShowDestructorMessageBox;
-#endif // _DEVELOPMENT
-		}
-		operator const CComPtr<IFilterGraph2>& () const throw()
-		{
-			return m_pFilterGraph;
-		}
-		const CComPtr<IFilterGraph2>& operator -> () const throw()
-		{
-			return m_pFilterGraph;
-		}
-	};
+	//public:
+	//// CGenericFilterGraph
+	//	CGenericFilterGraph(BOOL bShowDestructorMessageBox = FALSE) throw()
+	//	{
+	//		bShowDestructorMessageBox;
+	//		#if _DEVELOPMENT
+	//			m_bShowDestructorMessageBox = bShowDestructorMessageBox;
+	//		#endif // _DEVELOPMENT
+	//	}
+	//	~CGenericFilterGraph() throw()
+	//	{
+	//		#if _DEVELOPMENT
+	//			if(m_pFilterGraph && m_bShowDestructorMessageBox)
+	//				AtlMessageBox(GetActiveWindow(), _T("DirectShow Filter Graph is about to be Released - Break In"), _T("Debug"), MB_ICONWARNING | MB_OK);
+	//		#endif // _DEVELOPMENT
+	//	}
+	//	VOID CoCreateInstance(const CLSID& ClassIdentifier = CLSID_FilterGraph)
+	//	{
+	//		__C(m_pFilterGraph.CoCreateInstance(ClassIdentifier));
+	//		m_pMediaControl = CComQIPtr<IMediaControl>(m_pFilterGraph);
+	//		m_pMediaEventEx = CComQIPtr<IMediaEventEx>(m_pFilterGraph);
+	//		m_pMediaFilter = CComQIPtr<IMediaFilter>(m_pFilterGraph);
+	//		m_pMediaPosition = CComQIPtr<IMediaPosition>(m_pFilterGraph);
+	//		__D(m_pMediaControl && m_pMediaEventEx && m_pMediaFilter && m_pMediaPosition, E_NOINTERFACE);
+	//	}
+	//	VOID SetShowDestructorMessageBox(BOOL bShowDestructorMessageBox = TRUE)
+	//	{
+	//		bShowDestructorMessageBox;
+	//		#if _DEVELOPMENT
+	//			m_bShowDestructorMessageBox = bShowDestructorMessageBox;
+	//		#endif // _DEVELOPMENT
+	//	}
+	//	operator const CComPtr<IFilterGraph2>& () const throw()
+	//	{
+	//		return m_pFilterGraph;
+	//	}
+	//	const CComPtr<IFilterGraph2>& operator -> () const throw()
+	//	{
+	//		return m_pFilterGraph;
+	//	}
+	//};
 
 	////////////////////////////////////////////////////////
 	// CSourceFilter
@@ -241,9 +241,11 @@ public:
 							#pragma region Per-channel Frequencies and Amplitudes
 							if(FALSE)
 							{
-								const DOUBLE pfSignalFrequencies[5] = { 1000, 1000, 1000, 1000, 1000 };
-								const DOUBLE pfSignalAmplitudes[5] = { m_fSignalAmplitude, 0, 0, 0, 0 };
+								const DOUBLE pfSignalFrequencies[6] = { 1001, 1001, 1001, 1001, 1001, 1001 };
+								const DOUBLE pfSignalAmplitudes[6] = { 0, 0, m_fSignalAmplitude, 0, 0, 0 };
 								SHORT* pnSampleData = (SHORT*) (Properties.pbBuffer + nIndex);
+								_A(DIM(pfSignalFrequencies) == DIM(pfSignalAmplitudes));
+								_A(pWaveFormatEx->nChannels <= DIM(pfSignalFrequencies));
 								for(WORD nChannelIndex = 0; nChannelIndex < pWaveFormatEx->nChannels; nChannelIndex++)
 								{
 									const DOUBLE fSignalPeriod = (DOUBLE) pWaveFormatEx->nSamplesPerSec / pfSignalFrequencies[nChannelIndex];
@@ -404,9 +406,7 @@ public:
 // CModule
 	CModule() throw()
 	{
-#if defined(_DEBUG)
-		AtlTraceLoadSettings(NULL);
-#endif // defined(_DEBUG)
+		AtlTraceSetDefaultSettings();
 		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
 		ZeroMemory(&m_WaveFormatEx, sizeof m_WaveFormatEx);
 		m_nLength = 0;
