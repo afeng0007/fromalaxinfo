@@ -27,6 +27,7 @@ copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.exe" .
 @set B=DirectShowSpy
 copy /b /y "%A%\%B%\_Bin\%B%-Win32.dll" .
 copy /b /y "%A%\%B%\_Bin\%B%-x64.dll" .
+copy /b /y "%A%\%B%\_Bin\%B%-*.bat" .
 
 @set B=StressEvr
 copy /b /y "%A%\Utilities\%B%\_Bin\%B%-Win32.exe" .
