@@ -1,1 +1,0 @@
-rundll32 DirectShowSpy.dll,DoRegistrationPropertySheetModal

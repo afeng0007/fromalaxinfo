@@ -1,8 +1,6 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2008-2011
+// Copyright (C) Roman Ryltsov, 2008-2013
 // Created by Roman Ryltsov roman@alax.info
-// 
-// $Id$
 
 #include "stdafx.h"
 #include "resource.h"
@@ -12,10 +10,10 @@
 // CRegistrationPropertySheet
 
 #if defined(_WIN64)
-extern "C" __declspec(dllexport) 
+	extern "C" __declspec(dllexport) 
 #else
-#pragma comment(linker, "/EXPORT:DoRegistrationPropertySheetModal=_DoRegistrationPropertySheetModal@0,PRIVATE")
-extern "C" // __declspec(dllexport) 
+	#pragma comment(linker, "/EXPORT:DoRegistrationPropertySheetModal=_DoRegistrationPropertySheetModal@0,PRIVATE")
+	extern "C" // __declspec(dllexport) 
 #endif // defined(_WIN64)
 
 HRESULT STDMETHODCALLTYPE DoRegistrationPropertySheetModal() throw()

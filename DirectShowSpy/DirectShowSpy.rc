@@ -18,13 +18,11 @@
 #undef APSTUDIO_READONLY_SYMBOLS
 
 /////////////////////////////////////////////////////////////////////////////
-// English (U.S.) resources
+// English (United States) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
-#ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 #pragma code_page(1252)
-#endif //_WIN32
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -34,7 +32,7 @@ LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
 
 1 TEXTINCLUDE 
 BEGIN
-    "resource.h\0"
+    "resource.h\r\n"
 END
 
 2 TEXTINCLUDE 
@@ -44,12 +42,12 @@ BEGIN
     "#endif\r\n"
     "#include ""winres.h""\r\n"
     "#include ""atlres.h""\r\n"
-    "#include ""rores.rc""\r\0"
+    "#include ""rores.rc""\r\n"
 END
 
 3 TEXTINCLUDE 
 BEGIN
-    "1 TYPELIB ""DirectShowSpy.tlb""\r\0"
+    "1 TYPELIB ""DirectShowSpy.tlb""\r\n"
 END
 
 #endif    // APSTUDIO_INVOKED
@@ -61,7 +59,7 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION  1, 0, 0, 831
+ FILEVERSION  1, 0, 0, 941
  PRODUCTVERSION 1,0,0,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
@@ -80,9 +78,9 @@ BEGIN
             VALUE "Comments", "Created by Roman Ryltsov roman@alax.info"
             VALUE "CompanyName", "Roman Ryltsov"
             VALUE "FileDescription", "Alax.Info DirectShow Spy Module"
-            VALUE "FileVersion",  "1, 0, 0, 831\0"
+            VALUE "FileVersion",  "1, 0, 0, 941\0"
             VALUE "InternalName", "DirectShowSpy.dll"
-            VALUE "LegalCopyright", "Copyright © Alax.Info, Roman Ryltsov, 2008-2011"
+            VALUE "LegalCopyright", "Copyright © Alax.Info, Roman Ryltsov, 2008-2013"
             VALUE "OLESelfRegister", "Yes"
             VALUE "OriginalFilename", "DirectShowSpy.dll"
             VALUE "ProductName", "Alax.Info DirectShow Spy"
@@ -142,7 +140,7 @@ BEGIN
     LTEXT           "<A HREF=""http://alax.info/"">http://alax.info/</A>",IDC_ABOUT_WEBSITE,108,60,162,8,NOT WS_GROUP | WS_TABSTOP
     LTEXT           "Email:",IDC_ABOUT_EMAILTITLE,60,72,20,8
     LTEXT           "<A HREF=""mailto:support@alax.info"">support@alax.info</A>",IDC_ABOUT_EMAIL,108,72,162,8,NOT WS_GROUP | WS_TABSTOP
-    LTEXT           "Copyright © Alax.Info, Roman Ryltsov, 2008-2011",IDC_ABOUT_COPYRIGHT,60,84,210,8,SS_NOPREFIX
+    LTEXT           "Copyright © Alax.Info, Roman Ryltsov, 2008-2013",IDC_ABOUT_COPYRIGHT,60,84,210,8,SS_NOPREFIX
     DEFPUSHBUTTON   "OK",1,220,102,50,14
     CONTROL         "",IDC_STATIC,"Static",SS_ETCHEDHORZ,6,122,267,1
     LTEXT           "Warning: ...",IDC_ABOUT_COPYRIGHTWARNING,6,130,268,18
@@ -233,6 +231,17 @@ BEGIN
     PUSHBUTTON      "Unregister",IDC_REGISTRATION_EVRPROPREGISTRATION_USERUNREGISTER,102,148,50,14,NOT WS_VISIBLE
 END
 
+IDD_FILTERGRAPHLIST_LIST_PROPERTYPAGE DIALOGEX 0, 0, 227, 200
+STYLE DS_SETFONT | DS_FIXEDSYS | WS_CHILD
+EXSTYLE WS_EX_CONTROLPARENT
+FONT 8, "MS Shell Dlg", 400, 0, 0x0
+BEGIN
+    CONTROL         "",IDC_FILTERGRAPHLIST_LIST_GRAPH,"SysListView32",LVS_REPORT | LVS_SHOWSELALWAYS | LVS_EDITLABELS | LVS_ALIGNLEFT | LVS_NOSORTHEADER | WS_BORDER | WS_TABSTOP,6,6,215,168
+    PUSHBUTTON      "&Refresh",IDC_FILTERGRAPHLIST_LIST_REFRESH,6,180,50,14
+    PUSHBUTTON      "C&heck",IDC_FILTERGRAPHLIST_LIST_CHECK,60,180,50,14
+    PUSHBUTTON      "&Copy",IDC_FILTERGRAPHLIST_LIST_COPYTOCLIPBOARD,114,180,50,14
+END
+
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -240,8 +249,12 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
+GUIDELINES DESIGNINFO
 BEGIN
+    IDD_ABOUT, DIALOG
+    BEGIN
+    END
+
     IDD_GRAPHBUILDERCALLBACK_GRAPH_PROPERTYPAGE, DIALOG
     BEGIN
         LEFTMARGIN, 6
@@ -257,6 +270,14 @@ BEGIN
         TOPMARGIN, 6
         BOTTOMMARGIN, 193
     END
+
+    IDD_FILTERGRAPHLIST_LIST_PROPERTYPAGE, DIALOG
+    BEGIN
+        LEFTMARGIN, 6
+        RIGHTMARGIN, 221
+        TOPMARGIN, 6
+        BOTTOMMARGIN, 193
+    END
 END
 #endif    // APSTUDIO_INVOKED
 
@@ -266,9 +287,13 @@ END
 // String Table
 //
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_PROJNAME            "Alax.Info DirectShow Spy"
+END
+
+STRINGTABLE
+BEGIN
     IDR_FILTERGRAPHSPY      "\n\nAlax.Info DirectShow Filter Graph Spy\n"
     IDR_NOTHREADFILTERGRAPHSPY 
                             "\n\nAlax.Info DirectShow Filter Graph (No Thread) Spy\n"
@@ -277,55 +302,67 @@ BEGIN
                             "\n\nAlax.Info DirectShow System Device Enumerator Spy\n"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_REGISTRATION_PROPERTYSHEETCAPTION "Registration"
     IDD_REGISTRATION_REGISTRATION_PROPERTYPAGE "DirectShowSpy.dll"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDD_REGISTRATION_PROPPAGEREGISTRATION_PROPERTYPAGE "proppage.dll"
+END
+
+STRINGTABLE
+BEGIN
     IDD_REGISTRATION_EVRPROPREGISTRATION_PROPERTYPAGE "evrprop.dll"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDC_REGISTRATION_REGISTRATION_STATUS "Not Registered, Registered"
 END
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDC_REGISTRATION_PROPPAGEREGISTRATION_STATUS "Not Registered, Registered"
+END
+
+STRINGTABLE
+BEGIN
     IDC_REGISTRATION_EVRPROPREGISTRATION_STATUS "Not Registered, Registered"
 END
 
-STRINGTABLE 
-BEGIN
-    IDD_GRAPHBUILDERCALLBACK_GRAPH_PROPERTYPAGE "Filter Graphs"
-    IDC_GRAPHBUILDERCALLBACK_GRAPH_GRAPH 
-                            "v, 1\nx, 0x420, 0x420\nc, Time, 150, -1\nc, Process, 90, 1\nc, Name, 120, 2\nc, Directory, 360, 3\n"
-END
-
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_GRAPHBUILDERCALLBACK_GRAPH_PROPERTYSHEETCAPTION 
                             "Intelligent Connect Log"
+    IDD_GRAPHBUILDERCALLBACK_GRAPH_PROPERTYPAGE "Filter Graphs"
 END
 
-STRINGTABLE 
+STRINGTABLE
+BEGIN
+    IDC_GRAPHBUILDERCALLBACK_GRAPH_GRAPH 
+                            "v, 1\nx, 0x420, 0x420\nc, Time, 150, -1\nc, Process, 90, 1\nc, Name, 120, 2\nc, Directory, 360, 3\n"
+    IDC_GRAPHBUILDERCALLBACK_GRAPH_LOG 
+                            "v, 1\nx, 0x420, 0x420\nc, Time, 150, -1\nc, Event, 120, 1\nc, Moniker Name, 210, 2\nc, Filter Name, 210, 3\nc, Application Result, 150, 4\n"
+END
+
+STRINGTABLE
+BEGIN
+    IDS_FILTERGRAPHLIST_LIST_PROPERTYSHEETCAPTION "Running Filter Graph List"
+    IDD_FILTERGRAPHLIST_LIST_PROPERTYPAGE "Filter Graphs"
+    IDC_FILTERGRAPHLIST_LIST_GRAPH 
+                            "v, 1\nx, 0x420, 0x420\nc, ""Process, Instance"", 150, -1\nc, Process Name, 120, 1\nc, Creation Time, 90, 2\nc, Filters, 60, 3\nc, State, 60, 4\nc, Process Image Directory, 420, 5\n"
+END
+
+STRINGTABLE
 BEGIN
     IDC_ABOUT_COPYRIGHTWARNING 
                             "Warning: This computer program is protected by copyright law and international treaties. Unauthorized reproduction or distribution of this program, or any portion of it, may result in severe civil and criminal penalties, and will be prosecuted to the maximum extent possible under the law."
 END
 
-STRINGTABLE 
-BEGIN
-    IDC_GRAPHBUILDERCALLBACK_GRAPH_LOG 
-                            "v, 1\nx, 0x420, 0x420\nc, Time, 150, -1\nc, Event, 120, 1\nc, Moniker Name, 210, 2\nc, Filter Name, 210, 3\nc, Application Result, 150, 4\n"
-END
-
-#endif    // English (U.S.) resources
+#endif    // English (United States) resources
 /////////////////////////////////////////////////////////////////////////////
 
 

@@ -1,14 +1,13 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2008-2011
+// Copyright (C) Roman Ryltsov, 2008-2013
 // Created by Roman Ryltsov roman@alax.info
-// 
-// $Id$
 
 #pragma once
 
 #include <atlctrlx.h>
 #include <atlsplit.h>
 #include "rofiles.h"
+#include "FilterGraphSpy.h"
 #include "AboutDialog.h"
 
 ////////////////////////////////////////////////////////////
@@ -1325,27 +1324,8 @@ public:
 		CSizablePropertySheetT<CGraphBuilderCallbackPropertySheet>(IDS_GRAPHBUILDERCALLBACK_GRAPH_PROPERTYSHEETCAPTION),
 		m_GraphPropertyPage(this)
 	{
-		#pragma region Default Path
 		if(!_tcslen(m_sPath))
-		{
-			TCHAR pszDirectory[MAX_PATH] = { 0 };
-			_W(GetWindowsDirectory(pszDirectory, DIM(pszDirectory)));
-			#if defined(_TRACE) && _TRACE
-				_W(StripToRoot(pszDirectory));
-			#endif // defined(_TRACE) && _TRACE
-			if(GetOsVersion() >= 0x00060000) // Windows Vista+
-			{
-				_W(SHGetSpecialFolderPath(m_hWnd, pszDirectory, CSIDL_COMMON_APPDATA, FALSE));
-				AddBackslash(pszDirectory);
-			}
-			TCHAR pszPath[MAX_PATH] = { 0 };
-			_W(GetModuleFileName(_AtlBaseModule.GetModuleInstance(), pszPath, DIM(pszPath)));
-			LPTSTR pszFileName = FindFileName(pszPath);
-			_W(RenameExtension(pszFileName, _T(".log")));
-			m_sPath.Combine(pszDirectory, pszFileName);
-			_Z5(atlTraceGeneral, 5, _T("m_sPath \"%s\"\n"), m_sPath);
-		}
-		#pragma endregion
+			m_sPath = CDebugTraceBase::GetFilePath();
 		#if _DEVELOPMENT && FALSE
 			static LPCTSTR g_pszPath = _T("D:\\Projects\\A&H\\LuxRiot\\_Issues\\45 Sanyo XP Issues\\DirectShowSpy.log");
 			m_sPath = g_pszPath;
@@ -1358,7 +1338,7 @@ public:
 			return FALSE;
 		SetIcon(AtlLoadIconImage(IDI_MODULE, LR_DEFAULTCOLOR, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON)), TRUE);
 		SetIcon(AtlLoadIconImage(IDI_MODULE, LR_DEFAULTCOLOR, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON)), FALSE);
-		#pragma region Indication of Bitness
+		#pragma region Bitness Indication
 		CString sCaption;
 		_W(GetWindowText(sCaption));
 		#if defined(_WIN64)
