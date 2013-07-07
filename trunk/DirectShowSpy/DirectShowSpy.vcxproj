@@ -408,6 +408,7 @@
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</CompileAsManaged>
     </ClCompile>
     <ClCompile Include="FilterGraphSpy.cpp" />
+    <ClCompile Include="Helper.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -452,6 +453,7 @@
     <ClInclude Include="Common.h" />
     <ClInclude Include="Configuration.h" />
     <ClInclude Include="dllmain.h" />
+    <ClInclude Include="FilterGraphHelper.h" />
     <ClInclude Include="FilterGraphList.h" />
     <ClInclude Include="FilterGraphSpy.h" />
     <ClInclude Include="FilterMapperSpy.h" />
