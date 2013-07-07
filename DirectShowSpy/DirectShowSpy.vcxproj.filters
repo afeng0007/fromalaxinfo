@@ -37,6 +37,9 @@
     <ClCompile Include="DirectShowSpy_i.c">
       <Filter>Generated Files</Filter>
     </ClCompile>
+    <ClCompile Include="Helper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="DirectShowSpy.def">
@@ -98,6 +101,9 @@
       <Filter>Generated Files</Filter>
     </ClInclude>
     <ClInclude Include="FilterGraphList.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FilterGraphHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

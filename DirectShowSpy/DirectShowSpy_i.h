@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0555 */
-/* at Sun Jul 07 12:40:58 2013
+/* at Sun Jul 07 20:56:18 2013
  */
 /* Compiler settings for DirectShowSpy.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
@@ -61,6 +61,12 @@ typedef interface IFilterMapperSpy IFilterMapperSpy;
 #define __ISystemDeviceEnumeratorSpy_FWD_DEFINED__
 typedef interface ISystemDeviceEnumeratorSpy ISystemDeviceEnumeratorSpy;
 #endif 	/* __ISystemDeviceEnumeratorSpy_FWD_DEFINED__ */
+
+
+#ifndef __IFilterGraphHelper_FWD_DEFINED__
+#define __IFilterGraphHelper_FWD_DEFINED__
+typedef interface IFilterGraphHelper IFilterGraphHelper;
+#endif 	/* __IFilterGraphHelper_FWD_DEFINED__ */
 
 
 #ifndef __IFilterGraphAddRemoveHook_FWD_DEFINED__
@@ -127,6 +133,18 @@ typedef struct SystemDeviceEnumeratorSpy SystemDeviceEnumeratorSpy;
 #endif /* __cplusplus */
 
 #endif 	/* __SystemDeviceEnumeratorSpy_FWD_DEFINED__ */
+
+
+#ifndef __FilterGraphHelper_FWD_DEFINED__
+#define __FilterGraphHelper_FWD_DEFINED__
+
+#ifdef __cplusplus
+typedef class FilterGraphHelper FilterGraphHelper;
+#else
+typedef struct FilterGraphHelper FilterGraphHelper;
+#endif /* __cplusplus */
+
+#endif 	/* __FilterGraphHelper_FWD_DEFINED__ */
 
 
 /* header files for imported files */
@@ -469,6 +487,147 @@ EXTERN_C const IID IID_ISystemDeviceEnumeratorSpy;
 
 
 #endif 	/* __ISystemDeviceEnumeratorSpy_INTERFACE_DEFINED__ */
+
+
+#ifndef __IFilterGraphHelper_INTERFACE_DEFINED__
+#define __IFilterGraphHelper_INTERFACE_DEFINED__
+
+/* interface IFilterGraphHelper */
+/* [unique][helpstring][nonextensible][oleautomation][dual][uuid][object] */ 
+
+
+EXTERN_C const IID IID_IFilterGraphHelper;
+
+#if defined(__cplusplus) && !defined(CINTERFACE)
+    
+    MIDL_INTERFACE("3D1AF248-DEF1-4E26-A071-FEDF15FED6A8")
+    IFilterGraphHelper : public IDispatch
+    {
+    public:
+        virtual /* [propget][id] */ HRESULT STDMETHODCALLTYPE get_FilterGraph( 
+            /* [retval][out] */ IUnknown **ppFilterGraphUnknown) = 0;
+        
+        virtual /* [propput][id] */ HRESULT STDMETHODCALLTYPE put_FilterGraph( 
+            /* [in] */ IUnknown *pFilterGraphUnknown) = 0;
+        
+        virtual /* [propget][id] */ HRESULT STDMETHODCALLTYPE get_Text( 
+            /* [retval][out] */ BSTR *psText) = 0;
+        
+    };
+    
+#else 	/* C style interface */
+
+    typedef struct IFilterGraphHelperVtbl
+    {
+        BEGIN_INTERFACE
+        
+        HRESULT ( STDMETHODCALLTYPE *QueryInterface )( 
+            IFilterGraphHelper * This,
+            /* [in] */ REFIID riid,
+            /* [annotation][iid_is][out] */ 
+            __RPC__deref_out  void **ppvObject);
+        
+        ULONG ( STDMETHODCALLTYPE *AddRef )( 
+            IFilterGraphHelper * This);
+        
+        ULONG ( STDMETHODCALLTYPE *Release )( 
+            IFilterGraphHelper * This);
+        
+        HRESULT ( STDMETHODCALLTYPE *GetTypeInfoCount )( 
+            IFilterGraphHelper * This,
+            /* [out] */ UINT *pctinfo);
+        
+        HRESULT ( STDMETHODCALLTYPE *GetTypeInfo )( 
+            IFilterGraphHelper * This,
+            /* [in] */ UINT iTInfo,
+            /* [in] */ LCID lcid,
+            /* [out] */ ITypeInfo **ppTInfo);
+        
+        HRESULT ( STDMETHODCALLTYPE *GetIDsOfNames )( 
+            IFilterGraphHelper * This,
+            /* [in] */ REFIID riid,
+            /* [size_is][in] */ LPOLESTR *rgszNames,
+            /* [range][in] */ UINT cNames,
+            /* [in] */ LCID lcid,
+            /* [size_is][out] */ DISPID *rgDispId);
+        
+        /* [local] */ HRESULT ( STDMETHODCALLTYPE *Invoke )( 
+            IFilterGraphHelper * This,
+            /* [in] */ DISPID dispIdMember,
+            /* [in] */ REFIID riid,
+            /* [in] */ LCID lcid,
+            /* [in] */ WORD wFlags,
+            /* [out][in] */ DISPPARAMS *pDispParams,
+            /* [out] */ VARIANT *pVarResult,
+            /* [out] */ EXCEPINFO *pExcepInfo,
+            /* [out] */ UINT *puArgErr);
+        
+        /* [propget][id] */ HRESULT ( STDMETHODCALLTYPE *get_FilterGraph )( 
+            IFilterGraphHelper * This,
+            /* [retval][out] */ IUnknown **ppFilterGraphUnknown);
+        
+        /* [propput][id] */ HRESULT ( STDMETHODCALLTYPE *put_FilterGraph )( 
+            IFilterGraphHelper * This,
+            /* [in] */ IUnknown *pFilterGraphUnknown);
+        
+        /* [propget][id] */ HRESULT ( STDMETHODCALLTYPE *get_Text )( 
+            IFilterGraphHelper * This,
+            /* [retval][out] */ BSTR *psText);
+        
+        END_INTERFACE
+    } IFilterGraphHelperVtbl;
+
+    interface IFilterGraphHelper
+    {
+        CONST_VTBL struct IFilterGraphHelperVtbl *lpVtbl;
+    };
+
+    
+
+#ifdef COBJMACROS
+
+
+#define IFilterGraphHelper_QueryInterface(This,riid,ppvObject)	\
+    ( (This)->lpVtbl -> QueryInterface(This,riid,ppvObject) ) 
+
+#define IFilterGraphHelper_AddRef(This)	\
+    ( (This)->lpVtbl -> AddRef(This) ) 
+
+#define IFilterGraphHelper_Release(This)	\
+    ( (This)->lpVtbl -> Release(This) ) 
+
+
+#define IFilterGraphHelper_GetTypeInfoCount(This,pctinfo)	\
+    ( (This)->lpVtbl -> GetTypeInfoCount(This,pctinfo) ) 
+
+#define IFilterGraphHelper_GetTypeInfo(This,iTInfo,lcid,ppTInfo)	\
+    ( (This)->lpVtbl -> GetTypeInfo(This,iTInfo,lcid,ppTInfo) ) 
+
+#define IFilterGraphHelper_GetIDsOfNames(This,riid,rgszNames,cNames,lcid,rgDispId)	\
+    ( (This)->lpVtbl -> GetIDsOfNames(This,riid,rgszNames,cNames,lcid,rgDispId) ) 
+
+#define IFilterGraphHelper_Invoke(This,dispIdMember,riid,lcid,wFlags,pDispParams,pVarResult,pExcepInfo,puArgErr)	\
+    ( (This)->lpVtbl -> Invoke(This,dispIdMember,riid,lcid,wFlags,pDispParams,pVarResult,pExcepInfo,puArgErr) ) 
+
+
+#define IFilterGraphHelper_get_FilterGraph(This,ppFilterGraphUnknown)	\
+    ( (This)->lpVtbl -> get_FilterGraph(This,ppFilterGraphUnknown) ) 
+
+#define IFilterGraphHelper_put_FilterGraph(This,pFilterGraphUnknown)	\
+    ( (This)->lpVtbl -> put_FilterGraph(This,pFilterGraphUnknown) ) 
+
+#define IFilterGraphHelper_get_Text(This,psText)	\
+    ( (This)->lpVtbl -> get_Text(This,psText) ) 
+
+#endif /* COBJMACROS */
+
+
+#endif 	/* C style interface */
+
+
+
+
+#endif 	/* __IFilterGraphHelper_INTERFACE_DEFINED__ */
 
 
 
@@ -901,9 +1060,22 @@ EXTERN_C const CLSID CLSID_SystemDeviceEnumeratorSpy;
 class DECLSPEC_UUID("AD42E3BD-7B9B-4783-9DA2-61A9ACD0D4D2")
 SystemDeviceEnumeratorSpy;
 #endif
+
+EXTERN_C const CLSID CLSID_FilterGraphHelper;
+
+#ifdef __cplusplus
+
+class DECLSPEC_UUID("5A9A684C-A891-4032-8D31-FF6EAB5A0C1E")
+FilterGraphHelper;
+#endif
 #endif /* __AlaxInfoDirectShowSpy_LIBRARY_DEFINED__ */
 
 /* Additional Prototypes for ALL interfaces */
+
+unsigned long             __RPC_USER  BSTR_UserSize(     unsigned long *, unsigned long            , BSTR * ); 
+unsigned char * __RPC_USER  BSTR_UserMarshal(  unsigned long *, unsigned char *, BSTR * ); 
+unsigned char * __RPC_USER  BSTR_UserUnmarshal(unsigned long *, unsigned char *, BSTR * ); 
+void                      __RPC_USER  BSTR_UserFree(     unsigned long *, BSTR * ); 
 
 /* end of Additional Prototypes */
 

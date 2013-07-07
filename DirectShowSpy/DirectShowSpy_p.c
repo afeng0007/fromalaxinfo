@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0555 */
-/* at Sun Jul 07 12:40:58 2013
+/* at Sun Jul 07 20:56:18 2013
  */
 /* Compiler settings for DirectShowSpy.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
@@ -49,11 +49,11 @@
 
 #include "DirectShowSpy_i.h"
 
-#define TYPE_FORMAT_STRING_SIZE   3                                 
-#define PROC_FORMAT_STRING_SIZE   1                                 
+#define TYPE_FORMAT_STRING_SIZE   65                                
+#define PROC_FORMAT_STRING_SIZE   109                               
 #define EXPR_FORMAT_STRING_SIZE   1                                 
 #define TRANSMIT_AS_TABLE_SIZE    0            
-#define WIRE_MARSHAL_TABLE_SIZE   0            
+#define WIRE_MARSHAL_TABLE_SIZE   1            
 
 typedef struct _DirectShowSpy_MIDL_TYPE_FORMAT_STRING
     {
@@ -104,6 +104,14 @@ extern const MIDL_SERVER_INFO ISystemDeviceEnumeratorSpy_ServerInfo;
 extern const MIDL_STUBLESS_PROXY_INFO ISystemDeviceEnumeratorSpy_ProxyInfo;
 
 
+extern const MIDL_STUB_DESC Object_StubDesc;
+
+
+extern const MIDL_SERVER_INFO IFilterGraphHelper_ServerInfo;
+extern const MIDL_STUBLESS_PROXY_INFO IFilterGraphHelper_ProxyInfo;
+
+
+extern const USER_MARSHAL_ROUTINE_QUADRUPLE UserMarshalRoutines[ WIRE_MARSHAL_TABLE_SIZE ];
 
 #if !defined(__RPC_WIN32__)
 #error  Invalid build platform for this stub.
@@ -122,6 +130,96 @@ static const DirectShowSpy_MIDL_PROC_FORMAT_STRING DirectShowSpy__MIDL_ProcForma
         0,
         {
 
+	/* Procedure get_FilterGraph */
+
+			0x33,		/* FC_AUTO_HANDLE */
+			0x6c,		/* Old Flags:  object, Oi2 */
+/*  2 */	NdrFcLong( 0x0 ),	/* 0 */
+/*  6 */	NdrFcShort( 0x7 ),	/* 7 */
+/*  8 */	NdrFcShort( 0xc ),	/* x86 Stack size/offset = 12 */
+/* 10 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 12 */	NdrFcShort( 0x8 ),	/* 8 */
+/* 14 */	0x45,		/* Oi2 Flags:  srv must size, has return, has ext, */
+			0x2,		/* 2 */
+/* 16 */	0x8,		/* 8 */
+			0x1,		/* Ext Flags:  new corr desc, */
+/* 18 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 20 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 22 */	NdrFcShort( 0x0 ),	/* 0 */
+
+	/* Parameter ppFilterGraphUnknown */
+
+/* 24 */	NdrFcShort( 0x13 ),	/* Flags:  must size, must free, out, */
+/* 26 */	NdrFcShort( 0x4 ),	/* x86 Stack size/offset = 4 */
+/* 28 */	NdrFcShort( 0x2 ),	/* Type Offset=2 */
+
+	/* Return value */
+
+/* 30 */	NdrFcShort( 0x70 ),	/* Flags:  out, return, base type, */
+/* 32 */	NdrFcShort( 0x8 ),	/* x86 Stack size/offset = 8 */
+/* 34 */	0x8,		/* FC_LONG */
+			0x0,		/* 0 */
+
+	/* Procedure put_FilterGraph */
+
+/* 36 */	0x33,		/* FC_AUTO_HANDLE */
+			0x6c,		/* Old Flags:  object, Oi2 */
+/* 38 */	NdrFcLong( 0x0 ),	/* 0 */
+/* 42 */	NdrFcShort( 0x8 ),	/* 8 */
+/* 44 */	NdrFcShort( 0xc ),	/* x86 Stack size/offset = 12 */
+/* 46 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 48 */	NdrFcShort( 0x8 ),	/* 8 */
+/* 50 */	0x46,		/* Oi2 Flags:  clt must size, has return, has ext, */
+			0x2,		/* 2 */
+/* 52 */	0x8,		/* 8 */
+			0x1,		/* Ext Flags:  new corr desc, */
+/* 54 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 56 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 58 */	NdrFcShort( 0x0 ),	/* 0 */
+
+	/* Parameter pFilterGraphUnknown */
+
+/* 60 */	NdrFcShort( 0xb ),	/* Flags:  must size, must free, in, */
+/* 62 */	NdrFcShort( 0x4 ),	/* x86 Stack size/offset = 4 */
+/* 64 */	NdrFcShort( 0x6 ),	/* Type Offset=6 */
+
+	/* Return value */
+
+/* 66 */	NdrFcShort( 0x70 ),	/* Flags:  out, return, base type, */
+/* 68 */	NdrFcShort( 0x8 ),	/* x86 Stack size/offset = 8 */
+/* 70 */	0x8,		/* FC_LONG */
+			0x0,		/* 0 */
+
+	/* Procedure get_Text */
+
+/* 72 */	0x33,		/* FC_AUTO_HANDLE */
+			0x6c,		/* Old Flags:  object, Oi2 */
+/* 74 */	NdrFcLong( 0x0 ),	/* 0 */
+/* 78 */	NdrFcShort( 0x9 ),	/* 9 */
+/* 80 */	NdrFcShort( 0xc ),	/* x86 Stack size/offset = 12 */
+/* 82 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 84 */	NdrFcShort( 0x8 ),	/* 8 */
+/* 86 */	0x45,		/* Oi2 Flags:  srv must size, has return, has ext, */
+			0x2,		/* 2 */
+/* 88 */	0x8,		/* 8 */
+			0x3,		/* Ext Flags:  new corr desc, clt corr check, */
+/* 90 */	NdrFcShort( 0x1 ),	/* 1 */
+/* 92 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 94 */	NdrFcShort( 0x0 ),	/* 0 */
+
+	/* Parameter psText */
+
+/* 96 */	NdrFcShort( 0x2113 ),	/* Flags:  must size, must free, out, simple ref, srv alloc size=8 */
+/* 98 */	NdrFcShort( 0x4 ),	/* x86 Stack size/offset = 4 */
+/* 100 */	NdrFcShort( 0x36 ),	/* Type Offset=54 */
+
+	/* Return value */
+
+/* 102 */	NdrFcShort( 0x70 ),	/* Flags:  out, return, base type, */
+/* 104 */	NdrFcShort( 0x8 ),	/* x86 Stack size/offset = 8 */
+/* 106 */	0x8,		/* FC_LONG */
+			0x0,		/* 0 */
+
 			0x0
         }
     };
@@ -131,10 +229,71 @@ static const DirectShowSpy_MIDL_TYPE_FORMAT_STRING DirectShowSpy__MIDL_TypeForma
         0,
         {
 			NdrFcShort( 0x0 ),	/* 0 */
+/*  2 */	
+			0x11, 0x10,	/* FC_RP [pointer_deref] */
+/*  4 */	NdrFcShort( 0x2 ),	/* Offset= 2 (6) */
+/*  6 */	
+			0x2f,		/* FC_IP */
+			0x5a,		/* FC_CONSTANT_IID */
+/*  8 */	NdrFcLong( 0x0 ),	/* 0 */
+/* 12 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 14 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 16 */	0xc0,		/* 192 */
+			0x0,		/* 0 */
+/* 18 */	0x0,		/* 0 */
+			0x0,		/* 0 */
+/* 20 */	0x0,		/* 0 */
+			0x0,		/* 0 */
+/* 22 */	0x0,		/* 0 */
+			0x46,		/* 70 */
+/* 24 */	
+			0x11, 0x4,	/* FC_RP [alloced_on_stack] */
+/* 26 */	NdrFcShort( 0x1c ),	/* Offset= 28 (54) */
+/* 28 */	
+			0x13, 0x0,	/* FC_OP */
+/* 30 */	NdrFcShort( 0xe ),	/* Offset= 14 (44) */
+/* 32 */	
+			0x1b,		/* FC_CARRAY */
+			0x1,		/* 1 */
+/* 34 */	NdrFcShort( 0x2 ),	/* 2 */
+/* 36 */	0x9,		/* Corr desc: FC_ULONG */
+			0x0,		/*  */
+/* 38 */	NdrFcShort( 0xfffc ),	/* -4 */
+/* 40 */	NdrFcShort( 0x1 ),	/* Corr flags:  early, */
+/* 42 */	0x6,		/* FC_SHORT */
+			0x5b,		/* FC_END */
+/* 44 */	
+			0x17,		/* FC_CSTRUCT */
+			0x3,		/* 3 */
+/* 46 */	NdrFcShort( 0x8 ),	/* 8 */
+/* 48 */	NdrFcShort( 0xfff0 ),	/* Offset= -16 (32) */
+/* 50 */	0x8,		/* FC_LONG */
+			0x8,		/* FC_LONG */
+/* 52 */	0x5c,		/* FC_PAD */
+			0x5b,		/* FC_END */
+/* 54 */	0xb4,		/* FC_USER_MARSHAL */
+			0x83,		/* 131 */
+/* 56 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 58 */	NdrFcShort( 0x4 ),	/* 4 */
+/* 60 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 62 */	NdrFcShort( 0xffde ),	/* Offset= -34 (28) */
 
 			0x0
         }
     };
+
+static const USER_MARSHAL_ROUTINE_QUADRUPLE UserMarshalRoutines[ WIRE_MARSHAL_TABLE_SIZE ] = 
+        {
+            
+            {
+            BSTR_UserSize
+            ,BSTR_UserMarshal
+            ,BSTR_UserUnmarshal
+            ,BSTR_UserFree
+            }
+
+        };
+
 
 
 /* Object interface: IUnknown, ver. 0.0,
@@ -342,6 +501,80 @@ CInterfaceStubVtbl _ISystemDeviceEnumeratorSpyStubVtbl =
     CStdStubBuffer_DELEGATING_METHODS
 };
 
+
+/* Object interface: IFilterGraphHelper, ver. 0.0,
+   GUID={0x3D1AF248,0xDEF1,0x4E26,{0xA0,0x71,0xFE,0xDF,0x15,0xFE,0xD6,0xA8}} */
+
+#pragma code_seg(".orpc")
+static const unsigned short IFilterGraphHelper_FormatStringOffsetTable[] =
+    {
+    (unsigned short) -1,
+    (unsigned short) -1,
+    (unsigned short) -1,
+    (unsigned short) -1,
+    0,
+    36,
+    72
+    };
+
+static const MIDL_STUBLESS_PROXY_INFO IFilterGraphHelper_ProxyInfo =
+    {
+    &Object_StubDesc,
+    DirectShowSpy__MIDL_ProcFormatString.Format,
+    &IFilterGraphHelper_FormatStringOffsetTable[-3],
+    0,
+    0,
+    0
+    };
+
+
+static const MIDL_SERVER_INFO IFilterGraphHelper_ServerInfo = 
+    {
+    &Object_StubDesc,
+    0,
+    DirectShowSpy__MIDL_ProcFormatString.Format,
+    &IFilterGraphHelper_FormatStringOffsetTable[-3],
+    0,
+    0,
+    0,
+    0};
+CINTERFACE_PROXY_VTABLE(10) _IFilterGraphHelperProxyVtbl = 
+{
+    &IFilterGraphHelper_ProxyInfo,
+    &IID_IFilterGraphHelper,
+    IUnknown_QueryInterface_Proxy,
+    IUnknown_AddRef_Proxy,
+    IUnknown_Release_Proxy ,
+    0 /* IDispatch::GetTypeInfoCount */ ,
+    0 /* IDispatch::GetTypeInfo */ ,
+    0 /* IDispatch::GetIDsOfNames */ ,
+    0 /* IDispatch_Invoke_Proxy */ ,
+    (void *) (INT_PTR) -1 /* IFilterGraphHelper::get_FilterGraph */ ,
+    (void *) (INT_PTR) -1 /* IFilterGraphHelper::put_FilterGraph */ ,
+    (void *) (INT_PTR) -1 /* IFilterGraphHelper::get_Text */
+};
+
+
+static const PRPC_STUB_FUNCTION IFilterGraphHelper_table[] =
+{
+    STUB_FORWARDING_FUNCTION,
+    STUB_FORWARDING_FUNCTION,
+    STUB_FORWARDING_FUNCTION,
+    STUB_FORWARDING_FUNCTION,
+    NdrStubCall2,
+    NdrStubCall2,
+    NdrStubCall2
+};
+
+CInterfaceStubVtbl _IFilterGraphHelperStubVtbl =
+{
+    &IID_IFilterGraphHelper,
+    &IFilterGraphHelper_ServerInfo,
+    10,
+    &IFilterGraphHelper_table[-3],
+    CStdStubBuffer_DELEGATING_METHODS
+};
+
 static const MIDL_STUB_DESC Object_StubDesc = 
     {
     0,
@@ -358,7 +591,7 @@ static const MIDL_STUB_DESC Object_StubDesc =
     0,
     0x700022b, /* MIDL Version 7.0.555 */
     0,
-    0,
+    UserMarshalRoutines,
     0,  /* notify & notify_flag routine table */
     0x1, /* MIDL flag */
     0, /* cs routines */
@@ -369,6 +602,7 @@ static const MIDL_STUB_DESC Object_StubDesc =
 const CInterfaceProxyVtbl * const _DirectShowSpy_ProxyVtblList[] = 
 {
     ( CInterfaceProxyVtbl *) &_ISpyProxyVtbl,
+    ( CInterfaceProxyVtbl *) &_IFilterGraphHelperProxyVtbl,
     ( CInterfaceProxyVtbl *) &_ISystemDeviceEnumeratorSpyProxyVtbl,
     ( CInterfaceProxyVtbl *) &_IFilterMapperSpyProxyVtbl,
     0
@@ -377,6 +611,7 @@ const CInterfaceProxyVtbl * const _DirectShowSpy_ProxyVtblList[] =
 const CInterfaceStubVtbl * const _DirectShowSpy_StubVtblList[] = 
 {
     ( CInterfaceStubVtbl *) &_ISpyStubVtbl,
+    ( CInterfaceStubVtbl *) &_IFilterGraphHelperStubVtbl,
     ( CInterfaceStubVtbl *) &_ISystemDeviceEnumeratorSpyStubVtbl,
     ( CInterfaceStubVtbl *) &_IFilterMapperSpyStubVtbl,
     0
@@ -385,6 +620,7 @@ const CInterfaceStubVtbl * const _DirectShowSpy_StubVtblList[] =
 PCInterfaceName const _DirectShowSpy_InterfaceNamesList[] = 
 {
     "ISpy",
+    "IFilterGraphHelper",
     "ISystemDeviceEnumeratorSpy",
     "IFilterMapperSpy",
     0
@@ -392,6 +628,7 @@ PCInterfaceName const _DirectShowSpy_InterfaceNamesList[] =
 
 const IID *  const _DirectShowSpy_BaseIIDList[] = 
 {
+    &IID_IDispatch,
     &IID_IDispatch,
     &IID_IDispatch,
     &IID_IDispatch,
@@ -405,9 +642,9 @@ int __stdcall _DirectShowSpy_IID_Lookup( const IID * pIID, int * pIndex )
 {
     IID_BS_LOOKUP_SETUP
 
-    IID_BS_LOOKUP_INITIAL_TEST( _DirectShowSpy, 3, 2 )
+    IID_BS_LOOKUP_INITIAL_TEST( _DirectShowSpy, 4, 2 )
     IID_BS_LOOKUP_NEXT_TEST( _DirectShowSpy, 1 )
-    IID_BS_LOOKUP_RETURN_RESULT( _DirectShowSpy, 3, *pIndex )
+    IID_BS_LOOKUP_RETURN_RESULT( _DirectShowSpy, 4, *pIndex )
     
 }
 
@@ -418,7 +655,7 @@ const ExtendedProxyFileInfo DirectShowSpy_ProxyFileInfo =
     (const PCInterfaceName * ) & _DirectShowSpy_InterfaceNamesList,
     (const IID ** ) & _DirectShowSpy_BaseIIDList,
     & _DirectShowSpy_IID_Lookup, 
-    3,
+    4,
     2,
     0, /* table of [async_uuid] interfaces */
     0, /* Filler1 */
