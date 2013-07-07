@@ -496,6 +496,7 @@ public:
 							#pragma region AM_MEDIA_TYPE
 							#define J(x) I(pMediaType->x)
 							#define K1(x) sText += AtlFormatString(_T(" * `") _T(#x) _T("`: %s") _T("\r\n"), J(x))
+							sText += AtlFormatString(_T(" * ") _T("Data: %s") _T("\r\n"), I(AtlFormatData((const BYTE*) (const AM_MEDIA_TYPE*) pMediaType, sizeof *pMediaType).TrimRight()));
 							sText += AtlFormatString(_T(" * ") _T("`majortype`: %s") _T("\r\n"), I(_FilterGraphHelper::FormatMajorType(pMediaType->majortype)));
 							if(pMediaType->subtype != MEDIASUBTYPE_NULL)
 								sText += AtlFormatString(_T(" * ") _T("`subtype`: %s") _T("\r\n"), I(_FilterGraphHelper::FormatSubtype(pMediaType->subtype)));
@@ -510,13 +511,7 @@ public:
 							{
 								K1(cbFormat);
 								if(pMediaType->pbFormat)
-								{
-									CString sFormat = AtlFormatData(pMediaType->pbFormat, pMediaType->cbFormat).TrimRight();
-									sFormat.Replace(_T(" "), _T("` `"));
-									sFormat.Insert(0, _T("`"));
-									sFormat.Append(_T("`"));
-									sText += AtlFormatString(_T(" * ") _T("`pbFormat`: %s") _T("\r\n"), sFormat);
-								}
+									sText += AtlFormatString(_T(" * ") _T("Format Data, `pbFormat`: %s") _T("\r\n"), I(AtlFormatData(pMediaType->pbFormat, pMediaType->cbFormat).TrimRight()));
 							}
 							#undef J
 							#undef K1
@@ -681,11 +676,7 @@ public:
 							{
 								if(!pnExtraData)
 									pnExtraData = pMediaType->pbFormat + pMediaType->cbFormat - nExtraDataSize;
-								CString sFormat = AtlFormatData(pnExtraData, nExtraDataSize).TrimRight();
-								sFormat.Replace(_T(" "), _T("` `"));
-								sFormat.Insert(0, _T("`"));
-								sFormat.Append(_T("`"));
-								sText += AtlFormatString(_T("  * ") _T("Extra Data: %s") _T("\r\n"), sFormat);
+								sText += AtlFormatString(_T("  * ") _T("Extra Data: %s") _T("\r\n"), I(AtlFormatData(pnExtraData, nExtraDataSize).TrimRight()));
 							}
 							#pragma endregion 
 						}

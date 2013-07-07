@@ -1,8 +1,6 @@
 ////////////////////////////////////////////////////////////
 // Copyright (C) Roman Ryltsov, 2008-2011
 // Created by Roman Ryltsov roman@alax.info
-// 
-// $Id: AboutDialog.h 302 2011-07-26 08:46:45Z alax $
 
 #pragma once
 
