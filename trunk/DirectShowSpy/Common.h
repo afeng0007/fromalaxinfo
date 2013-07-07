@@ -1,8 +1,6 @@
 ////////////////////////////////////////////////////////////
 // Copyright (C) Roman Ryltsov, 2008-2011
 // Created by Roman Ryltsov roman@alax.info
-// 
-// $Id$
 
 #pragma once
 
@@ -135,7 +133,7 @@ inline VOID TreatAsUpdateRegistryFromResource(const CLSID& TreatAsClassIdentifie
 	const ULONG nOsVersion = GetOsVersion();
 	_Z4(atlTraceRegistrar, 4, _T("nOsVersion 0x%08x\n"), nOsVersion);
 	CProcessTokenPrivileges ProcessTokenPrivileges;
-	if(nOsVersion >= 0x060000) // Vista+
+	if(nOsVersion >= 0x060000) // Win Vista+
 		_ATLTRY
 		{
 			ProcessTokenPrivileges.Adjust();
@@ -152,7 +150,7 @@ inline VOID TreatAsUpdateRegistryFromResource(const CLSID& TreatAsClassIdentifie
 	CClassIdentifierRegKeySecurity ClassIdentifierRegKeySecurity(TreatAsClassIdentifier);
 	if(!bRegister && nCoGetTreatAsClassResult == S_OK)
 	{
-		if(nOsVersion >= 0x060000) // Vista+
+		if(nOsVersion >= 0x060000) // Win Vista+
 			ClassIdentifierRegKeySecurity.Adjust();
 		__C(CoTreatAsClass(TreatAsClassIdentifier, CLSID_NULL));
 	}
@@ -160,18 +158,18 @@ inline VOID TreatAsUpdateRegistryFromResource(const CLSID& TreatAsClassIdentifie
 	UpdateRegistryFromResource<T>(bRegister);
 	if(bRegister)
 	{
-		if(nOsVersion >= 0x060000) // Vista+
+		if(nOsVersion >= 0x060000) // Win Vista+
 			ClassIdentifierRegKeySecurity.Adjust();
-#if _DEVELOPMENT
-		const HRESULT nCoTreatAsClassResult = CoTreatAsClass(TreatAsClassIdentifier, T::GetObjectCLSID());
-		_Z2(atlTraceRegistrar, SUCCEEDED(nCoTreatAsClassResult) ? 4 : 2, _T("nCoTreatAsClassResult 0x%08x\n"), nCoTreatAsClassResult);
-		__C(nCoTreatAsClassResult);
-		const HRESULT nCoGetTreatAsClassResult = CoGetTreatAsClass(TreatAsClassIdentifier, &CurrentTreatAsClassIdentifier);
-		_Z4(atlTraceRegistrar, 4, _T("nCoGetTreatAsClassResult 0x%08x, CurrentTreatAsClassIdentifier %ls\n"), nCoGetTreatAsClassResult, _PersistHelper::StringFromIdentifier(CurrentTreatAsClassIdentifier));
-		_A(CurrentTreatAsClassIdentifier == T::GetObjectCLSID());
-#else
-		__C(CoTreatAsClass(TreatAsClassIdentifier, T::GetObjectCLSID()));
-#endif // _DEVELOPMENT
+		#if _DEVELOPMENT
+			const HRESULT nCoTreatAsClassResult = CoTreatAsClass(TreatAsClassIdentifier, T::GetObjectCLSID());
+			_Z2(atlTraceRegistrar, SUCCEEDED(nCoTreatAsClassResult) ? 4 : 2, _T("nCoTreatAsClassResult 0x%08x\n"), nCoTreatAsClassResult);
+			__C(nCoTreatAsClassResult);
+			const HRESULT nCoGetTreatAsClassResult = CoGetTreatAsClass(TreatAsClassIdentifier, &CurrentTreatAsClassIdentifier);
+			_Z4(atlTraceRegistrar, 4, _T("nCoGetTreatAsClassResult 0x%08x, CurrentTreatAsClassIdentifier %ls\n"), nCoGetTreatAsClassResult, _PersistHelper::StringFromIdentifier(CurrentTreatAsClassIdentifier));
+			_A(CurrentTreatAsClassIdentifier == T::GetObjectCLSID());
+		#else
+			__C(CoTreatAsClass(TreatAsClassIdentifier, T::GetObjectCLSID()));
+		#endif // _DEVELOPMENT
 	}
 }
 
