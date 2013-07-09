@@ -267,8 +267,35 @@ public:
 							CStringW sMajorType = _FilterGraphHelper::FormatMajorType(pMediaType->majortype);
 							CStringW sSubtype;
 							if(pMediaType->subtype != MEDIASUBTYPE_NULL)
-								sSubtype = _FilterGraphHelper::FormatSubtype(pMediaType->subtype);
-							sConnectionText += AtlFormatString(_T(" (%s %s)"), I(sMajorType), I(sSubtype));
+								sSubtype = _FilterGraphHelper::FormatSubtype(pMediaType->majortype, pMediaType->subtype);
+							CRoArrayT<CString> Array;
+							Array.Add(I(sMajorType));
+							Array.Add(I(sSubtype));
+							#pragma region MEDIATYPE_Video
+							if(pMediaType->majortype == MEDIATYPE_Video)
+							{
+								const CVideoInfoHeader2 VideoInfoHeader2 = pMediaType.GetCompatibleVideoInfoHeader2();
+								const CSize Extent = VideoInfoHeader2.GetExtent();
+								if(Extent.cx || Extent.cy)
+									Array.Add(AtlFormatString(_T("%s x %s"), I(Extent.cx), I(Extent.cy)));
+							} else
+							#pragma endregion 
+							#pragma region MEDIATYPE_Audio
+							if(pMediaType->majortype == MEDIATYPE_Audio)
+							{
+								const CWaveFormatEx* pWaveFormatEx = pMediaType.GetWaveFormatEx();
+								if(pWaveFormatEx)
+								{
+									if(pWaveFormatEx->nSamplesPerSec)
+										Array.Add(AtlFormatString(_T("%s Hz"), I(pWaveFormatEx->nSamplesPerSec)));
+									if(pWaveFormatEx->nChannels)
+										Array.Add(AtlFormatString(_T("%s channels"), I(pWaveFormatEx->nChannels)));
+									if(pWaveFormatEx->wBitsPerSample)
+										Array.Add(AtlFormatString(_T("%s bits"), I(pWaveFormatEx->wBitsPerSample)));
+								}
+							}
+							#pragma endregion 
+							sConnectionText += AtlFormatString(_T(" (%s)"), _StringHelper::Join(Array, _T(", ")));
 						}
 					}
 					_ATLCATCHALL()
@@ -318,7 +345,7 @@ public:
 						sText += AtlFormatString(_T(" * ") _T("Data: %s") _T("\r\n"), I(AtlFormatData((const BYTE*) (const AM_MEDIA_TYPE*) pMediaType, sizeof *pMediaType).TrimRight()));
 						sText += AtlFormatString(_T(" * ") _T("`majortype`: %s") _T("\r\n"), I(_FilterGraphHelper::FormatMajorType(pMediaType->majortype)));
 						if(pMediaType->subtype != MEDIASUBTYPE_NULL)
-							sText += AtlFormatString(_T(" * ") _T("`subtype`: %s") _T("\r\n"), I(_FilterGraphHelper::FormatSubtype(pMediaType->subtype)));
+							sText += AtlFormatString(_T(" * ") _T("`subtype`: %s") _T("\r\n"), I(_FilterGraphHelper::FormatSubtype(pMediaType->majortype, pMediaType->subtype)));
 						K1(bFixedSizeSamples);
 						K1(bTemporalCompression);
 						K1(lSampleSize);
