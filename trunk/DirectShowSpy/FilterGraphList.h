@@ -414,10 +414,10 @@ public:
 			}
 			sTextBuffer.AppendFormat(_T("Display Name: %ls\r\n"), Item.m_sDisplayName);
 			sTextBuffer.AppendFormat(_T("Instance: 0x%p\r\n"), Item.m_nInstance);
-			sTextBuffer.TrimRight(_T("\t\n\r ."));
 			const CString sDirectory = (LPCTSTR) GetPathDirectory(Item.m_sProcessImagePath);
 			if(!sDirectory.IsEmpty())
 				sTextBuffer.AppendFormat(_T("Process Directory: %s\r\n"), sDirectory);
+			sTextBuffer.TrimRight(_T("\t\n\r ."));
 			#pragma region Clipboard Copy
 			if(GetKeyState(VK_CONTROL) < 0 && GetKeyState(VK_SHIFT) < 0)
 				_ATLTRY
