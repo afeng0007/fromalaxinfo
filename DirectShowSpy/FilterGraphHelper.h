@@ -190,6 +190,10 @@ public:
 			if(!sDirectory.IsEmpty())
 				sText += AtlFormatString(_T("* ") _T("Process Directory: %s") _T("\r\n"), I(sDirectory));
 		}
+		const CComQIPtr<IMediaFilter> pMediaFilter = pFilterGraph;
+		CComPtr<IReferenceClock> pFilterGraphReferenceClock;
+		const HRESULT nGetSyncSourceResult = pMediaFilter->GetSyncSource(&pFilterGraphReferenceClock);
+		_Z45_DSHRESULT(nGetSyncSourceResult);
 		sText += _T("\r\n");
 		#pragma endregion 
 		#pragma region Filter
@@ -212,6 +216,17 @@ public:
 					_FilterGraphHelper::CPinArray OutputPinArray;
 					if(_FilterGraphHelper::GetFilterPins(pBaseFilter, PINDIR_OUTPUT, OutputPinArray))
 						sText += AtlFormatString(_T(" * ") _T("Output Pins: %s") _T("\r\n"), FormatPins(OutputPinArray));
+					#pragma region IReferenceClock
+					const CComQIPtr<IReferenceClock> pReferenceClock = pBaseFilter;
+					if(pReferenceClock)
+					{
+						CRoArrayT<CString> Array;
+						Array.Add(I(_T("Available")));
+						if(pReferenceClock == pFilterGraphReferenceClock)
+							Array.Add(I(_T("Selected")));
+						sText += AtlFormatString(_T(" * ") _T("Reference Clock: %s") _T("\r\n"), _StringHelper::Join(Array, _T(", ")));
+					}
+					#pragma endregion 
 					#pragma region IFileSourceFilter
 					const CComQIPtr<IFileSourceFilter> pFileSourceFilter = pBaseFilter;
 					if(pFileSourceFilter)
