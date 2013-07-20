@@ -110,7 +110,7 @@ VOID Do(LPCTSTR pszPath, SIZE_T nOutputPinIndex = 0)
 	}
 	#pragma endregion 
 	__C(pFilterGraph2->Render(pCurrentPin));
-	MessageBox(GetActiveWindow(), _T("Grab the Topology!"), _T("Debug"), MB_ICONINFORMATION | MB_OK);
+	//MessageBox(GetActiveWindow(), _T("Grab the Topology!"), _T("Debug"), MB_ICONINFORMATION | MB_OK);
 	const CComQIPtr<IMediaControl> pMediaControl = pFilterGraph2;
 	__C(pMediaControl->Run());
 	const CComQIPtr<IMediaEvent> pMediaEvent = pFilterGraph2;
