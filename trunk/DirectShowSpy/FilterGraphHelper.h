@@ -120,6 +120,47 @@ public:
 		return sText;
 	}
 	#define I FormatIdentifier
+	static CString FormatPhysicalConnectorType(PhysicalConnectorType Value)
+	{
+		struct 
+		{
+			PhysicalConnectorType Value;
+			LPCSTR pszName;
+		} g_pMap[] = 
+		{
+			#define A(x) { x, #x },
+			A(PhysConn_Video_Tuner)
+			A(PhysConn_Video_Composite)
+			A(PhysConn_Video_SVideo)
+			A(PhysConn_Video_RGB)
+			A(PhysConn_Video_YRYBY)
+			A(PhysConn_Video_SerialDigital)
+			A(PhysConn_Video_ParallelDigital)
+			A(PhysConn_Video_SCSI)
+			A(PhysConn_Video_AUX)
+			A(PhysConn_Video_1394)
+			A(PhysConn_Video_USB)
+			A(PhysConn_Video_VideoDecoder)
+			A(PhysConn_Video_VideoEncoder)
+			A(PhysConn_Video_SCART)
+			A(PhysConn_Video_Black)
+			A(PhysConn_Audio_Tuner)
+			A(PhysConn_Audio_Line)
+			A(PhysConn_Audio_Mic)
+			A(PhysConn_Audio_AESDigital)
+			A(PhysConn_Audio_SPDIFDigital)
+			A(PhysConn_Audio_SCSI)
+			A(PhysConn_Audio_AUX)
+			A(PhysConn_Audio_1394)
+			A(PhysConn_Audio_USB)
+			A(PhysConn_Audio_AudioDecoder)
+			#undef A
+		};
+		for(SIZE_T nIndex = 0; nIndex < DIM(g_pMap); nIndex++)
+			if(g_pMap[nIndex].Value == Value)
+				return CString(g_pMap[nIndex].pszName);
+		return AtlFormatString(_T("0x%04X"), Value);
+	}
 	static CString FormatPins(_FilterGraphHelper::CPinArray& PinArray)
 	{
 		CRoArrayT<CString> Array;
@@ -230,28 +271,104 @@ public:
 					#pragma region IFileSourceFilter
 					const CComQIPtr<IFileSourceFilter> pFileSourceFilter = pBaseFilter;
 					if(pFileSourceFilter)
-					{
-						CComHeapPtr<OLECHAR> pszFileName;
-						CMediaType pMediaType;
-						pMediaType.Allocate(MEDIATYPE_NULL, MEDIASUBTYPE_NULL);
-						const HRESULT nGetCurFileResult = pFileSourceFilter->GetCurFile(&pszFileName, pMediaType);
-						_Z45_DSHRESULT(nGetCurFileResult);
-						if(SUCCEEDED(nGetCurFileResult))
-							sText += AtlFormatString(_T(" * ") _T("File Source: %s") _T("\r\n"), I(pszFileName));
-					}
+						_ATLTRY
+						{
+							CComHeapPtr<OLECHAR> pszFileName;
+							CMediaType pMediaType;
+							pMediaType.Allocate(MEDIATYPE_NULL, MEDIASUBTYPE_NULL);
+							const HRESULT nGetCurFileResult = pFileSourceFilter->GetCurFile(&pszFileName, pMediaType);
+							_Z45_DSHRESULT(nGetCurFileResult);
+							if(SUCCEEDED(nGetCurFileResult))
+								sText += AtlFormatString(_T(" * ") _T("File Source: %s") _T("\r\n"), I(pszFileName));
+						}
+						_ATLCATCHALL()
+						{
+							_Z_EXCEPTION();
+						}
 					#pragma endregion 
 					#pragma region IFileSinkFilter
 					const CComQIPtr<IFileSinkFilter> pFileSinkFilter = pBaseFilter;
 					if(pFileSinkFilter)
-					{
-						CComHeapPtr<OLECHAR> pszFileName;
-						CMediaType pMediaType;
-						pMediaType.Allocate(MEDIATYPE_NULL, MEDIASUBTYPE_NULL);
-						const HRESULT nGetCurFileResult = pFileSinkFilter->GetCurFile(&pszFileName, pMediaType);
-						_Z45_DSHRESULT(nGetCurFileResult);
-						if(SUCCEEDED(nGetCurFileResult))
-							sText += AtlFormatString(_T(" * ") _T("File Sink: %s") _T("\r\n"), I(pszFileName));
-					}
+						_ATLTRY
+						{
+							CComHeapPtr<OLECHAR> pszFileName;
+							CMediaType pMediaType;
+							pMediaType.Allocate(MEDIATYPE_NULL, MEDIASUBTYPE_NULL);
+							const HRESULT nGetCurFileResult = pFileSinkFilter->GetCurFile(&pszFileName, pMediaType);
+							_Z45_DSHRESULT(nGetCurFileResult);
+							if(SUCCEEDED(nGetCurFileResult))
+								sText += AtlFormatString(_T(" * ") _T("File Sink: %s") _T("\r\n"), I(pszFileName));
+						}
+						_ATLCATCHALL()
+						{
+							_Z_EXCEPTION();
+						}
+					#pragma endregion 
+					#pragma region IAMCrossbar
+					const CComQIPtr<IAMCrossbar> pAmCrossbar = pBaseFilter;
+					if(pAmCrossbar)
+						_ATLTRY
+						{
+							sText += AtlFormatString(_T(" * ") _T("Crossbar:") _T("\r\n"));
+							LONG nOutputPinCount = 0, nInputPinCount = 0;
+							__C(pAmCrossbar->get_PinCounts(&nOutputPinCount, &nInputPinCount));
+							sText += AtlFormatString(_T("  * ") _T("Pins: %s Input, %s Output") _T("\r\n"), I(nInputPinCount), I(nOutputPinCount));
+							#pragma region Input
+							for(LONG nInputPinIndex = 0; nInputPinIndex < nInputPinCount; nInputPinIndex++)
+								_ATLTRY
+								{
+									CRoArrayT<CString> Array;
+									LONG nRelatedPinIndex = -1;
+									LONG nPhysicalType = 0; // PhysicalConnectorType
+									__C(pAmCrossbar->get_CrossbarPinInfo(TRUE, nInputPinIndex, &nRelatedPinIndex, &nPhysicalType));
+									if(nRelatedPinIndex >= 0)
+										Array.Add(AtlFormatString(_T("Related %s"), I(nRelatedPinIndex)));
+									Array.Add(AtlFormatString(_T("Physical Type %s"), I(FormatPhysicalConnectorType((PhysicalConnectorType) nPhysicalType))));
+									sText += AtlFormatString(_T("  * ") _T("Input Pin %s: %s") _T("\r\n"), I(nInputPinIndex), _StringHelper::Join(Array, _T("; ")));
+								}
+								_ATLCATCHALL()
+								{
+									_Z_EXCEPTION();
+								}
+							#pragma endregion
+							#pragma region Output
+							for(LONG nOutputPinIndex = 0; nOutputPinIndex < nOutputPinCount; nOutputPinIndex++)
+								_ATLTRY
+								{
+									CRoArrayT<CString> Array;
+									LONG nRelatedPinIndex = -1;
+									LONG nPhysicalType = 0; // PhysicalConnectorType
+									__C(pAmCrossbar->get_CrossbarPinInfo(FALSE, nOutputPinIndex, &nRelatedPinIndex, &nPhysicalType));
+									if(nRelatedPinIndex >= 0)
+										Array.Add(AtlFormatString(_T("Related %s"), I(nRelatedPinIndex)));
+									if(nPhysicalType > 0)
+										Array.Add(AtlFormatString(_T("Physical Type %s"), I(FormatPhysicalConnectorType((PhysicalConnectorType) nPhysicalType))));
+									LONG nRoutedInputPinIndex = -1;
+									const HRESULT nGetIsRoutedToResult = pAmCrossbar->get_IsRoutedTo(nOutputPinIndex, &nRoutedInputPinIndex);
+									_A(nGetIsRoutedToResult == S_OK || nRoutedInputPinIndex == -1);
+									if(nRoutedInputPinIndex >= 0)
+										Array.Add(AtlFormatString(_T("Routed to Input Pin %s"), I(nRoutedInputPinIndex)));
+									CRoArrayT<CString> PinArray;
+									for(LONG nInputPinIndex = 0; nInputPinIndex < nInputPinCount; nInputPinIndex++)
+									{
+										const HRESULT nCanRouteResult = pAmCrossbar->CanRoute(nOutputPinIndex, nInputPinIndex);
+										if(nCanRouteResult == S_OK)
+											PinArray.Add(I(nInputPinIndex));
+									}
+									if(!PinArray.IsEmpty())
+										Array.Add(AtlFormatString(_T("Routeable to Input Pins %s"), _StringHelper::Join(PinArray, _T(", "))));
+									sText += AtlFormatString(_T("  * ") _T("Output Pin %s: %s") _T("\r\n"), I(nOutputPinIndex), _StringHelper::Join(Array, _T("; ")));
+								}
+								_ATLCATCHALL()
+								{
+									_Z_EXCEPTION();
+								}
+							#pragma endregion
+						}
+						_ATLCATCHALL()
+						{
+							_Z_EXCEPTION();
+						}
 					#pragma endregion 
 				}
 				_ATLCATCHALL()
