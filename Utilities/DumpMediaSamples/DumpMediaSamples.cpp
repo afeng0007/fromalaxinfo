@@ -171,6 +171,9 @@ public:
 		mutable CRoCriticalSection m_DataCriticalSection;
 		CMediaType m_pMediaType;
 		CComPtr<CAbstractHandler> m_pHandler;
+		DWORD m_nPreviousFlags;
+		REFERENCE_TIME m_nPreviousStartTime;
+		REFERENCE_TIME m_nPreviousStopTime;
 
 	public:
 	// CSampleGrabberCallback
@@ -187,6 +190,7 @@ public:
 		{
 			_A(!m_pModule && pModule);
 			m_pModule = pModule;
+			m_nPreviousFlags = 0;
 		}
 		VOID SetName(const CString& sName)
 		{
@@ -267,6 +271,25 @@ public:
 			{
 				CMediaSampleProperties Properties(pMediaSample);
 				_A(!Properties.pMediaType);
+				CRoArrayT<CString> TimeArray;
+				if(Properties.dwSampleFlags & AM_SAMPLE_TIMEVALID)
+				{
+					CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+					TimeArray.Add(_FilterGraphHelper::FormatReferenceTime(Properties.tStart));
+					if(m_nPreviousFlags & AM_SAMPLE_TIMEVALID)
+						TimeArray.Add(_FilterGraphHelper::FormatReferenceTime(Properties.tStart - m_nPreviousStartTime));
+					else
+						TimeArray.Add(_T(""));
+					if(m_nPreviousFlags & AM_SAMPLE_STOPVALID)
+						TimeArray.Add(_FilterGraphHelper::FormatReferenceTime(Properties.tStart - m_nPreviousStopTime));
+					else
+						TimeArray.Add(_T(""));
+					if(Properties.dwSampleFlags & AM_SAMPLE_STOPVALID)
+					{
+						TimeArray.Add(_FilterGraphHelper::FormatReferenceTime(Properties.tStop));
+						TimeArray.Add(_FilterGraphHelper::FormatReferenceTime(Properties.tStop - Properties.tStart));
+					}
+				}
 				CRoCriticalSectionLock PrintLock(m_pModule->m_PrintCriticalSection);
 				_tprintf(_T("%s") _T("fSampleTime %s, .dwTypeSpecificFlags 0x%08x%s, .dwSampleFlags 0x%08x%s, .tStart %s, .tStop %s, .dwStreamId %d\n"), 
 					m_sNamePrefix,
@@ -274,7 +297,7 @@ public:
 					Properties.dwTypeSpecificFlags, Properties.dwTypeSpecificFlags ? (LPCTSTR) AtlFormatString(_T(" (%s)"), StringFromTypeSpecificFlags(Properties.dwTypeSpecificFlags)) : _T(""),
 					Properties.dwSampleFlags, Properties.dwSampleFlags ? (LPCTSTR) AtlFormatString(_T(" (%s)"), StringFromSampleFlags(Properties.dwSampleFlags)) : _T(""),
 					_FilterGraphHelper::FormatReferenceTime(Properties.tStart), 
-					_FilterGraphHelper::FormatReferenceTime(Properties.tStop),
+					_FilterGraphHelper::FormatReferenceTime(Properties.tStop), 
 					Properties.dwStreamId,
 					0);
 				CRoCriticalSectionLock DataLock(m_DataCriticalSection);
@@ -295,9 +318,17 @@ public:
 						sBuffer,
 						0);
 				}
+				//_tprintf(_T("%s") _T("Time, %s") _T("\n"),
+				//	m_sNamePrefix,
+				//	_StringHelper::Join(TimeArray, _T(", ")), 
+				//	0);
 				if(m_pHandler)
 					m_pHandler->HandleSample(Properties);
 				_tprintf(_T("\n"));
+				m_nPreviousFlags = Properties.dwSampleFlags;
+				m_nPreviousStartTime = Properties.tStart;
+				m_nPreviousStopTime = Properties.tStop;
+
 			}
 			_ATLCATCH(Exception)
 			{
@@ -316,6 +347,7 @@ private:
 public:
 	CPath m_sPath;
 	BOOL m_bNoReferenceClock;
+	BOOL m_bSuppressLoadFailure;
 	mutable CRoCriticalSection m_PrintCriticalSection;
 
 public:
@@ -346,6 +378,7 @@ public:
 	{
 		//m_sPath = GetDefaultPath();
 		m_bNoReferenceClock = FALSE;
+		m_bSuppressLoadFailure = FALSE;
 	}
 	~CModule()
 	{
@@ -359,7 +392,16 @@ public:
 	{
 		CGenericFilterGraph FilterGraph;
 		FilterGraph.CoCreateInstance();
-		LoadGraphBuilderFromFile(FilterGraph.m_pFilterGraph, m_sPath);
+		_ATLTRY
+		{
+			LoadGraphBuilderFromFile(FilterGraph.m_pFilterGraph, m_sPath);
+		}
+		_ATLCATCH(Exception)
+		{
+			_tprintf(_T("Error loading filter graph: %s\n"), Ds::FormatResult(Exception));
+			if(!m_bSuppressLoadFailure)
+				_ATLRETHROW;
+		}
 		#pragma region Sample Grabbers
 		_FilterGraphHelper::CFilterArray FilterArray;
 		_FilterGraphHelper::GetGraphFilters(FilterGraph.m_pFilterGraph, FilterArray);
@@ -492,6 +534,10 @@ int _tmain(int argc, _TCHAR* argv[])
 				if(_tcschr(_T("Cc"), sArgument[0])) // No Reference Clock
 				{
 					Module.m_bNoReferenceClock = TRUE;
+				} else
+				if(_tcschr(_T("Ee"), sArgument[0])) // Suppress Load Failure
+				{
+					Module.m_bSuppressLoadFailure = TRUE;
 				}
 				continue;
 			}
