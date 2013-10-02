@@ -36,24 +36,29 @@ public:
 		Sleep(100);
 		m_nValue++;
 	}
+
+	~CFoo()
+	{
+		_tprintf(_T("~CFoo()\n"));
+	}
 };
 
 #define STATICLOCAL_PART1(type, name) \
-	static BYTE g_pn##name##Data[sizeof (type)]; \
-	static BOOL g_b##name##Initialized = FALSE; \
-	type& g_##name = reinterpret_cast<type&>(g_pn##name##Data); \
+	static type* g_p##name = NULL; \
 	{ \
 		ATLASSERT(_pAtlModule); \
 		CComCritSecLock<CComCriticalSection> Lock(_pAtlModule->m_csStaticDataInitAndTypeInfo); \
-		if(!g_b##name##Initialized) \
+		static CAutoPtr<type> g_pPrivate##name; \
+		if(!g_p##name) \
 		{ \
-			new (g_pn##name##Data) type(
+			g_pPrivate##name.Attach(new type(
 
 #define STATICLOCAL_PART2(type, name) \
-			); \
-			g_b##name##Initialized = TRUE; \
+			)); \
+			g_p##name = (type*) g_pPrivate##name; \
 		} \
-	}
+	} \
+	type& g_##name = *g_p##name;
 
 #define STATICLOCAL0(type, name) \
 	STATICLOCAL_PART1(type, name) STATICLOCAL_PART2(type, name)
