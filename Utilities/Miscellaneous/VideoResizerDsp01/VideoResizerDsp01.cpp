@@ -21,17 +21,17 @@
 #pragma comment(lib, "wmcodecdspuuid.lib")
 #pragma comment(lib, "msdmo.lib")
 
-//#define DSP CLSID_CResizerDMO
-//#define OUTPUTSUBTYPE MEDIASUBTYPE_YV12
-//#define OUTPUTWIDTH 1280
-//#define OUTPUTHEIGHT 720
-//#define OUTPUTBITCOUNT 12
+#define DSP CLSID_CResizerDMO
+#define OUTPUTSUBTYPE MEDIASUBTYPE_YV12
+#define OUTPUTWIDTH 1280
+#define OUTPUTHEIGHT 720
+#define OUTPUTBITCOUNT 12
 
-#define DSP CLSID_CColorConvertDMO
-#define OUTPUTSUBTYPE MEDIASUBTYPE_UYVY
-#define OUTPUTWIDTH 1920
-#define OUTPUTHEIGHT 1080
-#define OUTPUTBITCOUNT 16
+//#define DSP CLSID_CColorConvertDMO
+//#define OUTPUTSUBTYPE MEDIASUBTYPE_UYVY
+//#define OUTPUTWIDTH 1920
+//#define OUTPUTHEIGHT 1080
+//#define OUTPUTBITCOUNT 16
 
 VOID PrintInputType(IMediaObject* pMediaObject, HRESULT nExpectedResult = S_OK, LPCTSTR pszComment = _T(""))
 {
@@ -136,6 +136,8 @@ int _tmain(int argc, _TCHAR* argv[])
 		PrintOutputType(pMediaObject);
 		#pragma endregion
 		ATLASSERT(nSetInputTypeResult == S_OK && nSetOutputTypeResult == S_OK);
+		//const HRESULT nFreeStreamingResourcesResult = pMediaObject->FreeStreamingResources();
+		//_tprintf(_T("nFreeStreamingResourcesResult 0x%08x\n"), nFreeStreamingResourcesResult);
 		#pragma region Clear
 		_tprintf(_T("\n*** Clear ***\n\n"));
 		const HRESULT nResetInputTypeResult = pMediaObject->SetInputType(0, NULL, DMO_SET_TYPEF_CLEAR);
