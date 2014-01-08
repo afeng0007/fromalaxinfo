@@ -15,6 +15,11 @@ copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.%C%" .
 copy /b /y "%A%\Utilities\%B%\_Bin\%B%-Win32.%C%" ".\Hardware Specific"
 copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.%C%" ".\Hardware Specific"
 
+@set B=DeckLinkInputProbe
+@set C=exe
+copy /b /y "%A%\Utilities\%B%\_Bin\%B%-Win32.%C%" ".\Hardware Specific"
+copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.%C%" ".\Hardware Specific"
+
 @set B=MatroxDsxCapabilities
 @set C=exe
 copy /b /y "%A%\Utilities\%B%\_Bin\%B%-Win32.%C%" ".\Hardware Specific"
