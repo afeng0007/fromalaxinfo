@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2008-2011
+// Copyright (C) Roman Ryltsov, 2008-2014
 // Created by Roman Ryltsov roman@alax.info
 
 #include "stdafx.h"
@@ -8,7 +8,7 @@
 #include "dllmain.h"
 
 #if defined(_WIN32_WCE) && !defined(_CE_DCOM) && !defined(_CE_ALLOW_SINGLE_THREADED_OBJECTS_IN_MTA)
-#error "Single-threaded COM objects are not properly supported on Windows CE platform, such as the Windows Mobile platforms that do not include full DCOM support. Define _CE_ALLOW_SINGLE_THREADED_OBJECTS_IN_MTA to force ATL to support creating single-thread COM object's and allow use of it's single-threaded COM object implementations. The threading model in your rgs file was set to 'Free' as that is the only threading model supported in non DCOM Windows CE platforms."
+	#error "Single-threaded COM objects are not properly supported on Windows CE platform, such as the Windows Mobile platforms that do not include full DCOM support. Define _CE_ALLOW_SINGLE_THREADED_OBJECTS_IN_MTA to force ATL to support creating single-thread COM object's and allow use of it's single-threaded COM object implementations. The threading model in your rgs file was set to 'Free' as that is the only threading model supported in non DCOM Windows CE platforms."
 #endif
 
 ////////////////////////////////////////////////////////////
@@ -18,12 +18,10 @@ STDAPI DllCanUnloadNow() throw()
 {
     return _AtlModule.DllCanUnloadNow();
 }
-
 STDAPI DllGetClassObject(REFCLSID ClassIdentifier, REFIID InterfaceIdentifier, LPVOID* ppvObject) throw()
 {
     return _AtlModule.DllGetClassObject(ClassIdentifier, InterfaceIdentifier, ppvObject);
 }
-
 STDAPI DllRegisterServer() throw()
 {
 	HRESULT nResult;
@@ -38,7 +36,6 @@ STDAPI DllRegisterServer() throw()
 	}
 	return nResult;
 }
-
 STDAPI DllUnregisterServer() throw()
 {
 	HRESULT nResult;
@@ -53,7 +50,6 @@ STDAPI DllUnregisterServer() throw()
 	}
 	return nResult;
 }
-
 STDAPI DllInstall(BOOL bInstall, LPCWSTR pszCommandLine) throw()
 {
 	HRESULT nResult;

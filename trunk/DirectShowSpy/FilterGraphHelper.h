@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2008-2013
+// Copyright (C) Roman Ryltsov, 2008-2014
 // Created by Roman Ryltsov roman@alax.info
 
 #pragma once
@@ -8,6 +8,7 @@
 #include "rodshow.h"
 #include "DirectShowSpy_i.h"
 #include "Common.h"
+#include "AboutDialog.h"
 
 ////////////////////////////////////////////////////////////
 // CFilterGraphHelper
@@ -43,13 +44,572 @@ public:
 		CPath m_sImagePath;
 	};
 
+	////////////////////////////////////////////////////////
+	// CPropertyFrameDialog
+
+	class CPropertyFrameDialog :
+		public CDialogImpl<CPropertyFrameDialog>,
+		public CDialogResize<CPropertyFrameDialog>
+	{
+	public:
+		enum { IDD = IDD_FILTERGRAPHHELPER_PROPERTYFRAME };
+
+	BEGIN_MSG_MAP_EX(CPropertyFrameDialog)
+		//CHAIN_MSG_MAP(CDialogImpl<CPropertyFrameDialog>)
+		CHAIN_MSG_MAP(CDialogResize<CPropertyFrameDialog>)
+		MSG_WM_INITDIALOG(OnInitDialog)
+		MSG_WM_DESTROY(OnDestroy)
+		MSG_TVN_SELCHANGED(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_TREE, OnTreeViewSelChanged)
+		MSG_TVN_ITEMEXPANDING(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_TREE, OnTreeViewItemExplanding)
+		MSG_TVN_DBLCLK(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_TREE, OnTreeViewDblClk)
+		MSG_WM_SYSCOMMAND(OnSysCommand)
+		COMMAND_ID_HANDLER_EX(IDOK, OnOk)
+		COMMAND_ID_HANDLER_EX(IDCANCEL, OnCancel)
+		COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_APPLY, OnApply)
+		REFLECT_NOTIFICATIONS()
+	END_MSG_MAP()
+
+	BEGIN_DLGRESIZE_MAP(CPropertyFrameDialog)
+		DLGRESIZE_CONTROL(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_TREE, DLSZ_SIZE_Y)
+		DLGRESIZE_CONTROL(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_TEXT, DLSZ_SIZE_X | DLSZ_SIZE_Y)
+		DLGRESIZE_CONTROL(IDOK, DLSZ_MOVE_X | DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDCANCEL, DLSZ_MOVE_X | DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_APPLY, DLSZ_MOVE_X | DLSZ_MOVE_Y)
+	END_DLGRESIZE_MAP()
+
+	public:
+
+		////////////////////////////////////////////////////
+		// CPropertyPageSite
+
+		class ATL_NO_VTABLE CPropertyPageSite :
+			public CComObjectRootEx<CComSingleThreadModel>,
+			public IPropertyPageSite
+		{
+			friend class CPropertyFrameDialog;
+
+		public:
+
+		BEGIN_COM_MAP(CPropertyPageSite)
+			COM_INTERFACE_ENTRY(IPropertyPageSite)
+		END_COM_MAP()
+
+		private:
+			CPropertyFrameDialog* m_pOwner;
+			CComPtr<IUnknown> m_pUnknown;
+			CComPtr<IPropertyPage> m_pPropertyPage;
+			CString m_sTitle;
+			DWORD m_nStatus;
+
+		public:
+		// CPropertyPageSite
+			CPropertyPageSite() :
+				m_pOwner(NULL)
+			{
+			}
+			VOID Initialize(CPropertyFrameDialog* pOwner, IUnknown* pUnknown, IPropertyPage* pPropertyPage)
+			{
+				_A(pOwner && pUnknown && pPropertyPage);
+				_A(!m_pOwner);
+				m_pOwner = pOwner;
+				m_pUnknown = pUnknown;
+				m_pPropertyPage = pPropertyPage;
+				__C(pPropertyPage->SetObjects(1, &m_pUnknown.p));
+				PROPPAGEINFO Information;
+				ZeroMemory(&Information, sizeof Information);
+				Information.cb = sizeof Information;
+				__C(pPropertyPage->GetPageInfo(&Information));
+				CStringW sTitle = Information.pszTitle;
+				CoTaskMemFree(Information.pszTitle);
+				CoTaskMemFree(Information.pszDocString);
+				CoTaskMemFree(Information.pszHelpFile);
+				m_sTitle = CString(sTitle);
+				m_nStatus = 0;
+				__C(pPropertyPage->SetPageSite(this));
+			}
+			VOID Terminate()
+			{
+				if(m_pPropertyPage)
+				{
+					_V(m_pPropertyPage->SetPageSite(NULL));
+					m_pPropertyPage.Release();
+				}
+				m_pUnknown.Release();
+				m_pOwner = NULL;
+			}
+			BOOL IsDirty()
+			{
+				return m_nStatus & PROPPAGESTATUS_DIRTY;
+			}
+
+		// IPropertyPageSite
+			STDMETHOD(OnStatusChange)(DWORD nFlags)
+			{
+				_Z4(atlTraceCOM, 4, _T("nFlags 0x%x\n"), nFlags);
+				m_nStatus = nFlags;
+				m_pOwner->HandleStatusChange(this);
+				return S_OK;
+			}
+			STDMETHOD(GetLocaleID)(LCID* pLocaleIdentifier)
+			{
+				_Z4(atlTraceCOM, 4, _T("...\n"));
+				pLocaleIdentifier;
+				return E_NOTIMPL;
+			}
+			STDMETHOD(GetPageContainer)(IUnknown** ppUnknown)
+			{
+				_Z4(atlTraceCOM, 4, _T("...\n"));
+				ppUnknown;
+				return E_NOTIMPL;
+			}
+			STDMETHOD(TranslateAccelerator)(MSG* pMessage)
+			{
+				_Z4(atlTraceCOM, 4, _T("...\n"));
+				pMessage;
+				return E_NOTIMPL;
+			}
+		};
+
+		////////////////////////////////////////////////////
+		// CData
+
+		class CData
+		{
+		public:
+			CComPtr<IBaseFilter> m_pBaseFilter;
+			CLSID m_ClassIdentifier;
+			CComPtr<IPropertyPage> m_pPropertyPage;
+			CObjectPtr<CPropertyPageSite> m_pSite;
+			BOOL m_bSiteActivated;
+
+		public:
+		// CData
+			CData() :
+				m_ClassIdentifier(CLSID_NULL)
+			{
+			}
+			CData(IBaseFilter* pBaseFilter) :
+				m_pBaseFilter(pBaseFilter),
+				m_ClassIdentifier(CLSID_NULL)
+			{
+			}
+			CData(IBaseFilter* pBaseFilter, const CLSID& ClassIdentifier, IPropertyPage* pPropertyPage) :
+				m_pBaseFilter(pBaseFilter),
+				m_ClassIdentifier(ClassIdentifier),
+				m_pPropertyPage(pPropertyPage),
+				m_bSiteActivated(FALSE)
+			{
+				_A(pPropertyPage);
+			}
+			CString GetPropertyPageTitle() const
+			{
+				if(!m_pPropertyPage)
+					return _T("");
+				PROPPAGEINFO PageInformation;
+				ZeroMemory(&PageInformation, sizeof PageInformation);
+				PageInformation.cb = sizeof PageInformation;
+				__C(m_pPropertyPage->GetPageInfo(&PageInformation));
+				CString sTitle(PageInformation.pszTitle);
+				CoTaskMemFree(PageInformation.pszTitle);
+				CoTaskMemFree(PageInformation.pszDocString);
+				CoTaskMemFree(PageInformation.pszHelpFile);
+				return sTitle;
+			}
+		};
+
+	private:
+		CFilterGraphHelper& m_Owner;
+		BOOL m_bActivating; 
+		CRoTreeViewT<CData, CRoListControlDataTraitsT> m_TreeView;
+		CTreeItem m_FiltersItem;
+		CTabCtrl m_Tab;
+		CRoEdit m_TextEdit;
+		CRect m_TextPosition;
+		CFont m_TextFont;
+		CButton m_OkButton;
+		CButton m_CancelButton;
+		CButton m_ApplyButton;
+		CObjectPtr<CPropertyPageSite> m_pCurrentSite;
+
+	public:
+	// CPropertyFrameDialog
+		CPropertyFrameDialog(CFilterGraphHelper* pOwner) :
+			m_Owner(*pOwner)
+		{
+		}
+		CRect GetTextEditPosition() const
+		{
+			CRect Position;
+			_W(m_TextEdit.GetWindowRect(Position));
+			_W(ScreenToClient(Position));
+			return Position;
+		}
+		VOID UpdateTree()
+		{
+			CWindowRedraw TreeViewRedraw(m_TreeView);
+			m_TreeView.DeleteAllItems();
+			CTreeItem FiltersItem = m_TreeView.InsertItem(NULL, NULL, CData(), _T("Filters"));
+			_FilterGraphHelper::CFilterArray FilterArray;
+			_FilterGraphHelper::GetGraphFilters(m_Owner.m_pFilterGraph, FilterArray);
+			CTreeItem PreviousFilterItem;
+			for(SIZE_T nIndex = 0; nIndex < FilterArray.GetCount(); nIndex++)
+			{
+				const CComPtr<IBaseFilter>& pBaseFilter = FilterArray[nIndex];
+				CTreeItem FilterItem = m_TreeView.InsertItem(FiltersItem, PreviousFilterItem, CData(pBaseFilter), CString(_FilterGraphHelper::GetFilterName(pBaseFilter)));
+				PreviousFilterItem = FilterItem;
+				const CComQIPtr<ISpecifyPropertyPages> pSpecifyPropertyPages = pBaseFilter;
+				if(!pSpecifyPropertyPages)
+					continue;
+				_ATLTRY
+				{
+					CAUUID Pages;
+					ZeroMemory(&Pages, sizeof Pages);
+					__C(pSpecifyPropertyPages->GetPages(&Pages));
+					CComHeapPtr<CLSID> pClassIdentifiers;
+					pClassIdentifiers.Attach(Pages.pElems);
+					CTreeItem PreviousPageItem;
+					for(UINT nPageIndex = 0; nPageIndex < Pages.cElems; nPageIndex++)
+					{
+						const CLSID& ClassIdentifier = pClassIdentifiers[nPageIndex];
+						if(ClassIdentifier == CLSID_NULL)
+							continue;
+						_ATLTRY
+						{
+							CComPtr<IPropertyPage> pPropertyPage;
+							__C(pPropertyPage.CoCreateInstance(ClassIdentifier));
+							CData Data(pBaseFilter, ClassIdentifier, pPropertyPage);
+							Data.m_pSite.Construct()->Initialize(this, pBaseFilter, pPropertyPage);
+							CTreeItem PageItem = m_TreeView.InsertItem(FilterItem, PreviousPageItem, Data, Data.GetPropertyPageTitle());
+							PreviousPageItem = PageItem;
+						}
+						_ATLCATCHALL()
+						{
+							_Z_EXCEPTION();
+						}
+					}
+					m_TreeView.Expand(FilterItem);
+				}
+				_ATLCATCHALL()
+				{
+					_Z_EXCEPTION();
+				}
+			}
+			m_TreeView.Expand(FiltersItem);
+			m_FiltersItem.m_hTreeItem = FiltersItem;
+			m_FiltersItem.m_pTreeView = &m_TreeView;
+			// TODO: Email Item
+		}
+		VOID HideCurrentSite()
+		{
+			if(!m_pCurrentSite)
+				return;
+			if(m_pCurrentSite->m_pPropertyPage)
+				__C(m_pCurrentSite->m_pPropertyPage->Show(SW_HIDE));
+			m_pCurrentSite.Release();
+		}
+		VOID HandleStatusChange(CPropertyPageSite* pPropertyPageSite)
+		{
+			_A(pPropertyPageSite);
+			m_ApplyButton.EnableWindow(pPropertyPageSite->IsDirty());
+		}
+		VOID Apply()
+		{
+			if(!m_pCurrentSite || !m_pCurrentSite->m_pPropertyPage)
+				return;
+			__C(m_pCurrentSite->m_pPropertyPage->Apply());
+			HandleStatusChange(m_pCurrentSite);
+		}
+
+	// CDialogResize
+		VOID DlgResize_UpdateLayout(INT nWidth, INT nHeight)
+		{
+			__super::DlgResize_UpdateLayout(nWidth, nHeight);
+			if(m_pCurrentSite && m_pCurrentSite->m_pPropertyPage)
+				_V(m_pCurrentSite->m_pPropertyPage->Move(GetTextEditPosition()));
+		}
+
+	// Window Message Handler
+		LRESULT OnInitDialog(HWND, LPARAM)
+		{
+			m_bActivating = TRUE;
+			_ATLTRY
+			{
+				CWaitCursor WaitCursor;
+				#pragma region Bitness Indication
+				CString sCaption;
+				_W(GetWindowText(sCaption));
+				#if defined(_WIN64)
+					sCaption.Append(_T(" (64-bit)"));
+				#else
+					if(SafeIsWow64Process())
+						sCaption.Append(_T(" (32-bit)"));
+				#endif // defined(_WIN64)
+				_W(SetWindowText(sCaption));
+				#pragma endregion
+				#pragma region System Menu
+				CMenuHandle Menu = GetSystemMenu(FALSE);
+				_W(Menu.AppendMenu(MF_SEPARATOR));
+				_W(Menu.AppendMenu(MF_STRING, ID_APP_ABOUT, _T("&About...")));
+				#pragma endregion
+				m_TreeView.Initialize(GetDlgItem(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_TREE));
+				m_TextEdit = GetDlgItem(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_TEXT);
+				CRect TextPosition;
+				_W(m_TextEdit.GetWindowRect(TextPosition));
+				_W(ScreenToClient(TextPosition));
+				m_TextPosition = TextPosition;
+				CLogFont TextFont;
+				CFontHandle(AtlGetDefaultGuiFont()).GetLogFont(TextFont);
+				_tcsncpy_s(TextFont.lfFaceName, _T("Courier New"), _TRUNCATE);
+				TextFont.SetHeight(8);
+				m_TextFont = TextFont.CreateFontIndirect();
+				m_TextEdit.SetFont(m_TextFont);
+				m_OkButton = GetDlgItem(IDOK);
+				m_CancelButton = GetDlgItem(IDCANCEL);
+				m_ApplyButton = GetDlgItem(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_APPLY);
+				DlgResize_Init(TRUE);
+				UpdateTree();
+				m_FiltersItem.Select();
+				m_FiltersItem.EnsureVisible();
+				CRect Position;
+				_W(GetWindowRect(Position));
+				Position.right += Position.Width() / 2;
+				Position.bottom += Position.Width() / 4;
+				_W(SetWindowPos(NULL, Position, SWP_NOMOVE | SWP_NOZORDER));
+				_W(CenterWindow());
+				m_bActivating = FALSE;
+			}
+			_ATLCATCH(Exception)
+			{
+				for(CWindow Window = GetWindow(GW_CHILD); Window; Window = Window.GetWindow(GW_HWNDNEXT))
+					Window.EnableWindow(FALSE);
+				AtlExceptionMessageBox(m_hWnd, Exception);
+			}
+			return TRUE;
+		}
+		LRESULT OnDestroy()
+		{
+			#pragma region Deactivate and Terminate Sites
+			for(POSITION Position = m_TreeView.GetDataList().GetHeadPosition(); Position; m_TreeView.GetDataList().GetNext(Position))
+			{
+				CData& Data = m_TreeView.GetDataList().GetAt(Position);
+				if(!Data.m_pSite)
+					continue;
+				if(Data.m_bSiteActivated)
+				{
+					const HRESULT nDeactivateResult = Data.m_pPropertyPage->Deactivate();
+					_Z35_DSHRESULT(nDeactivateResult);
+					Data.m_bSiteActivated = FALSE;
+				}
+				Data.m_pSite->Terminate();
+			}
+			#pragma endregion
+			return 0;
+		}
+		LRESULT OnTreeViewSelChanged(NMTREEVIEW* pHeader)
+		{
+			_A(pHeader);
+			CTreeItem TreeItem(pHeader->itemNew.hItem);
+			if(TreeItem)
+			{
+				CData& Data = m_TreeView.GetItemData(TreeItem);
+				if(Data.m_pBaseFilter)
+				{
+					if(Data.m_pPropertyPage)
+					{
+						m_TextEdit.ShowWindow(SW_HIDE);
+						if(Data.m_pSite != m_pCurrentSite)
+							HideCurrentSite();
+						if(!Data.m_bSiteActivated)
+						{
+							__C(Data.m_pPropertyPage->Activate(m_hWnd, GetTextEditPosition(), TRUE));
+							Data.m_bSiteActivated = TRUE;
+						} else
+							__C(Data.m_pPropertyPage->Move(GetTextEditPosition()));
+						__C(Data.m_pPropertyPage->Show(SW_SHOWNORMAL));
+						m_pCurrentSite = Data.m_pSite;
+						HandleStatusChange(m_pCurrentSite);
+					} else
+					{
+						CWaitCursor WaitCursor;
+						HideCurrentSite();
+						m_TextEdit.ShowWindow(SW_SHOW);
+						CString sText;
+						sText += AtlFormatString(_T("## ") _T("Filter %ls") _T("\r\n") _T("\r\n"), _FilterGraphHelper::GetFilterName(Data.m_pBaseFilter));
+						sText += m_Owner.GetFilterText(Data.m_pBaseFilter);
+						sText += _T("\r\n");
+						#pragma region Connection
+						_FilterGraphHelper::CPinArray InputPinArray, OutputPinArray;
+						_FilterGraphHelper::GetFilterPins(Data.m_pBaseFilter, PINDIR_INPUT, InputPinArray);
+						_FilterGraphHelper::GetFilterPins(Data.m_pBaseFilter, PINDIR_OUTPUT, OutputPinArray);
+						if(!InputPinArray.IsEmpty() || !OutputPinArray.IsEmpty())
+						{
+							sText += AtlFormatString(_T("## ") _T("Connections") _T("\r\n") _T("\r\n"));
+							if(!InputPinArray.IsEmpty())
+							{
+								sText += AtlFormatString(_T("### ") _T("Input") _T("\r\n") _T("\r\n"));
+								for(SIZE_T nPinIndex = 0; nPinIndex < InputPinArray.GetCount(); nPinIndex++)
+								{
+									const CComPtr<IPin>& pInputPin = InputPinArray[nPinIndex];
+									const CComPtr<IPin> pOutputPin = _FilterGraphHelper::GetPeerPin(pInputPin);
+									if(!pOutputPin)
+										continue;
+									sText += AtlFormatString(_T(" * ") _T("%s") _T("\r\n"), m_Owner.GetConnectionText(pOutputPin, pInputPin));
+								}
+								sText += _T("\r\n");
+							}
+							if(!OutputPinArray.IsEmpty())
+							{
+								sText += AtlFormatString(_T("### ") _T("Output") _T("\r\n") _T("\r\n"));
+								for(SIZE_T nPinIndex = 0; nPinIndex < OutputPinArray.GetCount(); nPinIndex++)
+								{
+									const CComPtr<IPin>& pOutputPin = OutputPinArray[nPinIndex];
+									const CComPtr<IPin> pInputPin = _FilterGraphHelper::GetPeerPin(pOutputPin);
+									if(!pInputPin)
+										continue;
+									sText += AtlFormatString(_T(" * ") _T("%s") _T("\r\n"), m_Owner.GetConnectionText(pOutputPin, pInputPin));
+								}
+								sText += _T("\r\n");
+							}
+						}
+						#pragma endregion 
+						#pragma region Media Type
+						_FilterGraphHelper::CPinArray PinArray;
+						if(_FilterGraphHelper::GetFilterPins(Data.m_pBaseFilter, PinArray))
+						{
+							sText += AtlFormatString(_T("## ") _T("Media Types") _T("\r\n") _T("\r\n"));
+							for(SIZE_T nPinIndex = 0; nPinIndex < PinArray.GetCount(); nPinIndex++)
+							{
+								const CComPtr<IPin>& pPin = PinArray[nPinIndex];
+								CString sPinText = AtlFormatString(_T("%s"), FormatIdentifier(_FilterGraphHelper::GetPinFullName(pPin)));
+								const CComPtr<IPin> pPeerPin = _FilterGraphHelper::GetPeerPin(pPin);
+								if(pPeerPin)
+									sPinText += AtlFormatString(_T(", %s"), FormatIdentifier(_FilterGraphHelper::GetPinFullName(pPeerPin)));
+								sText += AtlFormatString(_T("%d. ") _T("%s") _T("\r\n"), nPinIndex, sPinText);
+								_ATLTRY
+								{
+									CMediaType pMediaType;
+									if(pPeerPin)
+										pMediaType = _FilterGraphHelper::GetPinMediaType(pPin);
+									else
+										pMediaType = _FilterGraphHelper::EnumerateFirstPinMediaType(pPin);
+									if(!pMediaType)
+										continue;
+									sText += m_Owner.GetMediaTypeText(pMediaType);
+								}
+								_ATLCATCHALL()
+								{
+									_Z_EXCEPTION();
+								}
+							}
+							sText += _T("\r\n");
+						}
+						#pragma endregion
+						m_TextEdit.SetValue(sText);
+						m_ApplyButton.EnableWindow(FALSE);
+					}
+				} else
+				{
+					CWaitCursor WaitCursor;
+					HideCurrentSite();
+					m_TextEdit.ShowWindow(SW_SHOW);
+					m_TextEdit.SetValue(m_Owner.GetText());
+					m_ApplyButton.EnableWindow(FALSE);
+				}
+			} else
+			{
+				HideCurrentSite();
+				m_TextEdit.ShowWindow(SW_HIDE);
+				m_ApplyButton.EnableWindow(FALSE);
+			}
+			return 0;
+		}
+		LRESULT OnTreeViewItemExplanding(NMTREEVIEW* pHeader)
+		{
+			if(pHeader->action == TVE_COLLAPSE)
+				return TRUE; // Prevent Collapsing
+			return 0;
+		}
+		LRESULT OnTreeViewDblClk(NMHDR*)
+		{
+			CTreeItem TreeItem = m_TreeView.GetSelectedItem();
+			if(!TreeItem)
+				return 0;
+			CData& Data = m_TreeView.GetItemData(TreeItem);
+			if(!Data.m_pBaseFilter)
+				return 0;
+			COlePropertyFrameDialog Dialog(Data.m_pBaseFilter);
+			if(!Dialog.SetObjectPages())
+				return 0;
+			Dialog.DoModal(m_hWnd);
+			return 0;
+		}
+		LRESULT OnSysCommand(UINT nCommand, CPoint)
+		{
+			switch(nCommand)
+			{
+			case ID_APP_ABOUT:
+				{
+					CAboutDialog Dialog;
+					Dialog.DoModal(m_hWnd);
+				}
+				break;
+			default:
+				SetMsgHandled(FALSE);
+			}
+			return 0;
+		}
+		LRESULT OnOk(UINT, INT nIdentifier, HWND)
+		{
+			_ATLTRY
+			{
+				#pragma region Apply All
+				for(POSITION Position = m_TreeView.GetDataList().GetHeadPosition(); Position; m_TreeView.GetDataList().GetNext(Position))
+				{
+					CData& Data = m_TreeView.GetDataList().GetAt(Position);
+					if(!Data.m_pSite)
+						continue;
+					_A(Data.m_pPropertyPage);
+					if(Data.m_bSiteActivated && Data.m_pSite->IsDirty())
+						__C(Data.m_pPropertyPage->Apply());
+				}
+				#pragma endregion
+			}
+			_ATLCATCH(Exception)
+			{
+				_Z_ATLEXCEPTION(Exception);
+				AtlMessageBoxEx(m_hWnd, (LPCTSTR) Ds::FormatResult(Exception), IDS_ERROR, MB_ICONERROR | MB_OK);
+				return 0;
+			}
+			EndDialog(nIdentifier);
+			return 0;
+		}
+		LRESULT OnCancel(UINT, INT nIdentifier, HWND)
+		{
+			EndDialog(nIdentifier);
+			return 0;
+		}
+		LRESULT OnApply(UINT, INT, HWND)
+		{
+			_ATLTRY
+			{
+				Apply();
+			}
+			_ATLCATCH(Exception)
+			{
+				_Z_ATLEXCEPTION(Exception);
+				AtlMessageBoxEx(m_hWnd, (LPCTSTR) Ds::FormatResult(Exception), IDS_ERROR, MB_ICONERROR | MB_OK);
+			}
+			return 0;
+		}
+	};
+
 private:
 	mutable CRoCriticalSection m_DataCriticalSection;
 	CComPtr<IFilterGraph> m_pFilterGraph;
 
 public:
 // CFilterGraphHelper
-	static HRESULT WINAPI UpdateRegistry(BOOL bRegister) throw()
+	static HRESULT WINAPI UpdateRegistry(BOOL bRegister)
 	{
 		_Z2(atlTraceRegistrar, 2, _T("bRegister %d\n"), bRegister);
 		_ATLTRY
@@ -175,6 +735,373 @@ public:
 		}
 		return _StringHelper::Join(Array, _T(", "));
 	}
+	static CString GetFilterText(IBaseFilter* pBaseFilter, IReferenceClock* pFilterGraphReferenceClock = NULL)
+	{
+		CString sText;
+		const CStringW sClassIdentifierString = _FilterGraphHelper::GetFilterClassIdentifierString(pBaseFilter);
+		if(!sClassIdentifierString.IsEmpty())
+			sText += AtlFormatString(_T(" * ") _T("Class: %s %s") _T("\r\n"), I(sClassIdentifierString), I(_FilterGraphHelper::GetFilterClassDescription(pBaseFilter)));
+		_FilterGraphHelper::CPinArray InputPinArray;
+		if(_FilterGraphHelper::GetFilterPins(pBaseFilter, PINDIR_INPUT, InputPinArray))
+			sText += AtlFormatString(_T(" * ") _T("Input Pins: %s") _T("\r\n"), FormatPins(InputPinArray));
+		_FilterGraphHelper::CPinArray OutputPinArray;
+		if(_FilterGraphHelper::GetFilterPins(pBaseFilter, PINDIR_OUTPUT, OutputPinArray))
+			sText += AtlFormatString(_T(" * ") _T("Output Pins: %s") _T("\r\n"), FormatPins(OutputPinArray));
+		#pragma region IReferenceClock
+		const CComQIPtr<IReferenceClock> pReferenceClock = pBaseFilter;
+		if(pReferenceClock)
+		{
+			CRoArrayT<CString> Array;
+			Array.Add(I(_T("Available")));
+			if(pReferenceClock == pFilterGraphReferenceClock)
+				Array.Add(I(_T("Selected")));
+			sText += AtlFormatString(_T(" * ") _T("Reference Clock: %s") _T("\r\n"), _StringHelper::Join(Array, _T(", ")));
+		}
+		#pragma endregion 
+		#pragma region IFileSourceFilter
+		const CComQIPtr<IFileSourceFilter> pFileSourceFilter = pBaseFilter;
+		if(pFileSourceFilter)
+			_ATLTRY
+			{
+				CComHeapPtr<OLECHAR> pszFileName;
+				CMediaType pMediaType;
+				pMediaType.Allocate(MEDIATYPE_NULL, MEDIASUBTYPE_NULL);
+				const HRESULT nGetCurFileResult = pFileSourceFilter->GetCurFile(&pszFileName, pMediaType);
+				_Z45_DSHRESULT(nGetCurFileResult);
+				if(SUCCEEDED(nGetCurFileResult))
+					sText += AtlFormatString(_T(" * ") _T("File Source: %s") _T("\r\n"), I(pszFileName));
+			}
+			_ATLCATCHALL()
+			{
+				_Z_EXCEPTION();
+			}
+		#pragma endregion 
+		#pragma region IFileSinkFilter
+		const CComQIPtr<IFileSinkFilter> pFileSinkFilter = pBaseFilter;
+		if(pFileSinkFilter)
+			_ATLTRY
+			{
+				CComHeapPtr<OLECHAR> pszFileName;
+				CMediaType pMediaType;
+				pMediaType.Allocate(MEDIATYPE_NULL, MEDIASUBTYPE_NULL);
+				const HRESULT nGetCurFileResult = pFileSinkFilter->GetCurFile(&pszFileName, pMediaType);
+				_Z45_DSHRESULT(nGetCurFileResult);
+				if(SUCCEEDED(nGetCurFileResult))
+					sText += AtlFormatString(_T(" * ") _T("File Sink: %s") _T("\r\n"), I(pszFileName));
+			}
+			_ATLCATCHALL()
+			{
+				_Z_EXCEPTION();
+			}
+		#pragma endregion 
+		#pragma region IAMCrossbar
+		const CComQIPtr<IAMCrossbar> pAmCrossbar = pBaseFilter;
+		if(pAmCrossbar)
+			_ATLTRY
+			{
+				sText += AtlFormatString(_T(" * ") _T("Crossbar:") _T("\r\n"));
+				LONG nOutputPinCount = 0, nInputPinCount = 0;
+				__C(pAmCrossbar->get_PinCounts(&nOutputPinCount, &nInputPinCount));
+				sText += AtlFormatString(_T("  * ") _T("Pins: %s Input, %s Output") _T("\r\n"), I(nInputPinCount), I(nOutputPinCount));
+				#pragma region Input
+				for(LONG nInputPinIndex = 0; nInputPinIndex < nInputPinCount; nInputPinIndex++)
+					_ATLTRY
+					{
+						CRoArrayT<CString> Array;
+						LONG nRelatedPinIndex = -1;
+						LONG nPhysicalType = 0; // PhysicalConnectorType
+						__C(pAmCrossbar->get_CrossbarPinInfo(TRUE, nInputPinIndex, &nRelatedPinIndex, &nPhysicalType));
+						if(nRelatedPinIndex >= 0)
+							Array.Add(AtlFormatString(_T("Related %s"), I(nRelatedPinIndex)));
+						Array.Add(AtlFormatString(_T("Physical Type %s"), I(FormatPhysicalConnectorType((PhysicalConnectorType) nPhysicalType))));
+						sText += AtlFormatString(_T("  * ") _T("Input Pin %s: %s") _T("\r\n"), I(nInputPinIndex), _StringHelper::Join(Array, _T("; ")));
+					}
+					_ATLCATCHALL()
+					{
+						_Z_EXCEPTION();
+					}
+				#pragma endregion
+				#pragma region Output
+				for(LONG nOutputPinIndex = 0; nOutputPinIndex < nOutputPinCount; nOutputPinIndex++)
+					_ATLTRY
+					{
+						CRoArrayT<CString> Array;
+						LONG nRelatedPinIndex = -1;
+						LONG nPhysicalType = 0; // PhysicalConnectorType
+						__C(pAmCrossbar->get_CrossbarPinInfo(FALSE, nOutputPinIndex, &nRelatedPinIndex, &nPhysicalType));
+						if(nRelatedPinIndex >= 0)
+							Array.Add(AtlFormatString(_T("Related %s"), I(nRelatedPinIndex)));
+						if(nPhysicalType > 0)
+							Array.Add(AtlFormatString(_T("Physical Type %s"), I(FormatPhysicalConnectorType((PhysicalConnectorType) nPhysicalType))));
+						LONG nRoutedInputPinIndex = -1;
+						const HRESULT nGetIsRoutedToResult = pAmCrossbar->get_IsRoutedTo(nOutputPinIndex, &nRoutedInputPinIndex);
+						_A(nGetIsRoutedToResult == S_OK || nRoutedInputPinIndex == -1);
+						if(nRoutedInputPinIndex >= 0)
+							Array.Add(AtlFormatString(_T("Routed to Input Pin %s"), I(nRoutedInputPinIndex)));
+						CRoArrayT<CString> PinArray;
+						for(LONG nInputPinIndex = 0; nInputPinIndex < nInputPinCount; nInputPinIndex++)
+						{
+							const HRESULT nCanRouteResult = pAmCrossbar->CanRoute(nOutputPinIndex, nInputPinIndex);
+							if(nCanRouteResult == S_OK)
+								PinArray.Add(I(nInputPinIndex));
+						}
+						if(!PinArray.IsEmpty())
+							Array.Add(AtlFormatString(_T("Routeable to Input Pins %s"), _StringHelper::Join(PinArray, _T(", "))));
+						sText += AtlFormatString(_T("  * ") _T("Output Pin %s: %s") _T("\r\n"), I(nOutputPinIndex), _StringHelper::Join(Array, _T("; ")));
+					}
+					_ATLCATCHALL()
+					{
+						_Z_EXCEPTION();
+					}
+				#pragma endregion
+			}
+			_ATLCATCHALL()
+			{
+				_Z_EXCEPTION();
+			}
+		#pragma endregion 
+		return sText;
+	}
+	static CString GetConnectionText(IPin* pOutputPin, IPin* pInputPin)
+	{
+		_A(pOutputPin && pInputPin);
+		CString sText = AtlFormatString(_T("%s - %s"), I(_FilterGraphHelper::GetPinFullName(pOutputPin)), I(_FilterGraphHelper::GetPinFullName(pInputPin)));
+		_ATLTRY
+		{
+			const CMediaType pMediaType = _FilterGraphHelper::GetPinMediaType(pOutputPin);
+			if(pMediaType)
+			{
+				CStringW sMajorType = _FilterGraphHelper::FormatMajorType(pMediaType->majortype);
+				CStringW sSubtype;
+				if(pMediaType->subtype != MEDIASUBTYPE_NULL)
+					sSubtype = _FilterGraphHelper::FormatSubtype(pMediaType->majortype, pMediaType->subtype);
+				CRoArrayT<CString> Array;
+				Array.Add(I(sMajorType));
+				Array.Add(I(sSubtype));
+				#pragma region MEDIATYPE_Video
+				if(pMediaType->majortype == MEDIATYPE_Video)
+				{
+					const CVideoInfoHeader2 VideoInfoHeader2 = pMediaType.GetCompatibleVideoInfoHeader2();
+					const CSize Extent = VideoInfoHeader2.GetExtent();
+					if(Extent.cx || Extent.cy)
+						Array.Add(AtlFormatString(_T("%s x %s"), I(Extent.cx), I(Extent.cy)));
+				} else
+				#pragma endregion 
+				#pragma region MEDIATYPE_Audio
+				if(pMediaType->majortype == MEDIATYPE_Audio)
+				{
+					const CWaveFormatEx* pWaveFormatEx = pMediaType.GetWaveFormatEx();
+					if(pWaveFormatEx)
+					{
+						if(pWaveFormatEx->nSamplesPerSec)
+							Array.Add(AtlFormatString(_T("%s Hz"), I(pWaveFormatEx->nSamplesPerSec)));
+						if(pWaveFormatEx->nChannels)
+							Array.Add(AtlFormatString(_T("%s channels"), I(pWaveFormatEx->nChannels)));
+						if(pWaveFormatEx->wBitsPerSample)
+							Array.Add(AtlFormatString(_T("%s bits"), I(pWaveFormatEx->wBitsPerSample)));
+					}
+				}
+				#pragma endregion 
+				sText += AtlFormatString(_T(" (%s)"), _StringHelper::Join(Array, _T(", ")));
+			}
+		}
+		_ATLCATCHALL()
+		{
+			_Z_EXCEPTION();
+		}
+		return sText;
+	}
+	static CString GetMediaTypeText(const CMediaType& pMediaType)
+	{
+		CString sText;
+		#pragma region AM_MEDIA_TYPE
+		#define J(x) I(pMediaType->x)
+		#define K1(x) sText += AtlFormatString(_T(" * `") _T(#x) _T("`: %s") _T("\r\n"), J(x))
+		sText += AtlFormatString(_T(" * ") _T("Data: %s") _T("\r\n"), I(AtlFormatData((const BYTE*) (const AM_MEDIA_TYPE*) pMediaType, sizeof *pMediaType).TrimRight()));
+		sText += AtlFormatString(_T(" * ") _T("`majortype`: %s") _T("\r\n"), I(_FilterGraphHelper::FormatMajorType(pMediaType->majortype)));
+		if(pMediaType->subtype != MEDIASUBTYPE_NULL)
+			sText += AtlFormatString(_T(" * ") _T("`subtype`: %s") _T("\r\n"), I(_FilterGraphHelper::FormatSubtype(pMediaType->majortype, pMediaType->subtype)));
+		K1(bFixedSizeSamples);
+		K1(bTemporalCompression);
+		K1(lSampleSize);
+		if(pMediaType->formattype != GUID_NULL)
+			sText += AtlFormatString(_T(" * ") _T("`formattype`: %s") _T("\r\n"), I(_FilterGraphHelper::FormatFormatType(pMediaType->formattype)));
+		if(pMediaType->pUnk)
+			sText += AtlFormatString(_T(" * ") _T("`pUnk`: %s") _T("\r\n"), I(AtlFormatString(_T("0x%p"), pMediaType->pUnk)));
+		if(pMediaType->cbFormat)
+		{
+			K1(cbFormat);
+			if(pMediaType->pbFormat)
+				sText += AtlFormatString(_T(" * ") _T("Format Data, `pbFormat`: %s") _T("\r\n"), I(AtlFormatData(pMediaType->pbFormat, pMediaType->cbFormat).TrimRight()));
+		}
+		#undef J
+		#undef K1
+		#pragma endregion
+		const BYTE* pnExtraData = NULL;
+		SIZE_T nExtraDataSize = 0;
+		#pragma region FORMAT_VideoInfo
+		if(pMediaType->formattype == FORMAT_VideoInfo)
+		{
+			sText += AtlFormatString(_T(" * ") _T("As `VIDEOINFOHEADER`:") _T("\r\n"));
+			const VIDEOINFOHEADER* pVideoInfoHeader = (const VIDEOINFOHEADER*) pMediaType->pbFormat;
+			#define J(x) I(pVideoInfoHeader->x)
+			#define K1(x) sText += AtlFormatString(_T("  * `") _T(#x) _T("`: %s") _T("\r\n"), J(x))
+			sText += AtlFormatString(_T("  * ") _T("`rcSource`: (%s, %s) - (%s, %s)") _T("\r\n"), J(rcSource.left), J(rcSource.top), J(rcSource.right), J(rcSource.bottom));
+			sText += AtlFormatString(_T("  * ") _T("`rcTarget`: (%s, %s) - (%s, %s)") _T("\r\n"), J(rcTarget.left), J(rcTarget.top), J(rcTarget.right), J(rcTarget.bottom));
+			K1(dwBitRate);
+			K1(dwBitErrorRate);
+			sText += AtlFormatString(_T("  * ") _T("`AvgTimePerFrame`: %s units") _T("\r\n"), I(_FilterGraphHelper::FormatReferenceTime(pVideoInfoHeader->AvgTimePerFrame)));
+			K1(bmiHeader.biSize);
+			K1(bmiHeader.biWidth);
+			K1(bmiHeader.biHeight);
+			K1(bmiHeader.biPlanes);
+			K1(bmiHeader.biBitCount);
+			sText += AtlFormatString(_T("  * ") _T("`bmiHeader.biCompression`: %s") _T("\r\n"), I(_FilterGraphHelper::GetFourccCodeString(pVideoInfoHeader->bmiHeader.biCompression)));
+			K1(bmiHeader.biSizeImage);
+			K1(bmiHeader.biXPelsPerMeter);
+			K1(bmiHeader.biYPelsPerMeter);
+			K1(bmiHeader.biClrUsed);
+			K1(bmiHeader.biClrImportant);
+			#undef J
+			#undef K1
+			nExtraDataSize = pMediaType->cbFormat - sizeof *pVideoInfoHeader;
+		} else
+		#pragma endregion 
+		#pragma region FORMAT_VideoInfo2
+		if(pMediaType->formattype == FORMAT_VideoInfo2)
+		{
+			sText += AtlFormatString(_T(" * ") _T("As `VIDEOINFOHEADER2`:") _T("\r\n"));
+			const VIDEOINFOHEADER2* pVideoInfoHeader2 = (const VIDEOINFOHEADER2*) pMediaType->pbFormat;
+			#define J(x) I(pVideoInfoHeader2->x)
+			#define K1(x) sText += AtlFormatString(_T("  * `") _T(#x) _T("`: %s") _T("\r\n"), J(x))
+			#define K2(x, y) sText += AtlFormatString(_T("  * `") _T(#x) _T("`: %s") _T("\r\n"), I(pVideoInfoHeader2->x, y))
+			sText += AtlFormatString(_T("  * ") _T("rcSource: (%s, %s) - (%s, %s)") _T("\r\n"), J(rcSource.left), J(rcSource.top), J(rcSource.right), J(rcSource.bottom));
+			sText += AtlFormatString(_T("  * ") _T("rcTarget: (%s, %s) - (%s, %s)") _T("\r\n"), J(rcTarget.left), J(rcTarget.top), J(rcTarget.right), J(rcTarget.bottom));
+			K1(dwBitRate);
+			K1(dwBitErrorRate);
+			sText += AtlFormatString(_T("  * ") _T("`AvgTimePerFrame`: %s units") _T("\r\n"), I(_FilterGraphHelper::FormatReferenceTime(pVideoInfoHeader2->AvgTimePerFrame)));
+			K2(dwInterlaceFlags, _T("0x%X"));
+			K2(dwCopyProtectFlags, _T("0x%X"));
+			K1(dwPictAspectRatioX);
+			K1(dwPictAspectRatioY);
+			K2(dwControlFlags, _T("0x%X"));
+			K1(bmiHeader.biSize);
+			K1(bmiHeader.biWidth);
+			K1(bmiHeader.biHeight);
+			K1(bmiHeader.biPlanes);
+			K1(bmiHeader.biBitCount);
+			sText += AtlFormatString(_T("  * ") _T("`bmiHeader.biCompression`: %s") _T("\r\n"), I(_FilterGraphHelper::GetFourccCodeString(pVideoInfoHeader2->bmiHeader.biCompression)));
+			K1(bmiHeader.biSizeImage);
+			K1(bmiHeader.biXPelsPerMeter);
+			K1(bmiHeader.biYPelsPerMeter);
+			K1(bmiHeader.biClrUsed);
+			K1(bmiHeader.biClrImportant);
+			#undef J
+			#undef K1
+			#undef K2
+			nExtraDataSize = pMediaType->cbFormat - sizeof *pVideoInfoHeader2;
+			if(nExtraDataSize)
+			{
+				sText += AtlFormatString(_T("  * ") _T("Extra Data: (%d bytes)") _T("\r\n"), nExtraDataSize);
+				nExtraDataSize = 0;
+			}
+		} else
+		#pragma endregion 
+		#pragma region FORMAT_MPEG2Video
+		if(pMediaType->formattype == FORMAT_MPEG2Video)
+		{
+			sText += AtlFormatString(_T(" * ") _T("As `MPEG2VIDEOINFO`:") _T("\r\n"));
+			const MPEG2VIDEOINFO* pMpeg2VideoInfo = (const MPEG2VIDEOINFO*) pMediaType->pbFormat;
+			#define J(x) I(pMpeg2VideoInfo->x)
+			#define K1(x) sText += AtlFormatString(_T("  * `") _T(#x) _T("`: %s") _T("\r\n"), J(x))
+			#define K2(x, y) sText += AtlFormatString(_T("  * `") _T(#x) _T("`: %s") _T("\r\n"), I(pMpeg2VideoInfo->x, y))
+			sText += AtlFormatString(_T("  * ") _T("`hdr.rcSource`: (%s, %s) - (%s, %s)") _T("\r\n"), J(hdr.rcSource.left), J(hdr.rcSource.top), J(hdr.rcSource.right), J(hdr.rcSource.bottom));
+			sText += AtlFormatString(_T("  * ") _T("`hdr.rcTarget`: (%s, %s) - (%s, %s)") _T("\r\n"), J(hdr.rcTarget.left), J(hdr.rcTarget.top), J(hdr.rcTarget.right), J(hdr.rcTarget.bottom));
+			K1(hdr.dwBitRate);
+			K1(hdr.dwBitErrorRate);
+			sText += AtlFormatString(_T("  * ") _T("`hdr.AvgTimePerFrame`: %s") _T("\r\n"), I(_FilterGraphHelper::FormatReferenceTime(pMpeg2VideoInfo->hdr.AvgTimePerFrame)));
+			K2(hdr.dwInterlaceFlags, _T("0x%X"));
+			K2(hdr.dwCopyProtectFlags, _T("0x%X"));
+			K1(hdr.dwPictAspectRatioX);
+			K1(hdr.dwPictAspectRatioY);
+			K2(hdr.dwControlFlags, _T("0x%X"));
+			K1(hdr.bmiHeader.biSize);
+			K1(hdr.bmiHeader.biWidth);
+			K1(hdr.bmiHeader.biHeight);
+			K1(hdr.bmiHeader.biPlanes);
+			K1(hdr.bmiHeader.biBitCount);
+			sText += AtlFormatString(_T("  * ") _T("`hdr.bmiHeader.biCompression`: %s") _T("\r\n"), I(_FilterGraphHelper::GetFourccCodeString(pMpeg2VideoInfo->hdr.bmiHeader.biCompression)));
+			K1(hdr.bmiHeader.biSizeImage);
+			K1(hdr.bmiHeader.biXPelsPerMeter);
+			K1(hdr.bmiHeader.biYPelsPerMeter);
+			K1(hdr.bmiHeader.biClrUsed);
+			K1(hdr.bmiHeader.biClrImportant);
+			K2(dwStartTimeCode, _T("0x%08X"));
+			K1(cbSequenceHeader);
+			K1(dwProfile);
+			K1(dwLevel);
+			K2(dwFlags, _T("0x%08X"));
+			#undef J
+			#undef K1
+			#undef K2
+			#undef J
+			nExtraDataSize = pMediaType->cbFormat - (sizeof *pMpeg2VideoInfo - sizeof pMpeg2VideoInfo->dwSequenceHeader);
+		} else
+		#pragma endregion 
+		#pragma region FORMAT_WaveFormatEx
+		if(pMediaType->formattype == FORMAT_WaveFormatEx)
+		{
+			const WAVEFORMATEX* pWaveFormatEx = (const WAVEFORMATEX*) pMediaType->pbFormat;
+			if(pWaveFormatEx->wFormatTag == WAVE_FORMAT_EXTENSIBLE)
+			{
+				const WAVEFORMATEXTENSIBLE* pWaveFormatExtensible = (const WAVEFORMATEXTENSIBLE*) pMediaType->pbFormat;
+				#define J(x) I(pWaveFormatExtensible->x)
+				#define K1(x) sText += AtlFormatString(_T("  * `") _T(#x) _T("`: %s") _T("\r\n"), J(x))
+				#define K2(x, y) sText += AtlFormatString(_T("  * `") _T(#x) _T("`: %s") _T("\r\n"), I(pWaveFormatExtensible->x, y))
+				sText += AtlFormatString(_T(" * ") _T("As `WAVEFORMATEXTENSIBLE`:") _T("\r\n"));
+				K2(Format.wFormatTag, _T("0x%02X"));
+				K1(Format.nChannels);
+				K1(Format.nSamplesPerSec);
+				K1(Format.nAvgBytesPerSec);
+				K1(Format.nBlockAlign);
+				K1(Format.wBitsPerSample);
+				K1(Format.cbSize);
+				K1(Samples.wValidBitsPerSample);
+				K2(dwChannelMask, _T("0x%02X"));
+				sText += AtlFormatString(_T("  * ") _T("`SubFormat`: %s") _T("\r\n"), I(_PersistHelper::StringFromIdentifier(pWaveFormatExtensible->SubFormat)));
+				#undef J
+				#undef K1
+				#undef K2
+				nExtraDataSize = pWaveFormatEx->cbSize - (sizeof *pWaveFormatExtensible - sizeof *pWaveFormatEx);
+			} else
+			{
+				#define J(x) I(pWaveFormatEx->x)
+				#define K1(x) sText += AtlFormatString(_T("  * `") _T(#x) _T("`: %s") _T("\r\n"), J(x))
+				#define K2(x, y) sText += AtlFormatString(_T("  * `") _T(#x) _T("`: %s") _T("\r\n"), I(pWaveFormatEx->x, y))
+				K2(wFormatTag, _T("0x%02X"));
+				K1(nChannels);
+				K1(nSamplesPerSec);
+				K1(nAvgBytesPerSec);
+				K1(nBlockAlign);
+				K1(wBitsPerSample);
+				K1(cbSize);
+				#undef J
+				#undef K1
+				#undef K2
+				nExtraDataSize = pWaveFormatEx->cbSize;
+			}
+		}
+		#pragma endregion 
+		#pragma region Extra Data
+		if(nExtraDataSize)
+		{
+			if(!pnExtraData)
+				pnExtraData = pMediaType->pbFormat + pMediaType->cbFormat - nExtraDataSize;
+			sText += AtlFormatString(_T("  * ") _T("Extra Data: %s") _T("\r\n"), I(AtlFormatData(pnExtraData, nExtraDataSize).TrimRight()));
+		}
+		#pragma endregion 
+		return sText;
+	}
 	static CString GetText(IFilterGraph* pFilterGraph, const CProcessData* pProcessData = NULL)
 	{
 		if(!pFilterGraph)
@@ -248,128 +1175,7 @@ public:
 				{
 					const CComPtr<IBaseFilter>& pBaseFilter = FilterArray[nIndex];
 					sText += AtlFormatString(_T("%d. ") _T("%ls") _T("\r\n"), nIndex + 1, _FilterGraphHelper::GetFilterName(pBaseFilter));
-					const CStringW sClassIdentifierString = _FilterGraphHelper::GetFilterClassIdentifierString(pBaseFilter);
-					if(!sClassIdentifierString.IsEmpty())
-						sText += AtlFormatString(_T(" * ") _T("Class: %s %s") _T("\r\n"), I(sClassIdentifierString), I(_FilterGraphHelper::GetFilterClassDescription(pBaseFilter)));
-					_FilterGraphHelper::CPinArray InputPinArray;
-					if(_FilterGraphHelper::GetFilterPins(pBaseFilter, PINDIR_INPUT, InputPinArray))
-						sText += AtlFormatString(_T(" * ") _T("Input Pins: %s") _T("\r\n"), FormatPins(InputPinArray));
-					_FilterGraphHelper::CPinArray OutputPinArray;
-					if(_FilterGraphHelper::GetFilterPins(pBaseFilter, PINDIR_OUTPUT, OutputPinArray))
-						sText += AtlFormatString(_T(" * ") _T("Output Pins: %s") _T("\r\n"), FormatPins(OutputPinArray));
-					#pragma region IReferenceClock
-					const CComQIPtr<IReferenceClock> pReferenceClock = pBaseFilter;
-					if(pReferenceClock)
-					{
-						CRoArrayT<CString> Array;
-						Array.Add(I(_T("Available")));
-						if(pReferenceClock == pFilterGraphReferenceClock)
-							Array.Add(I(_T("Selected")));
-						sText += AtlFormatString(_T(" * ") _T("Reference Clock: %s") _T("\r\n"), _StringHelper::Join(Array, _T(", ")));
-					}
-					#pragma endregion 
-					#pragma region IFileSourceFilter
-					const CComQIPtr<IFileSourceFilter> pFileSourceFilter = pBaseFilter;
-					if(pFileSourceFilter)
-						_ATLTRY
-						{
-							CComHeapPtr<OLECHAR> pszFileName;
-							CMediaType pMediaType;
-							pMediaType.Allocate(MEDIATYPE_NULL, MEDIASUBTYPE_NULL);
-							const HRESULT nGetCurFileResult = pFileSourceFilter->GetCurFile(&pszFileName, pMediaType);
-							_Z45_DSHRESULT(nGetCurFileResult);
-							if(SUCCEEDED(nGetCurFileResult))
-								sText += AtlFormatString(_T(" * ") _T("File Source: %s") _T("\r\n"), I(pszFileName));
-						}
-						_ATLCATCHALL()
-						{
-							_Z_EXCEPTION();
-						}
-					#pragma endregion 
-					#pragma region IFileSinkFilter
-					const CComQIPtr<IFileSinkFilter> pFileSinkFilter = pBaseFilter;
-					if(pFileSinkFilter)
-						_ATLTRY
-						{
-							CComHeapPtr<OLECHAR> pszFileName;
-							CMediaType pMediaType;
-							pMediaType.Allocate(MEDIATYPE_NULL, MEDIASUBTYPE_NULL);
-							const HRESULT nGetCurFileResult = pFileSinkFilter->GetCurFile(&pszFileName, pMediaType);
-							_Z45_DSHRESULT(nGetCurFileResult);
-							if(SUCCEEDED(nGetCurFileResult))
-								sText += AtlFormatString(_T(" * ") _T("File Sink: %s") _T("\r\n"), I(pszFileName));
-						}
-						_ATLCATCHALL()
-						{
-							_Z_EXCEPTION();
-						}
-					#pragma endregion 
-					#pragma region IAMCrossbar
-					const CComQIPtr<IAMCrossbar> pAmCrossbar = pBaseFilter;
-					if(pAmCrossbar)
-						_ATLTRY
-						{
-							sText += AtlFormatString(_T(" * ") _T("Crossbar:") _T("\r\n"));
-							LONG nOutputPinCount = 0, nInputPinCount = 0;
-							__C(pAmCrossbar->get_PinCounts(&nOutputPinCount, &nInputPinCount));
-							sText += AtlFormatString(_T("  * ") _T("Pins: %s Input, %s Output") _T("\r\n"), I(nInputPinCount), I(nOutputPinCount));
-							#pragma region Input
-							for(LONG nInputPinIndex = 0; nInputPinIndex < nInputPinCount; nInputPinIndex++)
-								_ATLTRY
-								{
-									CRoArrayT<CString> Array;
-									LONG nRelatedPinIndex = -1;
-									LONG nPhysicalType = 0; // PhysicalConnectorType
-									__C(pAmCrossbar->get_CrossbarPinInfo(TRUE, nInputPinIndex, &nRelatedPinIndex, &nPhysicalType));
-									if(nRelatedPinIndex >= 0)
-										Array.Add(AtlFormatString(_T("Related %s"), I(nRelatedPinIndex)));
-									Array.Add(AtlFormatString(_T("Physical Type %s"), I(FormatPhysicalConnectorType((PhysicalConnectorType) nPhysicalType))));
-									sText += AtlFormatString(_T("  * ") _T("Input Pin %s: %s") _T("\r\n"), I(nInputPinIndex), _StringHelper::Join(Array, _T("; ")));
-								}
-								_ATLCATCHALL()
-								{
-									_Z_EXCEPTION();
-								}
-							#pragma endregion
-							#pragma region Output
-							for(LONG nOutputPinIndex = 0; nOutputPinIndex < nOutputPinCount; nOutputPinIndex++)
-								_ATLTRY
-								{
-									CRoArrayT<CString> Array;
-									LONG nRelatedPinIndex = -1;
-									LONG nPhysicalType = 0; // PhysicalConnectorType
-									__C(pAmCrossbar->get_CrossbarPinInfo(FALSE, nOutputPinIndex, &nRelatedPinIndex, &nPhysicalType));
-									if(nRelatedPinIndex >= 0)
-										Array.Add(AtlFormatString(_T("Related %s"), I(nRelatedPinIndex)));
-									if(nPhysicalType > 0)
-										Array.Add(AtlFormatString(_T("Physical Type %s"), I(FormatPhysicalConnectorType((PhysicalConnectorType) nPhysicalType))));
-									LONG nRoutedInputPinIndex = -1;
-									const HRESULT nGetIsRoutedToResult = pAmCrossbar->get_IsRoutedTo(nOutputPinIndex, &nRoutedInputPinIndex);
-									_A(nGetIsRoutedToResult == S_OK || nRoutedInputPinIndex == -1);
-									if(nRoutedInputPinIndex >= 0)
-										Array.Add(AtlFormatString(_T("Routed to Input Pin %s"), I(nRoutedInputPinIndex)));
-									CRoArrayT<CString> PinArray;
-									for(LONG nInputPinIndex = 0; nInputPinIndex < nInputPinCount; nInputPinIndex++)
-									{
-										const HRESULT nCanRouteResult = pAmCrossbar->CanRoute(nOutputPinIndex, nInputPinIndex);
-										if(nCanRouteResult == S_OK)
-											PinArray.Add(I(nInputPinIndex));
-									}
-									if(!PinArray.IsEmpty())
-										Array.Add(AtlFormatString(_T("Routeable to Input Pins %s"), _StringHelper::Join(PinArray, _T(", "))));
-									sText += AtlFormatString(_T("  * ") _T("Output Pin %s: %s") _T("\r\n"), I(nOutputPinIndex), _StringHelper::Join(Array, _T("; ")));
-								}
-								_ATLCATCHALL()
-								{
-									_Z_EXCEPTION();
-								}
-							#pragma endregion
-						}
-						_ATLCATCHALL()
-						{
-							_Z_EXCEPTION();
-						}
-					#pragma endregion 
+					sText += GetFilterText(pBaseFilter, pFilterGraphReferenceClock);
 				}
 				_ATLCATCHALL()
 				{
@@ -384,57 +1190,13 @@ public:
 				const CComPtr<IBaseFilter>& pBaseFilter = FilterArray[nFilterIndex];
 				_FilterGraphHelper::CPinArray PinArray;
 				_FilterGraphHelper::GetFilterPins(pBaseFilter, PINDIR_OUTPUT, PinArray);
-				for(SIZE_T nPinIndex  = 0; nPinIndex < PinArray.GetCount(); nPinIndex++)
+				for(SIZE_T nPinIndex = 0; nPinIndex < PinArray.GetCount(); nPinIndex++)
 				{
 					const CComPtr<IPin>& pOutputPin = PinArray[nPinIndex];
 					const CComPtr<IPin> pInputPin = _FilterGraphHelper::GetPeerPin(pOutputPin);
 					if(!pInputPin)
 						continue;
-					CString sConnectionText = AtlFormatString(_T("%s - %s"), I(_FilterGraphHelper::GetPinFullName(pOutputPin)), I(_FilterGraphHelper::GetPinFullName(pInputPin)));
-					_ATLTRY
-					{
-						const CMediaType pMediaType = _FilterGraphHelper::GetPinMediaType(pOutputPin);
-						if(pMediaType)
-						{
-							CStringW sMajorType = _FilterGraphHelper::FormatMajorType(pMediaType->majortype);
-							CStringW sSubtype;
-							if(pMediaType->subtype != MEDIASUBTYPE_NULL)
-								sSubtype = _FilterGraphHelper::FormatSubtype(pMediaType->majortype, pMediaType->subtype);
-							CRoArrayT<CString> Array;
-							Array.Add(I(sMajorType));
-							Array.Add(I(sSubtype));
-							#pragma region MEDIATYPE_Video
-							if(pMediaType->majortype == MEDIATYPE_Video)
-							{
-								const CVideoInfoHeader2 VideoInfoHeader2 = pMediaType.GetCompatibleVideoInfoHeader2();
-								const CSize Extent = VideoInfoHeader2.GetExtent();
-								if(Extent.cx || Extent.cy)
-									Array.Add(AtlFormatString(_T("%s x %s"), I(Extent.cx), I(Extent.cy)));
-							} else
-							#pragma endregion 
-							#pragma region MEDIATYPE_Audio
-							if(pMediaType->majortype == MEDIATYPE_Audio)
-							{
-								const CWaveFormatEx* pWaveFormatEx = pMediaType.GetWaveFormatEx();
-								if(pWaveFormatEx)
-								{
-									if(pWaveFormatEx->nSamplesPerSec)
-										Array.Add(AtlFormatString(_T("%s Hz"), I(pWaveFormatEx->nSamplesPerSec)));
-									if(pWaveFormatEx->nChannels)
-										Array.Add(AtlFormatString(_T("%s channels"), I(pWaveFormatEx->nChannels)));
-									if(pWaveFormatEx->wBitsPerSample)
-										Array.Add(AtlFormatString(_T("%s bits"), I(pWaveFormatEx->wBitsPerSample)));
-								}
-							}
-							#pragma endregion 
-							sConnectionText += AtlFormatString(_T(" (%s)"), _StringHelper::Join(Array, _T(", ")));
-						}
-					}
-					_ATLCATCHALL()
-					{
-						_Z_EXCEPTION();
-					}
-					sText += AtlFormatString(_T("%d. ") _T("%s") _T("\r\n"), ++nConnectionIndex, sConnectionText);
+					sText += AtlFormatString(_T("%d. ") _T("%s") _T("\r\n"), ++nConnectionIndex, GetConnectionText(pOutputPin, pInputPin));
 				}
 			}
 			sText += _T("\r\n");
@@ -448,7 +1210,7 @@ public:
 				const CComPtr<IBaseFilter>& pBaseFilter = FilterArray[nFilterIndex];
 				_FilterGraphHelper::CPinArray PinArray;
 				_FilterGraphHelper::GetFilterPins(pBaseFilter, PinArray);
-				for(SIZE_T nPinIndex  = 0; nPinIndex < PinArray.GetCount(); nPinIndex++)
+				for(SIZE_T nPinIndex = 0; nPinIndex < PinArray.GetCount(); nPinIndex++)
 				{
 					const CComPtr<IPin>& pPin = PinArray[nPinIndex];
 					if(PinList.FindFirst(pPin))
@@ -471,192 +1233,7 @@ public:
 							pMediaType = _FilterGraphHelper::EnumerateFirstPinMediaType(pPin);
 						if(!pMediaType)
 							continue;
-						#pragma region AM_MEDIA_TYPE
-						#define J(x) I(pMediaType->x)
-						#define K1(x) sText += AtlFormatString(_T(" * `") _T(#x) _T("`: %s") _T("\r\n"), J(x))
-						sText += AtlFormatString(_T(" * ") _T("Data: %s") _T("\r\n"), I(AtlFormatData((const BYTE*) (const AM_MEDIA_TYPE*) pMediaType, sizeof *pMediaType).TrimRight()));
-						sText += AtlFormatString(_T(" * ") _T("`majortype`: %s") _T("\r\n"), I(_FilterGraphHelper::FormatMajorType(pMediaType->majortype)));
-						if(pMediaType->subtype != MEDIASUBTYPE_NULL)
-							sText += AtlFormatString(_T(" * ") _T("`subtype`: %s") _T("\r\n"), I(_FilterGraphHelper::FormatSubtype(pMediaType->majortype, pMediaType->subtype)));
-						K1(bFixedSizeSamples);
-						K1(bTemporalCompression);
-						K1(lSampleSize);
-						if(pMediaType->formattype != GUID_NULL)
-							sText += AtlFormatString(_T(" * ") _T("`formattype`: %s") _T("\r\n"), I(_FilterGraphHelper::FormatFormatType(pMediaType->formattype)));
-						if(pMediaType->pUnk)
-							sText += AtlFormatString(_T(" * ") _T("`pUnk`: %s") _T("\r\n"), I(AtlFormatString(_T("0x%p"), pMediaType->pUnk)));
-						if(pMediaType->cbFormat)
-						{
-							K1(cbFormat);
-							if(pMediaType->pbFormat)
-								sText += AtlFormatString(_T(" * ") _T("Format Data, `pbFormat`: %s") _T("\r\n"), I(AtlFormatData(pMediaType->pbFormat, pMediaType->cbFormat).TrimRight()));
-						}
-						#undef J
-						#undef K1
-						#pragma endregion
-						const BYTE* pnExtraData = NULL;
-						SIZE_T nExtraDataSize = 0;
-						#pragma region FORMAT_VideoInfo
-						if(pMediaType->formattype == FORMAT_VideoInfo)
-						{
-							sText += AtlFormatString(_T(" * ") _T("As `VIDEOINFOHEADER`:") _T("\r\n"));
-							const VIDEOINFOHEADER* pVideoInfoHeader = (const VIDEOINFOHEADER*) pMediaType->pbFormat;
-							#define J(x) I(pVideoInfoHeader->x)
-							#define K1(x) sText += AtlFormatString(_T("  * `") _T(#x) _T("`: %s") _T("\r\n"), J(x))
-							sText += AtlFormatString(_T("  * ") _T("`rcSource`: (%s, %s) - (%s, %s)") _T("\r\n"), J(rcSource.left), J(rcSource.top), J(rcSource.right), J(rcSource.bottom));
-							sText += AtlFormatString(_T("  * ") _T("`rcTarget`: (%s, %s) - (%s, %s)") _T("\r\n"), J(rcTarget.left), J(rcTarget.top), J(rcTarget.right), J(rcTarget.bottom));
-							K1(dwBitRate);
-							K1(dwBitErrorRate);
-							sText += AtlFormatString(_T("  * ") _T("`AvgTimePerFrame`: %s units") _T("\r\n"), I(_FilterGraphHelper::FormatReferenceTime(pVideoInfoHeader->AvgTimePerFrame)));
-							K1(bmiHeader.biSize);
-							K1(bmiHeader.biWidth);
-							K1(bmiHeader.biHeight);
-							K1(bmiHeader.biPlanes);
-							K1(bmiHeader.biBitCount);
-							sText += AtlFormatString(_T("  * ") _T("`bmiHeader.biCompression`: %s") _T("\r\n"), I(_FilterGraphHelper::GetFourccCodeString(pVideoInfoHeader->bmiHeader.biCompression)));
-							K1(bmiHeader.biSizeImage);
-							K1(bmiHeader.biXPelsPerMeter);
-							K1(bmiHeader.biYPelsPerMeter);
-							K1(bmiHeader.biClrUsed);
-							K1(bmiHeader.biClrImportant);
-							#undef J
-							#undef K1
-							nExtraDataSize = pMediaType->cbFormat - sizeof *pVideoInfoHeader;
-						} else
-						#pragma endregion 
-						#pragma region FORMAT_VideoInfo2
-						if(pMediaType->formattype == FORMAT_VideoInfo2)
-						{
-							sText += AtlFormatString(_T(" * ") _T("As `VIDEOINFOHEADER2`:") _T("\r\n"));
-							const VIDEOINFOHEADER2* pVideoInfoHeader2 = (const VIDEOINFOHEADER2*) pMediaType->pbFormat;
-							#define J(x) I(pVideoInfoHeader2->x)
-							#define K1(x) sText += AtlFormatString(_T("  * `") _T(#x) _T("`: %s") _T("\r\n"), J(x))
-							#define K2(x, y) sText += AtlFormatString(_T("  * `") _T(#x) _T("`: %s") _T("\r\n"), I(pVideoInfoHeader2->x, y))
-							sText += AtlFormatString(_T("  * ") _T("rcSource: (%s, %s) - (%s, %s)") _T("\r\n"), J(rcSource.left), J(rcSource.top), J(rcSource.right), J(rcSource.bottom));
-							sText += AtlFormatString(_T("  * ") _T("rcTarget: (%s, %s) - (%s, %s)") _T("\r\n"), J(rcTarget.left), J(rcTarget.top), J(rcTarget.right), J(rcTarget.bottom));
-							K1(dwBitRate);
-							K1(dwBitErrorRate);
-							sText += AtlFormatString(_T("  * ") _T("`AvgTimePerFrame`: %s units") _T("\r\n"), I(_FilterGraphHelper::FormatReferenceTime(pVideoInfoHeader2->AvgTimePerFrame)));
-							K2(dwInterlaceFlags, _T("0x%X"));
-							K2(dwCopyProtectFlags, _T("0x%X"));
-							K1(dwPictAspectRatioX);
-							K1(dwPictAspectRatioY);
-							K2(dwControlFlags, _T("0x%X"));
-							K1(bmiHeader.biSize);
-							K1(bmiHeader.biWidth);
-							K1(bmiHeader.biHeight);
-							K1(bmiHeader.biPlanes);
-							K1(bmiHeader.biBitCount);
-							sText += AtlFormatString(_T("  * ") _T("`bmiHeader.biCompression`: %s") _T("\r\n"), I(_FilterGraphHelper::GetFourccCodeString(pVideoInfoHeader2->bmiHeader.biCompression)));
-							K1(bmiHeader.biSizeImage);
-							K1(bmiHeader.biXPelsPerMeter);
-							K1(bmiHeader.biYPelsPerMeter);
-							K1(bmiHeader.biClrUsed);
-							K1(bmiHeader.biClrImportant);
-							#undef J
-							#undef K1
-							#undef K2
-							nExtraDataSize = pMediaType->cbFormat - sizeof *pVideoInfoHeader2;
-							if(nExtraDataSize)
-							{
-								sText += AtlFormatString(_T("  * ") _T("Extra Data: (%d bytes)") _T("\r\n"), nExtraDataSize);
-								nExtraDataSize = 0;
-							}
-						} else
-						#pragma endregion 
-						#pragma region FORMAT_MPEG2Video
-						if(pMediaType->formattype == FORMAT_MPEG2Video)
-						{
-							sText += AtlFormatString(_T(" * ") _T("As `MPEG2VIDEOINFO`:") _T("\r\n"));
-							const MPEG2VIDEOINFO* pMpeg2VideoInfo = (const MPEG2VIDEOINFO*) pMediaType->pbFormat;
-							#define J(x) I(pMpeg2VideoInfo->x)
-							#define K1(x) sText += AtlFormatString(_T("  * `") _T(#x) _T("`: %s") _T("\r\n"), J(x))
-							#define K2(x, y) sText += AtlFormatString(_T("  * `") _T(#x) _T("`: %s") _T("\r\n"), I(pMpeg2VideoInfo->x, y))
-							sText += AtlFormatString(_T("  * ") _T("`hdr.rcSource`: (%s, %s) - (%s, %s)") _T("\r\n"), J(hdr.rcSource.left), J(hdr.rcSource.top), J(hdr.rcSource.right), J(hdr.rcSource.bottom));
-							sText += AtlFormatString(_T("  * ") _T("`hdr.rcTarget`: (%s, %s) - (%s, %s)") _T("\r\n"), J(hdr.rcTarget.left), J(hdr.rcTarget.top), J(hdr.rcTarget.right), J(hdr.rcTarget.bottom));
-							K1(hdr.dwBitRate);
-							K1(hdr.dwBitErrorRate);
-							sText += AtlFormatString(_T("  * ") _T("`hdr.AvgTimePerFrame`: %s") _T("\r\n"), I(_FilterGraphHelper::FormatReferenceTime(pMpeg2VideoInfo->hdr.AvgTimePerFrame)));
-							K2(hdr.dwInterlaceFlags, _T("0x%X"));
-							K2(hdr.dwCopyProtectFlags, _T("0x%X"));
-							K1(hdr.dwPictAspectRatioX);
-							K1(hdr.dwPictAspectRatioY);
-							K2(hdr.dwControlFlags, _T("0x%X"));
-							K1(hdr.bmiHeader.biSize);
-							K1(hdr.bmiHeader.biWidth);
-							K1(hdr.bmiHeader.biHeight);
-							K1(hdr.bmiHeader.biPlanes);
-							K1(hdr.bmiHeader.biBitCount);
-							sText += AtlFormatString(_T("  * ") _T("`hdr.bmiHeader.biCompression`: %s") _T("\r\n"), I(_FilterGraphHelper::GetFourccCodeString(pMpeg2VideoInfo->hdr.bmiHeader.biCompression)));
-							K1(hdr.bmiHeader.biSizeImage);
-							K1(hdr.bmiHeader.biXPelsPerMeter);
-							K1(hdr.bmiHeader.biYPelsPerMeter);
-							K1(hdr.bmiHeader.biClrUsed);
-							K1(hdr.bmiHeader.biClrImportant);
-							K2(dwStartTimeCode, _T("0x%08X"));
-							K1(cbSequenceHeader);
-							K1(dwProfile);
-							K1(dwLevel);
-							K2(dwFlags, _T("0x%08X"));
-							#undef J
-							#undef K1
-							#undef K2
-							#undef J
-							nExtraDataSize = pMediaType->cbFormat - (sizeof *pMpeg2VideoInfo - sizeof pMpeg2VideoInfo->dwSequenceHeader);
-						} else
-						#pragma endregion 
-						#pragma region FORMAT_WaveFormatEx
-						if(pMediaType->formattype == FORMAT_WaveFormatEx)
-						{
-							const WAVEFORMATEX* pWaveFormatEx = (const WAVEFORMATEX*) pMediaType->pbFormat;
-							if(pWaveFormatEx->wFormatTag == WAVE_FORMAT_EXTENSIBLE)
-							{
-								const WAVEFORMATEXTENSIBLE* pWaveFormatExtensible = (const WAVEFORMATEXTENSIBLE*) pMediaType->pbFormat;
-								#define J(x) I(pWaveFormatExtensible->x)
-								#define K1(x) sText += AtlFormatString(_T("  * `") _T(#x) _T("`: %s") _T("\r\n"), J(x))
-								#define K2(x, y) sText += AtlFormatString(_T("  * `") _T(#x) _T("`: %s") _T("\r\n"), I(pWaveFormatExtensible->x, y))
-								sText += AtlFormatString(_T(" * ") _T("As `WAVEFORMATEXTENSIBLE`:") _T("\r\n"));
-								K2(Format.wFormatTag, _T("0x%02X"));
-								K1(Format.nChannels);
-								K1(Format.nSamplesPerSec);
-								K1(Format.nAvgBytesPerSec);
-								K1(Format.nBlockAlign);
-								K1(Format.wBitsPerSample);
-								K1(Format.cbSize);
-								K1(Samples.wValidBitsPerSample);
-								K2(dwChannelMask, _T("0x%02X"));
-								sText += AtlFormatString(_T("  * ") _T("`SubFormat`: %s") _T("\r\n"), I(_PersistHelper::StringFromIdentifier(pWaveFormatExtensible->SubFormat)));
-								#undef J
-								#undef K1
-								#undef K2
-								nExtraDataSize = pWaveFormatEx->cbSize - (sizeof *pWaveFormatExtensible - sizeof *pWaveFormatEx);
-							} else
-							{
-								#define J(x) I(pWaveFormatEx->x)
-								#define K1(x) sText += AtlFormatString(_T("  * `") _T(#x) _T("`: %s") _T("\r\n"), J(x))
-								#define K2(x, y) sText += AtlFormatString(_T("  * `") _T(#x) _T("`: %s") _T("\r\n"), I(pWaveFormatEx->x, y))
-								K2(wFormatTag, _T("0x%02X"));
-								K1(nChannels);
-								K1(nSamplesPerSec);
-								K1(nAvgBytesPerSec);
-								K1(nBlockAlign);
-								K1(wBitsPerSample);
-								K1(cbSize);
-								#undef J
-								#undef K1
-								#undef K2
-								nExtraDataSize = pWaveFormatEx->cbSize;
-							}
-						}
-						#pragma endregion 
-						#pragma region Extra Data
-						if(nExtraDataSize)
-						{
-							if(!pnExtraData)
-								pnExtraData = pMediaType->pbFormat + pMediaType->cbFormat - nExtraDataSize;
-							sText += AtlFormatString(_T("  * ") _T("Extra Data: %s") _T("\r\n"), I(AtlFormatData(pnExtraData, nExtraDataSize).TrimRight()));
-						}
-						#pragma endregion 
+						sText += GetMediaTypeText(pMediaType);
 					}
 					_ATLCATCHALL()
 					{
@@ -671,16 +1248,30 @@ public:
 		return sText;
 	}
 	#undef I
+	CComPtr<IFilterGraph> GetFilterGraph() const
+	{
+		CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+		return m_pFilterGraph;
+	}
+	VOID SetFilterGraph(IFilterGraph* pFilterGraph) 
+	{
+		CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+		m_pFilterGraph = pFilterGraph;
+	}
+	CString GetText() const
+	{
+		CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+		return GetText(m_pFilterGraph);
+	}
 
 // IFilterGraphHelper
-	STDMETHOD(get_FilterGraph)(IUnknown** ppFilterGraphUnknown) throw()
+	STDMETHOD(get_FilterGraph)(IUnknown** ppFilterGraphUnknown)
 	{
 		_Z4(atlTraceCOM, 4, _T("...\n"));
 		_ATLTRY
 		{
 			__D(ppFilterGraphUnknown, E_POINTER);
-			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
-			*ppFilterGraphUnknown = CComPtr<IUnknown>(m_pFilterGraph).Detach();
+			*ppFilterGraphUnknown = GetFilterGraph().Detach();
 		}
 		_ATLCATCH(Exception)
 		{
@@ -688,15 +1279,14 @@ public:
 		}
 		return S_OK;
 	}
-	STDMETHOD(put_FilterGraph)(IUnknown* pFilterGraphUnknown) throw()
+	STDMETHOD(put_FilterGraph)(IUnknown* pFilterGraphUnknown)
 	{
 		_Z4(atlTraceCOM, 4, _T("pFilterGraphUnknown 0x%p\n"), pFilterGraphUnknown);
 		_ATLTRY
 		{
 			const CComQIPtr<IFilterGraph> pFilterGraph = pFilterGraphUnknown;
 			__D(!pFilterGraphUnknown || pFilterGraph, E_INVALIDARG);
-			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
-			m_pFilterGraph = pFilterGraph;
+			SetFilterGraph(pFilterGraph);
 		}
 		_ATLCATCH(Exception)
 		{
@@ -704,7 +1294,7 @@ public:
 		}
 		return S_OK;
 	}
-	STDMETHOD(get_Text)(BSTR* psText) throw()
+	STDMETHOD(get_Text)(BSTR* psText)
 	{
 		_Z4(atlTraceCOM, 4, _T("...\n"));
 		_ATLTRY
@@ -712,6 +1302,26 @@ public:
 			__D(psText, E_POINTER);
 			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
 			*psText = CComBSTR(GetText(m_pFilterGraph)).Detach();
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return S_OK;
+	}
+	STDMETHOD(DoPropertyFrameModal)(LONG nParentWindowHandle)
+	{
+		_Z4(atlTraceCOM, 4, _T("...\n"));
+		_ATLTRY
+		{
+			CWindow ParentWindow = (HWND) (LONG_PTR) nParentWindowHandle;
+			if(!ParentWindow)
+				ParentWindow = GetActiveWindow();
+			__D(!ParentWindow || ParentWindow.IsWindow(), E_INVALIDARG);
+			const CComQIPtr<IFilterGraph2> pFilterGraph2 = GetFilterGraph();
+			__D(pFilterGraph2, E_NOINTERFACE);
+			CPropertyFrameDialog PropertyFrameDialog(this);
+			PropertyFrameDialog.DoModal(ParentWindow);
 		}
 		_ATLCATCH(Exception)
 		{

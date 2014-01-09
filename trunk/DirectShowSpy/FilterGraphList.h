@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2008-2013
+// Copyright (C) Roman Ryltsov, 2008-2014
 // Created by Roman Ryltsov roman@alax.info
 
 #pragma once
@@ -52,6 +52,7 @@ public:
 		COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHLIST_LIST_REFRESH, OnRefresh)
 		COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHLIST_LIST_CHECK, OnCheck)
 		COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHLIST_LIST_COPYTOCLIPBOARD, OnCopyToClipboard)
+		COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHLIST_LIST_PROPERTIES, OnProperties)
 		REFLECT_NOTIFICATIONS()
 	END_MSG_MAP()
 
@@ -60,6 +61,7 @@ public:
 		DLGRESIZE_CONTROL(IDC_FILTERGRAPHLIST_LIST_REFRESH, DLSZ_MOVE_Y)
 		DLGRESIZE_CONTROL(IDC_FILTERGRAPHLIST_LIST_CHECK, DLSZ_MOVE_Y)
 		DLGRESIZE_CONTROL(IDC_FILTERGRAPHLIST_LIST_COPYTOCLIPBOARD, DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_FILTERGRAPHLIST_LIST_PROPERTIES, DLSZ_MOVE_Y)
 	END_DLGRESIZE_MAP()
 
 	public:
@@ -170,6 +172,7 @@ public:
 		CButton m_RefreshButton;
 		CButton m_CheckButton;
 		CButton m_CopyToClipboardButton;
+		CButton m_PropertiesButton;
 		CComPtr<IRunningObjectTable> m_pRunningObjectTable;
 
 	public:
@@ -180,7 +183,9 @@ public:
 		}
 		VOID UpdateControls()
 		{
-			m_CopyToClipboardButton.EnableWindow(m_GraphListView.GetSelectedCount() > 0);
+			const UINT nSelectedCount = m_GraphListView.GetSelectedCount();
+			m_CopyToClipboardButton.EnableWindow(nSelectedCount > 0);
+			m_PropertiesButton.EnableWindow(nSelectedCount == 1);
 		}
 		INT SortGraphListViewItems(LPARAM nItemParameter1, LPARAM nItemParameter2)
 		{
@@ -328,6 +333,7 @@ public:
 				m_RefreshButton = GetDlgItem(IDC_FILTERGRAPHLIST_LIST_REFRESH);
 				m_CheckButton = GetDlgItem(IDC_FILTERGRAPHLIST_LIST_CHECK);
 				m_CopyToClipboardButton = GetDlgItem(IDC_FILTERGRAPHLIST_LIST_COPYTOCLIPBOARD);
+				m_PropertiesButton = GetDlgItem(IDC_FILTERGRAPHLIST_LIST_PROPERTIES);
 				DlgResize_Init(FALSE, FALSE);
 				Refresh();
 				#if _DEVELOPMENT
@@ -441,7 +447,8 @@ public:
 		}
 		LRESULT OnGraphListViewDblClk(NMITEMACTIVATE* pHeader)
 		{
-			m_CheckButton.Click();
+			//m_CheckButton.Click();
+			m_PropertiesButton.Click();
 			return 0;
 		}
 		LRESULT OnRefresh(UINT, INT, HWND)
@@ -471,6 +478,20 @@ public:
 				return 0;
 			SetClipboardText(m_hWnd, sText);
 			MessageBeep(MB_OK);
+			return 0;
+		}
+		LRESULT OnProperties(UINT, INT, HWND)
+		{
+			const INT nItem = m_GraphListView.GetNextItem(-1, LVNI_SELECTED);
+			if(nItem < 0)
+				return 0;
+			CItem& Item = m_GraphListView.GetItemData(nItem);
+			if(!Item.FilterGraphNeeded(m_pRunningObjectTable))
+				return 0;
+			Item.Check();
+			CLocalObjectPtr<CFilterGraphHelper> pFilterGraphHelper;
+			pFilterGraphHelper->SetFilterGraph(Item.m_pFilterGraph);
+			_V(pFilterGraphHelper->DoPropertyFrameModal((LONG) (LONG_PTR) m_hWnd));
 			return 0;
 		}
 	};

@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0555 */
-/* at Sun Jul 07 20:56:18 2013
+/* at Fri Jan 10 00:26:35 2014
  */
 /* Compiler settings for DirectShowSpy.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
@@ -513,6 +513,9 @@ EXTERN_C const IID IID_IFilterGraphHelper;
         virtual /* [propget][id] */ HRESULT STDMETHODCALLTYPE get_Text( 
             /* [retval][out] */ BSTR *psText) = 0;
         
+        virtual /* [id] */ HRESULT STDMETHODCALLTYPE DoPropertyFrameModal( 
+            /* [in] */ LONG nParentWindowHandle) = 0;
+        
     };
     
 #else 	/* C style interface */
@@ -574,6 +577,10 @@ EXTERN_C const IID IID_IFilterGraphHelper;
             IFilterGraphHelper * This,
             /* [retval][out] */ BSTR *psText);
         
+        /* [id] */ HRESULT ( STDMETHODCALLTYPE *DoPropertyFrameModal )( 
+            IFilterGraphHelper * This,
+            /* [in] */ LONG nParentWindowHandle);
+        
         END_INTERFACE
     } IFilterGraphHelperVtbl;
 
@@ -618,6 +625,9 @@ EXTERN_C const IID IID_IFilterGraphHelper;
 
 #define IFilterGraphHelper_get_Text(This,psText)	\
     ( (This)->lpVtbl -> get_Text(This,psText) ) 
+
+#define IFilterGraphHelper_DoPropertyFrameModal(This,nParentWindowHandle)	\
+    ( (This)->lpVtbl -> DoPropertyFrameModal(This,nParentWindowHandle) ) 
 
 #endif /* COBJMACROS */
 

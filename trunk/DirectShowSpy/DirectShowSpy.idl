@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2008-2013
+// Copyright (C) Roman Ryltsov, 2008-2014
 // Created by Roman Ryltsov roman@alax.info
 
 import "oaidl.idl";
@@ -55,6 +55,7 @@ interface IFilterGraphHelper : IDispatch
 	[id(DISPID_VALUE), propget] HRESULT FilterGraph([out, retval] IUnknown** ppFilterGraphUnknown);
 	[id(DISPID_VALUE), propput] HRESULT FilterGraph([in] IUnknown* pFilterGraphUnknown);
 	[id(1), propget] HRESULT Text([out, retval] BSTR* psText);
+	[id(2)] HRESULT DoPropertyFrameModal([in] LONG nParentWindowHandle);
 };
 [
 	uuid(B9EC374B-834B-4DA9-BFB5-C1872CE736FF),
