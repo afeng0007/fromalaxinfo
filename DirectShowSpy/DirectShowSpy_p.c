@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0555 */
-/* at Sun Jul 07 20:56:18 2013
+/* at Fri Jan 10 00:26:35 2014
  */
 /* Compiler settings for DirectShowSpy.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
@@ -50,7 +50,7 @@
 #include "DirectShowSpy_i.h"
 
 #define TYPE_FORMAT_STRING_SIZE   65                                
-#define PROC_FORMAT_STRING_SIZE   109                               
+#define PROC_FORMAT_STRING_SIZE   145                               
 #define EXPR_FORMAT_STRING_SIZE   1                                 
 #define TRANSMIT_AS_TABLE_SIZE    0            
 #define WIRE_MARSHAL_TABLE_SIZE   1            
@@ -218,6 +218,37 @@ static const DirectShowSpy_MIDL_PROC_FORMAT_STRING DirectShowSpy__MIDL_ProcForma
 /* 102 */	NdrFcShort( 0x70 ),	/* Flags:  out, return, base type, */
 /* 104 */	NdrFcShort( 0x8 ),	/* x86 Stack size/offset = 8 */
 /* 106 */	0x8,		/* FC_LONG */
+			0x0,		/* 0 */
+
+	/* Procedure DoPropertyFrameModal */
+
+/* 108 */	0x33,		/* FC_AUTO_HANDLE */
+			0x6c,		/* Old Flags:  object, Oi2 */
+/* 110 */	NdrFcLong( 0x0 ),	/* 0 */
+/* 114 */	NdrFcShort( 0xa ),	/* 10 */
+/* 116 */	NdrFcShort( 0xc ),	/* x86 Stack size/offset = 12 */
+/* 118 */	NdrFcShort( 0x8 ),	/* 8 */
+/* 120 */	NdrFcShort( 0x8 ),	/* 8 */
+/* 122 */	0x44,		/* Oi2 Flags:  has return, has ext, */
+			0x2,		/* 2 */
+/* 124 */	0x8,		/* 8 */
+			0x1,		/* Ext Flags:  new corr desc, */
+/* 126 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 128 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 130 */	NdrFcShort( 0x0 ),	/* 0 */
+
+	/* Parameter nParentWindowHandle */
+
+/* 132 */	NdrFcShort( 0x48 ),	/* Flags:  in, base type, */
+/* 134 */	NdrFcShort( 0x4 ),	/* x86 Stack size/offset = 4 */
+/* 136 */	0x8,		/* FC_LONG */
+			0x0,		/* 0 */
+
+	/* Return value */
+
+/* 138 */	NdrFcShort( 0x70 ),	/* Flags:  out, return, base type, */
+/* 140 */	NdrFcShort( 0x8 ),	/* x86 Stack size/offset = 8 */
+/* 142 */	0x8,		/* FC_LONG */
 			0x0,		/* 0 */
 
 			0x0
@@ -514,7 +545,8 @@ static const unsigned short IFilterGraphHelper_FormatStringOffsetTable[] =
     (unsigned short) -1,
     0,
     36,
-    72
+    72,
+    108
     };
 
 static const MIDL_STUBLESS_PROXY_INFO IFilterGraphHelper_ProxyInfo =
@@ -538,7 +570,7 @@ static const MIDL_SERVER_INFO IFilterGraphHelper_ServerInfo =
     0,
     0,
     0};
-CINTERFACE_PROXY_VTABLE(10) _IFilterGraphHelperProxyVtbl = 
+CINTERFACE_PROXY_VTABLE(11) _IFilterGraphHelperProxyVtbl = 
 {
     &IFilterGraphHelper_ProxyInfo,
     &IID_IFilterGraphHelper,
@@ -551,7 +583,8 @@ CINTERFACE_PROXY_VTABLE(10) _IFilterGraphHelperProxyVtbl =
     0 /* IDispatch_Invoke_Proxy */ ,
     (void *) (INT_PTR) -1 /* IFilterGraphHelper::get_FilterGraph */ ,
     (void *) (INT_PTR) -1 /* IFilterGraphHelper::put_FilterGraph */ ,
-    (void *) (INT_PTR) -1 /* IFilterGraphHelper::get_Text */
+    (void *) (INT_PTR) -1 /* IFilterGraphHelper::get_Text */ ,
+    (void *) (INT_PTR) -1 /* IFilterGraphHelper::DoPropertyFrameModal */
 };
 
 
@@ -563,6 +596,7 @@ static const PRPC_STUB_FUNCTION IFilterGraphHelper_table[] =
     STUB_FORWARDING_FUNCTION,
     NdrStubCall2,
     NdrStubCall2,
+    NdrStubCall2,
     NdrStubCall2
 };
 
@@ -570,7 +604,7 @@ CInterfaceStubVtbl _IFilterGraphHelperStubVtbl =
 {
     &IID_IFilterGraphHelper,
     &IFilterGraphHelper_ServerInfo,
-    10,
+    11,
     &IFilterGraphHelper_table[-3],
     CStdStubBuffer_DELEGATING_METHODS
 };

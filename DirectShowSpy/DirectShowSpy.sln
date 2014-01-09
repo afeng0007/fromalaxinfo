@@ -3,10 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectShowSpy", "DirectShowSpy.vcxproj", "{1A5DA4E5-ED09-476A-9A42-538D0DDA3FB9}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectShowSpyPS", "DirectShowSpyPS.vcproj", "{E0A3323D-478E-4046-909A-AD12AD399A68}"
-	ProjectSection(ProjectDependencies) = postProject
-		{1A5DA4E5-ED09-476A-9A42-538D0DDA3FB9} = {1A5DA4E5-ED09-476A-9A42-538D0DDA3FB9}
-	EndProjectSection
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectShowSpyPS", "DirectShowSpyPS.vcxproj", "{E0A3323D-478E-4046-909A-AD12AD399A68}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BdaHooks", "BdaHooks\BdaHooks.vcxproj", "{42B74EE4-45E2-44E8-B3EE-6061DBCDD86D}"
 EndProject
