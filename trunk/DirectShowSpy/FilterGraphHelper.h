@@ -441,7 +441,7 @@ public:
 					m_BodyEdit = GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_BODY);
 					m_BodyEdit.SetFont(m_pOwner->m_TextFont);
 					m_SendButton = GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_SEND);
-					DlgResize_Init(FALSE);
+					DlgResize_Init(FALSE, FALSE);
 					InitializeControlsFromRegistry();
 					InitializeBody();
 					m_sFilterGraphText = m_pOwner->m_Owner.GetText();
@@ -724,8 +724,10 @@ public:
 		VOID DlgResize_UpdateLayout(INT nWidth, INT nHeight)
 		{
 			__super::DlgResize_UpdateLayout(nWidth, nHeight);
+			const CRect Position = GetTextEditPosition();
 			if(m_pCurrentSite && m_pCurrentSite->m_pPropertyPage)
-				_V(m_pCurrentSite->m_pPropertyPage->Move(GetTextEditPosition()));
+				_V(m_pCurrentSite->m_pPropertyPage->Move(Position));
+			_W(m_EmailDialog.SetWindowPos(NULL, Position, SWP_NOZORDER | SWP_NOACTIVATE));
 		}
 
 	// Window Message Handler
