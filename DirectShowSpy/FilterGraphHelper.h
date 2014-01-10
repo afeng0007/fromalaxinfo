@@ -9,6 +9,7 @@
 #include "DirectShowSpy_i.h"
 #include "Common.h"
 #include "AboutDialog.h"
+#include "..\..\Repository-Private\Utilities\EmailTools\Message.h"
 
 ////////////////////////////////////////////////////////////
 // CFilterGraphHelper
@@ -171,11 +172,403 @@ public:
 		};
 
 		////////////////////////////////////////////////////
+		// CEmailDialog
+
+		class CEmailDialog :
+			public CDialogImpl<CEmailDialog>,
+			public CDialogResize<CEmailDialog>
+		{
+		public:
+			enum { IDD = IDD_FILTERGRAPHHELPER_EMAIL };
+
+		BEGIN_MSG_MAP_EX(CEmailDialog)
+			//CHAIN_MSG_MAP(CDialogImpl<CEmailDialog>)
+			CHAIN_MSG_MAP(CDialogResize<CEmailDialog>)
+			MSG_WM_INITDIALOG(OnInitDialog)
+			MSG_WM_DESTROY(OnDestroy)
+			MSG_WM_SHOWWINDOW(OnShowWindow)
+			COMMAND_HANDLER_EX(IDC_FILTERGRAPHHELPER_EMAIL_FROM, EN_CHANGE, OnChanged)
+			COMMAND_HANDLER_EX(IDC_FILTERGRAPHHELPER_EMAIL_TO, EN_CHANGE, OnChanged)
+			COMMAND_HANDLER_EX(IDC_FILTERGRAPHHELPER_EMAIL_METHOD, CBN_SELENDOK, OnChanged)
+			COMMAND_HANDLER_EX(IDC_FILTERGRAPHHELPER_EMAIL_HOST, EN_CHANGE, OnChanged)
+			COMMAND_HANDLER_EX(IDC_FILTERGRAPHHELPER_EMAIL_USERNAME, EN_CHANGE, OnChanged)
+			COMMAND_HANDLER_EX(IDC_FILTERGRAPHHELPER_EMAIL_PASSWORD, EN_CHANGE, OnChanged)
+			COMMAND_HANDLER_EX(IDC_FILTERGRAPHHELPER_EMAIL_BODY, EN_CHANGE, OnChanged)
+			COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHHELPER_EMAIL_SEND, OnSend)
+			REFLECT_NOTIFICATIONS()
+		END_MSG_MAP()
+
+		BEGIN_DLGRESIZE_MAP(CEmailDialog)
+			DLGRESIZE_CONTROL(IDC_FILTERGRAPHHELPER_EMAIL_BODY, DLSZ_SIZE_X | DLSZ_SIZE_Y)
+			DLGRESIZE_CONTROL(IDC_FILTERGRAPHHELPER_EMAIL_SEND, DLSZ_MOVE_X | DLSZ_MOVE_Y)
+		END_DLGRESIZE_MAP()
+
+		private:
+			CPropertyFrameDialog* m_pOwner;
+			BOOL m_bActivating;
+			CStatic m_TitleStatic;
+			CFont m_TitleFont;
+			CRoEdit m_FromEdit;
+			CRoEdit m_ToEdit;
+			CRoComboBoxT<> m_MethodComboBox;
+			CRoEdit m_HostEdit;
+			CRoEdit m_UsernameEdit;
+			CRoEdit m_PasswordEdit;
+			CRoEdit m_BodyEdit;
+			CButton m_SendButton;
+			CString m_sFilterGraphText;
+			CRoMapT<INT_PTR, BOOL> m_ChangeMap;
+
+		public:
+		// CEmailDialog
+			VOID InitializeControlsFromRegistry()
+			{
+				CRegKey Key;
+				Key.Open(HKEY_CURRENT_USER, REGISTRY_ROOT, KEY_READ);
+				if(!Key)
+					return;
+				CString sMessageString = _RegKeyHelper::QueryStringValue(Key, _T("Email Message Template"));
+				if(sMessageString.IsEmpty())
+					return;
+				_ATLTRY
+				{
+					CObjectPtr<CMessage> pMessage;
+					pMessage.Construct();
+					pMessage->LoadTypeInfo(IDR_EMAILTOOLS);
+					pMessage->SetAsString(CStringA(sMessageString));
+					#pragma region Sender and Recipients
+					CComBSTR sSender, sToRecipients;
+					__C(pMessage->get_Sender(&sSender));
+					__C(pMessage->get_ToRecipients(&sToRecipients));
+					m_FromEdit.SetValue(CString(sSender));
+					m_ToEdit.SetValue(CString(sToRecipients));
+					#pragma endregion 
+					CComBSTR sAuthMethods;
+					__C(pMessage->get_AuthMethods(&sAuthMethods));
+					VARIANT_BOOL bSecureSocketsLayer, bTransportLayerSecurity;
+					__C(pMessage->get_SecureSocketsLayer(&bSecureSocketsLayer));
+					__C(pMessage->get_TransportLayerSecurity(&bTransportLayerSecurity));
+					#pragma region Host and Port
+					CComBSTR sHost;
+					__C(pMessage->get_ServerHost(&sHost));
+					LONG nPort = 0;
+					__C(pMessage->get_ServerPort(&nPort));
+					CString sHostT(sHost);
+					if(nPort)
+						sHostT += AtlFormatString(_T(":%d"), nPort);
+					m_HostEdit.SetValue(sHostT);
+					#pragma endregion 
+					#pragma region User Name and Password
+					CComBSTR sAuthName, sAuthPassword;
+					__C(pMessage->get_AuthName(&sAuthName));
+					__C(pMessage->get_AuthPassword(&sAuthPassword));
+					m_UsernameEdit.SetValue(CString(sAuthName));
+					m_PasswordEdit.SetValue(CString(sAuthPassword));
+					#pragma endregion 
+					m_MethodComboBox.SetCurSel(0);
+					if(bTransportLayerSecurity != ATL_VARIANT_FALSE && sHostT.CompareNoCase(_T("smtp.gmail.com")) == 0)
+					{
+						//m_MethodComboBox.SetCurSel(0);
+					} else
+					{
+						if(bTransportLayerSecurity != ATL_VARIANT_FALSE)
+							m_MethodComboBox.SetCurSel(1);
+						else if(bSecureSocketsLayer != ATL_VARIANT_FALSE)
+							m_MethodComboBox.SetCurSel(2);
+						else if(CString(sAuthMethods).CompareNoCase(_T("cram-md5")) == 0)
+							m_MethodComboBox.SetCurSel(3);
+						else if(!CString(sAuthName).IsEmpty())
+							m_MethodComboBox.SetCurSel(4);
+						else
+							m_MethodComboBox.SetCurSel(5);
+					}
+				}
+				_ATLCATCHALL()
+				{
+					_Z_EXCEPTION();
+				}
+			}
+			VOID InitializeBody()
+			{
+				CString sText;
+				sText += _T("(add notes here)") _T("\r\n") _T("\r\n");
+				sText += _T("* * *") _T("\r\n") _T("\r\n");
+				#define I FormatIdentifier
+				#pragma region System
+				{
+					sText += _T("# System") _T("\r\n") _T("\r\n");
+					OSVERSIONINFOEX Version;
+					ZeroMemory(&Version, sizeof Version);
+					Version.dwOSVersionInfoSize = sizeof Version;
+					GetVersionEx((OSVERSIONINFO*) &Version);
+					#pragma region Version
+					CRoArrayT<CString> VersionArray;
+					VersionArray.Add(AtlFormatString(_T("%s Build %s"), I(AtlFormatString(_T("%d.%d"), Version.dwMajorVersion, Version.dwMinorVersion)), I(Version.dwBuildNumber)));
+					switch((Version.dwMajorVersion << 16) + Version.dwMinorVersion)
+					{
+					case 0x00050001: 
+						VersionArray.Add(_T("Windows XP"));
+						break;
+					case 0x00050002: 
+						if(Version.wProductType != VER_NT_WORKSTATION)
+							VersionArray.Add(_T("Windows Server 2003"));
+						break;
+					case 0x00060000: 
+						if(Version.wProductType == VER_NT_WORKSTATION)
+							VersionArray.Add(_T("Windows Vista"));
+						else
+							VersionArray.Add(_T("Windows Server 2008"));
+						break;
+					case 0x00060001: 
+						if(Version.wProductType == VER_NT_WORKSTATION)
+							VersionArray.Add(_T("Windows 7"));
+						else
+							VersionArray.Add(_T("Windows Server 2008 R2"));
+						break;
+					case 0x00060002: 
+						if(Version.wProductType == VER_NT_WORKSTATION)
+							VersionArray.Add(_T("Windows 8"));
+						else
+							VersionArray.Add(_T("Windows Server 2012"));
+						break;
+					}
+					if(_tcslen(Version.szCSDVersion))
+						VersionArray.Add(Version.szCSDVersion);
+					if(Version.wServicePackMajor)
+						VersionArray.Add(AtlFormatString(_T("Service Pack %s"), I(AtlFormatString(_T("%d.%d"), Version.wServicePackMajor, Version.wServicePackMinor))));
+					//Version.wSuiteMask, Version.wProductType
+					sText += AtlFormatString(_T(" * ") _T("Version: %s") _T("\r\n"), _StringHelper::Join(VersionArray, _T("; ")));
+					#pragma endregion 
+					TCHAR pszComputerName[256] = { 0 };
+					DWORD nComputerNameLength = DIM(pszComputerName);
+					GetComputerName(pszComputerName, &nComputerNameLength);
+					sText += AtlFormatString(_T(" * ") _T("Computer Name: %s") _T("\r\n"), I(pszComputerName));
+					TCHAR pszUserName[256] = { 0 };
+					DWORD nUserNameLength = DIM(pszUserName);
+					GetUserName(pszUserName, &nUserNameLength);
+					CString sUserName(pszUserName);
+					BOOL bAdministrator = FALSE;
+					bool bIsMember = FALSE;
+					if(CAccessToken().CheckTokenMembership(Sids::Admins(), &bIsMember) && bIsMember)
+						bAdministrator = TRUE;
+					sText += AtlFormatString(_T(" * ") _T("User Name: %s %s") _T("\r\n"), I(sUserName), bAdministrator ? _T("(Administrator)") : _T(""));
+					SYSTEM_INFO SystemInformation;
+					GetSystemInfo(&SystemInformation);
+					#pragma region Architecture
+					CString sArchitecture;
+					switch(SystemInformation.wProcessorArchitecture)
+					{
+					case PROCESSOR_ARCHITECTURE_INTEL:
+						sArchitecture = I(_T("x86"));
+						break;
+					case PROCESSOR_ARCHITECTURE_AMD64:
+						sArchitecture = I(_T("AMD/Intel x64"));
+						break;
+					case PROCESSOR_ARCHITECTURE_IA64:
+						sArchitecture = I(_T("Intel Itanium"));
+						break;
+					default:
+						sArchitecture = I(SystemInformation.wProcessorArchitecture, _T("0x%04X"));
+					}
+					#if defined(_WIN64)
+						sText += AtlFormatString(_T(" * ") _T("Architecture: %s (x64 Application)") _T("\r\n"), sArchitecture);
+					#else
+						sText += AtlFormatString(_T(" * ") _T("Architecture: %s") _T("\r\n"), sArchitecture);
+					#endif // defined(_WIN64)
+					#pragma endregion 
+					sText += AtlFormatString(_T(" * ") _T("Processors: %s, Active Mask %s") _T("\r\n"), I(SystemInformation.dwNumberOfProcessors), I(SystemInformation.dwActiveProcessorMask, _T("0x%X")));
+					sText += AtlFormatString(_T(" * ") _T("Page Size: %s") _T("\r\n"), I(SystemInformation.dwPageSize, _T("0x%X")));
+					sText += AtlFormatString(_T(" * ") _T("Application Address Space: %s..%s") _T("\r\n"), I(SystemInformation.lpMinimumApplicationAddress), I(SystemInformation.lpMaximumApplicationAddress));
+					#pragma region Memory
+					MEMORYSTATUSEX MemoryStatus = { sizeof MemoryStatus };
+					_W(GlobalMemoryStatusEx(&MemoryStatus));
+					sText += AtlFormatString(_T(" * ") _T("Physical Memory: %s MB") _T("\r\n"), I(_StringHelper::FormatNumber((LONG) (MemoryStatus.ullTotalPhys >> 20))));
+					sText += AtlFormatString(_T(" * ") _T("Committed Memory Limit: %s MB") _T("\r\n"), I(_StringHelper::FormatNumber((LONG) (MemoryStatus.ullTotalPageFile >> 20))));
+					#pragma endregion
+				}
+				#pragma endregion 
+				sText += AtlFormatString(_T(" * ") _T("Module Version: %s") _T("\r\n"), I(_VersionInfoHelper::GetVersionString(_VersionInfoHelper::GetFileVersion(_VersionInfoHelper::GetModulePath()))));
+				SYSTEMTIME LocalTime;
+				GetLocalTime(&LocalTime);
+				sText += AtlFormatString(_T(" * ") _T("Local Time: %s") _T("\r\n"), I(_StringHelper::FormatDateTime(&LocalTime)));
+				sText += _T("\r\n");
+				#undef I
+				m_BodyEdit.SetValue(sText);
+			}
+			VOID UpdateControls()
+			{
+				BOOL bAllowSend = TRUE;
+				if(m_ToEdit.GetValue().Trim().IsEmpty())
+					bAllowSend = FALSE;
+				const INT nMethod = m_MethodComboBox.GetCurSel();
+				m_HostEdit.GetWindow(GW_HWNDPREV).EnableWindow(nMethod != 0); // Google Mail
+				m_HostEdit.EnableWindow(nMethod != 0); // Google Mail
+				m_UsernameEdit.GetWindow(GW_HWNDPREV).EnableWindow(nMethod != 5); // No Authentication
+				m_UsernameEdit.EnableWindow(nMethod != 5); // No Authentication
+				m_PasswordEdit.GetWindow(GW_HWNDPREV).EnableWindow(nMethod != 5); // No Authentication
+				m_PasswordEdit.EnableWindow(nMethod != 5); // No Authentication
+				if(nMethod != 0) // Google Mail
+					if(m_HostEdit.GetValue().Trim().IsEmpty())
+						bAllowSend = FALSE;
+				if(nMethod != 5) // No Authentication
+				{
+					if(m_UsernameEdit.GetValue().Trim().IsEmpty())
+						bAllowSend = FALSE;
+					if(m_PasswordEdit.GetValue().Trim().IsEmpty())
+						bAllowSend = FALSE;
+				}
+				m_SendButton.EnableWindow(bAllowSend);
+			}
+
+		// Window Message Handler
+			LRESULT OnInitDialog(HWND, LPARAM lParam)
+			{
+				m_pOwner = (CPropertyFrameDialog*) lParam;
+				m_bActivating = TRUE;
+				_ATLTRY
+				{
+					CWaitCursor WaitCursor;
+					m_TitleStatic = GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_TITLE);
+					CLogFont LogFont;
+					LogFont.SetHeight(12, CClientDC(m_hWnd));
+					LogFont.lfWeight = FW_BOLD;
+					_tcsncpy_s(LogFont.lfFaceName, _T("Verdana"), _TRUNCATE);
+					_W(m_TitleFont.CreateFontIndirect(&LogFont));
+					m_TitleStatic.SetFont(m_TitleFont);
+					m_FromEdit = GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_FROM);
+					m_ToEdit = GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_TO);
+					m_MethodComboBox.Initialize(GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_METHOD));
+					m_MethodComboBox.SetCurSel(0);
+					m_HostEdit = GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_HOST);
+					m_UsernameEdit = GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_USERNAME);
+					m_PasswordEdit = GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_PASSWORD);
+					m_BodyEdit = GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_BODY);
+					m_BodyEdit.SetFont(m_pOwner->m_TextFont);
+					m_SendButton = GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_SEND);
+					DlgResize_Init(TRUE);
+					InitializeControlsFromRegistry();
+					InitializeBody();
+					m_sFilterGraphText = m_pOwner->m_Owner.GetText();
+					UpdateControls();
+					m_bActivating = FALSE;
+				}
+				_ATLCATCH(Exception)
+				{
+					for(CWindow Window = GetWindow(GW_CHILD); Window; Window = Window.GetWindow(GW_HWNDNEXT))
+						Window.EnableWindow(FALSE);
+					AtlExceptionMessageBox(m_hWnd, Exception);
+				}
+				return TRUE;
+			}
+			LRESULT OnDestroy()
+			{
+				return 0;
+			}
+			LRESULT OnShowWindow(BOOL bShowing, INT)
+			{
+				if(bShowing && !m_ChangeMap.Lookup(IDC_FILTERGRAPHHELPER_EMAIL_BODY))
+					InitializeBody();
+				return 0;
+			}
+			LRESULT OnChanged(UINT, INT_PTR nIdentifier, HWND)
+			{
+				if(m_bActivating)
+					return 0;
+				m_ChangeMap[nIdentifier] = TRUE;
+				UpdateControls();
+				return 0;
+			}
+			LRESULT OnChanged(NMHDR* pHeader)
+			{
+				return OnChanged(pHeader->code, pHeader->idFrom, pHeader->hwndFrom);
+			}
+			LRESULT OnSend(UINT, INT, HWND)
+			{
+				CWaitCursor WaitCursor;
+				CObjectPtr<CMessage> pMessage;
+				pMessage.Construct();
+				#pragma region Setup
+				pMessage->LoadTypeInfo(IDR_EMAILTOOLS);
+				__C(pMessage->put_Sender(CComBSTR(m_FromEdit.GetValue())));
+				__C(pMessage->put_ToRecipients(CComBSTR(m_ToEdit.GetValue())));
+				// NOTE: 
+				// 0 Google Mail (SMTP, TLS Connection)
+				// 1 SMTP, TLS Connection, Plain Text Authentication (TLS, PLAIN)
+				// 2 SMTP, SSL Connection, Plain Text Authentication (SSL, PLAIN)
+				// 3 SMTP, Digest Authentication (CRAM-MD5)
+				// 4 SMTP, Plain Text Authentication (PLAIN)
+				// 5 SMTP, No Authentication
+				const INT nMethod = m_MethodComboBox.GetCurSel();
+				__C(pMessage->put_SecureSocketsLayer((nMethod == 2) ? ATL_VARIANT_TRUE : ATL_VARIANT_FALSE));
+				__C(pMessage->put_TransportLayerSecurity((nMethod < 2) ? ATL_VARIANT_TRUE : ATL_VARIANT_FALSE));
+				if(nMethod != 5)
+				{
+					__C(pMessage->put_AuthMethods(CComBSTR(_T("plain"))));
+					__C(pMessage->put_AuthName(CComBSTR(m_UsernameEdit.GetValue())));
+					__C(pMessage->put_AuthPassword(CComBSTR(m_PasswordEdit.GetValue())));
+				}
+				switch(nMethod)
+				{
+				case 0:
+					__C(pMessage->put_ServerHost(CComBSTR(_T("smtp.gmail.com"))));
+					break;
+				default:
+					CString sHost = m_HostEdit.GetValue();
+					sHost.Trim();
+					const INT nPortPosition = sHost.Find(_T(":"));
+					if(nPortPosition >= 0)
+					{
+						INT nPort;
+						__D(AtlStringToInteger(sHost.Mid(nPortPosition + 1), nPort), E_UNNAMED);
+						__C(pMessage->put_ServerPort(nPort));
+						sHost = sHost.Left(nPortPosition);
+					}
+					__C(pMessage->put_ServerHost(CComBSTR(sHost)));
+					break;
+				}
+				switch(nMethod)
+				{
+				case 3:
+					__C(pMessage->put_AuthMethods(CComBSTR(_T("cram-md5"))));
+					break;
+				}
+				#pragma endregion 
+				CStringA sMessageString = pMessage->GetAsString();
+				CString sText = m_BodyEdit.GetValue();
+				sText.TrimRight(_T("\t\n\r "));
+				sText += _T("\r\n") _T("\r\n") _T("* * *") _T("\r\n") _T("\r\n");
+				sText += m_sFilterGraphText;
+				__C(pMessage->put_Body(CComBSTR(sText)));
+				CString sSubject = AtlFormatString(_T("DirectShow Filter Graph by %s"), AtlLoadString(IDS_PROJNAME));
+				__C(pMessage->put_Subject(CComBSTR(sSubject)));
+				__C(pMessage->Send());
+				MessageBeep(MB_OK);
+				_RegKeyHelper::SetStringValue(HKEY_CURRENT_USER, REGISTRY_ROOT, _T("Email Message Template"), CString(sMessageString));
+				return 0;
+			}
+		};
+
+		////////////////////////////////////////////////////
 		// CData
 
 		class CData
 		{
 		public:
+
+			/////////////////////////////////////////////////////////
+			// TYPE
+
+			typedef enum _TYPE
+			{
+				TYPE_UNKNOWN = 0,
+				TYPE_FILTERS,
+				TYPE_FILTER,
+				TYPE_FILTERPROPERTYPAGE,
+				TYPE_EMAIL,
+			} TYPE;
+
+		public:
+			TYPE m_Type;
 			CComPtr<IBaseFilter> m_pBaseFilter;
 			CLSID m_ClassIdentifier;
 			CComPtr<IPropertyPage> m_pPropertyPage;
@@ -184,16 +577,19 @@ public:
 
 		public:
 		// CData
-			CData() :
+			CData(TYPE Type = TYPE_UNKNOWN) :
+				m_Type(Type),
 				m_ClassIdentifier(CLSID_NULL)
 			{
 			}
 			CData(IBaseFilter* pBaseFilter) :
+				m_Type(TYPE_FILTER),
 				m_pBaseFilter(pBaseFilter),
 				m_ClassIdentifier(CLSID_NULL)
 			{
 			}
 			CData(IBaseFilter* pBaseFilter, const CLSID& ClassIdentifier, IPropertyPage* pPropertyPage) :
+				m_Type(TYPE_FILTERPROPERTYPAGE),
 				m_pBaseFilter(pBaseFilter),
 				m_ClassIdentifier(ClassIdentifier),
 				m_pPropertyPage(pPropertyPage),
@@ -222,6 +618,7 @@ public:
 		BOOL m_bActivating; 
 		CRoTreeViewT<CData, CRoListControlDataTraitsT> m_TreeView;
 		CTreeItem m_FiltersItem;
+		CTreeItem m_EmailItem;
 		CTabCtrl m_Tab;
 		CRoEdit m_TextEdit;
 		CRect m_TextPosition;
@@ -230,6 +627,7 @@ public:
 		CButton m_CancelButton;
 		CButton m_ApplyButton;
 		CObjectPtr<CPropertyPageSite> m_pCurrentSite;
+		CEmailDialog m_EmailDialog;
 
 	public:
 	// CPropertyFrameDialog
@@ -248,7 +646,8 @@ public:
 		{
 			CWindowRedraw TreeViewRedraw(m_TreeView);
 			m_TreeView.DeleteAllItems();
-			CTreeItem FiltersItem = m_TreeView.InsertItem(NULL, NULL, CData(), _T("Filters"));
+			#pragma region Filter
+			CTreeItem FiltersItem = m_TreeView.InsertItem(NULL, NULL, CData(CData::TYPE_FILTERS), _T("Filters"));
 			_FilterGraphHelper::CFilterArray FilterArray;
 			_FilterGraphHelper::GetGraphFilters(m_Owner.m_pFilterGraph, FilterArray);
 			CTreeItem PreviousFilterItem;
@@ -257,6 +656,7 @@ public:
 				const CComPtr<IBaseFilter>& pBaseFilter = FilterArray[nIndex];
 				CTreeItem FilterItem = m_TreeView.InsertItem(FiltersItem, PreviousFilterItem, CData(pBaseFilter), CString(_FilterGraphHelper::GetFilterName(pBaseFilter)));
 				PreviousFilterItem = FilterItem;
+				#pragma region Property Page
 				const CComQIPtr<ISpecifyPropertyPages> pSpecifyPropertyPages = pBaseFilter;
 				if(!pSpecifyPropertyPages)
 					continue;
@@ -293,11 +693,15 @@ public:
 				{
 					_Z_EXCEPTION();
 				}
+				#pragma endregion 
 			}
 			m_TreeView.Expand(FiltersItem);
 			m_FiltersItem.m_hTreeItem = FiltersItem;
 			m_FiltersItem.m_pTreeView = &m_TreeView;
-			// TODO: Email Item
+			#pragma endregion
+			CTreeItem EmailItem = m_TreeView.InsertItem(NULL, FiltersItem, CData(CData::TYPE_EMAIL), _T("Email"));
+			m_EmailItem.m_hTreeItem = EmailItem;
+			m_EmailItem.m_pTreeView = &m_TreeView;
 		}
 		VOID HideCurrentSite()
 		{
@@ -366,6 +770,7 @@ public:
 				m_OkButton = GetDlgItem(IDOK);
 				m_CancelButton = GetDlgItem(IDCANCEL);
 				m_ApplyButton = GetDlgItem(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_APPLY);
+				__E(m_EmailDialog.Create(m_hWnd, (LPARAM) this));
 				DlgResize_Init(TRUE);
 				UpdateTree();
 				m_FiltersItem.Select();
@@ -412,6 +817,9 @@ public:
 			if(TreeItem)
 			{
 				CData& Data = m_TreeView.GetItemData(TreeItem);
+				if(Data.m_Type != CData::TYPE_EMAIL)
+					m_EmailDialog.ShowWindow(SW_HIDE);
+				#pragma endregion
 				if(Data.m_pBaseFilter)
 				{
 					if(Data.m_pPropertyPage)
@@ -511,14 +919,26 @@ public:
 				{
 					CWaitCursor WaitCursor;
 					HideCurrentSite();
-					m_TextEdit.ShowWindow(SW_SHOW);
-					m_TextEdit.SetValue(m_Owner.GetText());
+					switch(Data.m_Type)
+					{
+					#pragma region TYPE_EMAIL
+					case CData::TYPE_EMAIL:
+						m_TextEdit.ShowWindow(SW_HIDE);
+						_W(m_EmailDialog.SetWindowPos(NULL, GetTextEditPosition(), SWP_NOZORDER | SWP_SHOWWINDOW));
+						break;
+					#pragma endregion
+					default:
+						m_TextEdit.ShowWindow(SW_SHOW);
+						m_TextEdit.SetValue(m_Owner.GetText());
+						m_EmailDialog.ShowWindow(SW_HIDE);
+					}
 					m_ApplyButton.EnableWindow(FALSE);
 				}
 			} else
 			{
 				HideCurrentSite();
 				m_TextEdit.ShowWindow(SW_HIDE);
+				m_EmailDialog.ShowWindow(SW_HIDE);
 				m_ApplyButton.EnableWindow(FALSE);
 			}
 			return 0;
@@ -677,6 +1097,13 @@ public:
 		CString sText;
 		sText = _T("``");
 		sText.Insert(1, AtlFormatString(pszFormat, nValue));
+		return sText;
+	}
+	static CString FormatIdentifier(const VOID* pvValue, LPCTSTR pszFormat = _T("0x%p"))
+	{
+		CString sText;
+		sText = _T("``");
+		sText.Insert(1, AtlFormatString(pszFormat, pvValue));
 		return sText;
 	}
 	#define I FormatIdentifier
@@ -1258,6 +1685,28 @@ public:
 		CRoCriticalSectionLock DataLock(m_DataCriticalSection);
 		m_pFilterGraph = pFilterGraph;
 	}
+	BOOL SetFilterGraph(IUnknown* pFilterGraphUnknown) 
+	{
+		CComQIPtr<IFilterGraph> pFilterGraph;
+		if(pFilterGraphUnknown)
+		{
+			pFilterGraph = pFilterGraphUnknown;
+			if(!pFilterGraph)
+			{
+				const CComQIPtr<IBaseFilter> pBaseFilter = pFilterGraphUnknown;
+				if(!pBaseFilter)
+				{
+					const CComQIPtr<IPin> pPin = pFilterGraphUnknown;
+					if(pPin)
+						pFilterGraph = _FilterGraphHelper::GetFilterGraph(_FilterGraphHelper::GetPinFilter(pPin));
+				} else
+					pFilterGraph = _FilterGraphHelper::GetFilterGraph(pBaseFilter);
+			}
+		}
+		CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+		m_pFilterGraph = pFilterGraph;
+		return m_pFilterGraph != NULL;
+	}
 	CString GetText() const
 	{
 		CRoCriticalSectionLock DataLock(m_DataCriticalSection);
@@ -1284,9 +1733,8 @@ public:
 		_Z4(atlTraceCOM, 4, _T("pFilterGraphUnknown 0x%p\n"), pFilterGraphUnknown);
 		_ATLTRY
 		{
-			const CComQIPtr<IFilterGraph> pFilterGraph = pFilterGraphUnknown;
-			__D(!pFilterGraphUnknown || pFilterGraph, E_INVALIDARG);
-			SetFilterGraph(pFilterGraph);
+			if(!SetFilterGraph(pFilterGraphUnknown))
+				return S_FALSE;
 		}
 		_ATLCATCH(Exception)
 		{

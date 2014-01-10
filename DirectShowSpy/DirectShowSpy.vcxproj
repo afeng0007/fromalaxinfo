@@ -439,6 +439,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\Repository-Private\Utilities\EmailTools\_Bin\Win32\Release\EmailTools\EmailTools.tlb" />
     <None Include="DirectShowSpy.def" />
     <None Include="DirectShowSpy.rgs" />
     <None Include="FilterGraphSpy.rgs" />
