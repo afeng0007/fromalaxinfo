@@ -63,7 +63,7 @@ using namespace WTL;
 ////////////////////////////////////////////////////////////
 // Alax.Info ATL/WTL
 
-#define REGISTRY_PRODUCTROOT	_T("SOFTWARE\\Alax.Info\\Utilities")
+#define REGISTRY_PRODUCTROOT	_T("SOFTWARE\\Alax.Info\\Utility")
 #define REGISTRY_FILEROOT		REGISTRY_PRODUCTROOT _T("\\DirectShowSpy")
 #define REGISTRY_ROOT			REGISTRY_FILEROOT
 
