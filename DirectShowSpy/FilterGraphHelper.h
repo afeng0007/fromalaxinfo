@@ -223,11 +223,7 @@ public:
 		// CEmailDialog
 			VOID InitializeControlsFromRegistry()
 			{
-				CRegKey Key;
-				Key.Open(HKEY_CURRENT_USER, REGISTRY_ROOT, KEY_READ);
-				if(!Key)
-					return;
-				CString sMessageString = _RegKeyHelper::QueryStringValue(Key, _T("Email Message Template"));
+				const CString sMessageString = _RegKeyHelper::QueryStringValue(HKEY_CURRENT_USER, REGISTRY_ROOT, _T("Email Message Template"));
 				if(sMessageString.IsEmpty())
 					return;
 				_ATLTRY
