@@ -291,7 +291,7 @@ public:
 			VOID InitializeBody()
 			{
 				CString sText;
-				sText += _T("(add notes here)") _T("\r\n") _T("\r\n");
+				sText += _T("(add notes here; graph data will be appended below)") _T("\r\n") _T("\r\n");
 				sText += _T("* * *") _T("\r\n") _T("\r\n");
 				#define I FormatIdentifier
 				#pragma region System
@@ -376,7 +376,7 @@ public:
 						sText += AtlFormatString(_T(" * ") _T("Architecture: %s") _T("\r\n"), sArchitecture);
 					#endif // defined(_WIN64)
 					#pragma endregion 
-					sText += AtlFormatString(_T(" * ") _T("Processors: %s, Active Mask %s") _T("\r\n"), I(SystemInformation.dwNumberOfProcessors), I(SystemInformation.dwActiveProcessorMask, _T("0x%X")));
+					sText += AtlFormatString(_T(" * ") _T("Processors: %s, Active Mask %s") _T("\r\n"), I(SystemInformation.dwNumberOfProcessors), I((DWORD) SystemInformation.dwActiveProcessorMask, _T("0x%X")));
 					sText += AtlFormatString(_T(" * ") _T("Page Size: %s") _T("\r\n"), I(SystemInformation.dwPageSize, _T("0x%X")));
 					sText += AtlFormatString(_T(" * ") _T("Application Address Space: %s..%s") _T("\r\n"), I(SystemInformation.lpMinimumApplicationAddress), I(SystemInformation.lpMaximumApplicationAddress));
 					#pragma region Memory
@@ -445,7 +445,7 @@ public:
 					m_BodyEdit = GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_BODY);
 					m_BodyEdit.SetFont(m_pOwner->m_TextFont);
 					m_SendButton = GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_SEND);
-					DlgResize_Init(TRUE);
+					DlgResize_Init(FALSE);
 					InitializeControlsFromRegistry();
 					InitializeBody();
 					m_sFilterGraphText = m_pOwner->m_Owner.GetText();
@@ -892,7 +892,7 @@ public:
 								const CComPtr<IPin> pPeerPin = _FilterGraphHelper::GetPeerPin(pPin);
 								if(pPeerPin)
 									sPinText += AtlFormatString(_T(", %s"), FormatIdentifier(_FilterGraphHelper::GetPinFullName(pPeerPin)));
-								sText += AtlFormatString(_T("%d. ") _T("%s") _T("\r\n"), nPinIndex, sPinText);
+								sText += AtlFormatString(_T("%d. ") _T("%s") _T("\r\n"), 1 + nPinIndex, sPinText);
 								_ATLTRY
 								{
 									CMediaType pMediaType;
