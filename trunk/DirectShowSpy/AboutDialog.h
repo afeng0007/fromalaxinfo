@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2008-2011
+// Copyright (C) Roman Ryltsov, 2008-2014
 // Created by Roman Ryltsov roman@alax.info
 
 #pragma once
@@ -17,7 +17,6 @@ class CAboutDialog :
 	public CDialogImpl<CAboutDialog>
 {
 public:
-
 	enum { IDD = IDD_ABOUT };
 
 BEGIN_MSG_MAP_EX(CAboutDialog)
@@ -35,6 +34,27 @@ protected:
 
 public:
 // CAboutDialog
+	static CFontHandle CreateTitleFont() throw()
+	{
+		CLogFont LogFont;
+		LogFont.lfHeight = -MulDiv(12, GetDeviceCaps(CClientDC(GetDesktopWindow()), LOGPIXELSY), 72);
+		LogFont.lfWeight = FW_BOLD;
+		LogFont.lfItalic = TRUE;
+		_tcsncpy_s(LogFont.lfFaceName, _countof(LogFont.lfFaceName), _T("Arial"), _TRUNCATE);
+		CFont Font;
+		_W(Font.CreateFontIndirect(&LogFont));
+		return Font.Detach();
+	}
+	static CFontHandle CreateDisclaimerFont() throw()
+	{
+		CLogFont LogFont;
+		LogFont.lfHeight = -MulDiv(7, GetDeviceCaps(CClientDC(GetDesktopWindow()), LOGPIXELSY), 72);
+		LogFont.lfWeight = FW_NORMAL;
+		_tcsncpy_s(LogFont.lfFaceName, _countof(LogFont.lfFaceName), _T("Lucida Console"), _TRUNCATE);
+		CFont Font;
+		_W(Font.CreateFontIndirect(&LogFont));
+		return Font.Detach();
+	}
 	CAboutDialog() throw()
 	{
 		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
@@ -48,24 +68,13 @@ public:
 	LRESULT OnInitDialog(HWND, LPARAM)
 	{
 		CStatic(GetDlgItem(IDC_ABOUT_ICON)).SetIcon(AtlLoadIconImage(IDI_MODULE, LR_DEFAULTCOLOR, 48, 48));
-		#pragma region Create and apply title font
-		{
-			CLogFont LogFont;
-			LogFont.lfHeight = -MulDiv(12, GetDeviceCaps(CClientDC(m_hWnd), LOGPIXELSY), 72);
-			LogFont.lfWeight = FW_BOLD;
-			LogFont.lfItalic = TRUE;
-			_tcsncpy_s(LogFont.lfFaceName, _countof(LogFont.lfFaceName), _T("Arial"), _TRUNCATE);
-			_W(m_TitleFont.CreateFontIndirect(&LogFont));
-			CStatic(GetDlgItem(IDC_ABOUT_TITLE)).SetFont(m_TitleFont);
-		}
+		#pragma region Title Font
+		m_TitleFont = CreateTitleFont();
+		CStatic(GetDlgItem(IDC_ABOUT_TITLE)).SetFont(m_TitleFont);
 		#pragma endregion 
-		#pragma region Create and apply disclaimer font
+		#pragma region Disclaimer Font
 		{
-			CLogFont LogFont;
-			LogFont.lfHeight = -MulDiv(7, GetDeviceCaps(CClientDC(m_hWnd), LOGPIXELSY), 72);
-			LogFont.lfWeight = FW_NORMAL;
-			_tcsncpy_s(LogFont.lfFaceName, _countof(LogFont.lfFaceName), _T("Lucida Console"), _TRUNCATE);
-			_W(m_DisclaimerFont.CreateFontIndirect(&LogFont));
+			m_DisclaimerFont = CreateDisclaimerFont();
 			CStatic CopyrightWarningText = GetDlgItem(IDC_ABOUT_COPYRIGHTWARNING);
 			CopyrightWarningText.SetFont(m_DisclaimerFont);
 			{
@@ -88,7 +97,7 @@ public:
 			}
 		}
 		#pragma endregion 
-		#pragma region Update version text
+		#pragma region Version Text
 		CStatic ProductVersionStatic = GetDlgItem(IDC_ABOUT_PRODUCTVERSION), FileVersionStatic = GetDlgItem(IDC_ABOUT_FILEVERSION);
 		CString sProductVersionFormat, sFileVersionFormat;
 		ProductVersionStatic.GetWindowText(sProductVersionFormat);
@@ -97,25 +106,28 @@ public:
 		ProductVersionStatic.SetWindowText(_VersionInfoHelper::GetVersionString(_VersionInfoHelper::GetProductVersion(sModulePath), sProductVersionFormat));
 		FileVersionStatic.SetWindowText(_VersionInfoHelper::GetVersionString(_VersionInfoHelper::GetFileVersion(sModulePath), sFileVersionFormat));
 		#pragma endregion 
-		#pragma region Update hyperlinks
+		#pragma region Hyperlinks
 		_W(m_WebsiteHyperStatic.SubclassWindow(GetDlgItem(IDC_ABOUT_WEBSITE)));
 		_W(m_EmailHyperStatic.SubclassWindow(GetDlgItem(IDC_ABOUT_EMAIL)));
 		#pragma endregion 
-		#pragma region Update caption
+		#pragma region Caption
 		{
-#if _TRACE
-			CString sCaption;
-			_W(GetWindowText(sCaption));
-			sCaption.Append(_T(" // "));
-#if _DEVELOPMENT
-			sCaption.Append(_T("Dev "));
-#endif // _DEVELOPMENT
-			sCaption.Append(_VersionInfoHelper::GetVersionString(_VersionInfoHelper::GetFileVersion(_VersionInfoHelper::GetModulePath())));
-			_W(SetWindowText(sCaption));
-#endif // _TRACE
+			#if _TRACE || defined(_WIN64)
+				CString sCaption;
+				_W(GetWindowText(sCaption));
+				sCaption.Append(_T(" // "));
+				#if _DEVELOPMENT
+					sCaption.Append(_T("Dev "));
+				#endif // _DEVELOPMENT
+				sCaption.Append(_VersionInfoHelper::GetVersionString(_VersionInfoHelper::GetFileVersion(_VersionInfoHelper::GetModulePath())));
+				#if defined(_WIN64)
+					sCaption.Append(_T(" (x64)"));
+				#endif // defined(_WIN64)
+				_W(SetWindowText(sCaption));
+			#endif // _TRACE || defined(_WIN64)
 		}
 		#pragma endregion 
-		#pragma region Update window position and focus
+		#pragma region Window Position and Focus
 		_W(CenterWindow(GetParent()));
 		GetDlgItem(IDOK).SetFocus();
 		#pragma endregion 
