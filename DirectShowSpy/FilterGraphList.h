@@ -17,8 +17,11 @@
 ////////////////////////////////////////////////////////////
 // CFilterGraphListPropertySheet
 
+INT_PTR DoFilterGraphListPropertySheetModal(HWND hParentWindow = GetActiveWindow());
+
 class CFilterGraphListPropertySheet :
-	public CSizablePropertySheetT<CFilterGraphListPropertySheet>
+	public CSizablePropertySheetT<CFilterGraphListPropertySheet>,
+	public CPropertySheetWithAcceleratorsT<CFilterGraphListPropertySheet>
 {
 public:
 
@@ -34,7 +37,8 @@ public:
 
 	class CListPropertyPage :
 		public CPropertyPageT<CListPropertyPage>,
-		public CDialogResize<CListPropertyPage>
+		public CDialogResize<CListPropertyPage>,
+		public CPropertyPageWithAcceleratorsT<CListPropertyPage>
 	{
 	public:
 
@@ -43,16 +47,21 @@ public:
 	BEGIN_MSG_MAP_EX(CListPropertyPage)
 		CHAIN_MSG_MAP(CPropertyPage)
 		CHAIN_MSG_MAP(CDialogResize<CListPropertyPage>)
+		CHAIN_MSG_MAP(CPropertyPageWithAccelerators)
 		MSG_WM_INITDIALOG(OnInitDialog)
 		MSG_WM_DESTROY(OnDestroy)
 		MSG_LVN_GETDISPINFO(IDC_FILTERGRAPHLIST_LIST_GRAPH, OnGraphListViewGetDispInfo)
 		MSG_LVN_GETINFOTIP(IDC_FILTERGRAPHLIST_LIST_GRAPH, OnGraphListViewGetInfoTip)
 		MSG_LVN_ITEMCHANGED(IDC_FILTERGRAPHLIST_LIST_GRAPH, OnGraphListViewItemChanged)
 		MSG_LVN_DBLCLK(IDC_FILTERGRAPHLIST_LIST_GRAPH, OnGraphListViewDblClk)
+		MSG_WM_CONTEXTMENU(OnContextMenu)
 		COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHLIST_LIST_REFRESH, OnRefresh)
 		COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHLIST_LIST_CHECK, OnCheck)
+		COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHLIST_LIST_CHECKALL, OnCheckAll)
 		COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHLIST_LIST_COPYTOCLIPBOARD, OnCopyToClipboard)
 		COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHLIST_LIST_PROPERTIES, OnProperties)
+		COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHLIST_LIST_OPENGSN, OnOpenGsn)
+		COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHLIST_LIST_OPENGE, OnOpenGe)
 		REFLECT_NOTIFICATIONS()
 	END_MSG_MAP()
 
@@ -80,6 +89,7 @@ public:
 			CString m_sTime;
 			CComPtr<IUnknown> m_pFilterGraphUnknown;
 			CComPtr<IFilterGraph> m_pFilterGraph;
+			CStringW m_sFriendlyName;
 			SIZE_T m_nFilterCount;
 			CString m_sState;
 			DOUBLE m_fDuration;
@@ -107,6 +117,20 @@ public:
 					__D(pFilterGraph, E_NOINTERFACE);
 					m_pFilterGraphUnknown = pUnknown;
 					m_pFilterGraph = pFilterGraph;
+					_ATLTRY
+					{
+						const CComQIPtr<ISpy> pSpy = pFilterGraph;
+						if(pSpy)
+						{
+							CComBSTR sFriendlyName;
+							__C(pSpy->get_FriendlyName(&sFriendlyName));
+							m_sFriendlyName = sFriendlyName;
+						}
+					}
+					_ATLCATCHALL()
+					{
+						_Z_EXCEPTION();
+					}
 					m_nFilterCount = 0;
 					m_sState.Empty();
 				}
@@ -184,6 +208,7 @@ public:
 		VOID UpdateControls()
 		{
 			const UINT nSelectedCount = m_GraphListView.GetSelectedCount();
+			m_CheckButton.EnableWindow(nSelectedCount > 0);
 			m_CopyToClipboardButton.EnableWindow(nSelectedCount > 0);
 			m_PropertiesButton.EnableWindow(nSelectedCount == 1);
 		}
@@ -368,6 +393,10 @@ public:
 		{
 			return 0;
 		}
+		LRESULT OnTranslateAccelerator(MSG* pMessage)
+		{
+			return TranslateAccelerator(m_hWnd, m_hAccelerators, pMessage) ? PSNRET_MESSAGEHANDLED : PSNRET_NOERROR;
+		}
 		LRESULT OnGraphListViewGetDispInfo(NMLVDISPINFO* pHeader)
 		{
 			const CItem& Item = m_GraphListView.DataFromParameter(pHeader->item.lParam);
@@ -382,15 +411,18 @@ public:
 				case 2: // Creation Time
 					sTextBuffer = Item.m_sTime;
 					break;
-				case 3: // Filter Count
+				case 3: // Friendly Name
+					sTextBuffer = CString(Item.m_sFriendlyName);
+					break;
+				case 4: // Filter Count
 					if(Item.m_pFilterGraph)
 						sTextBuffer = AtlFormatString(_T("%d"), Item.m_nFilterCount);
 					break;
-				case 4: // State
+				case 5: // State
 					if(Item.m_pFilterGraph)
 						sTextBuffer = Item.m_sState;
 					break;
-				case 5: // Process Image Directory
+				case 6: // Process Image Directory
 					sTextBuffer = (LPCTSTR) GetPathDirectory(Item.m_sProcessImagePath);
 					break;
 				default: // Process, Instance
@@ -406,7 +438,9 @@ public:
 			CString& sTextBuffer = m_GraphListView.GetTextBufferString(TRUE);
 			sTextBuffer.AppendFormat(_T("Process: %d (0x%X) %s\r\n"), Item.m_nProcessIdentifier, Item.m_nProcessIdentifier, CString(FindFileName(Item.m_sProcessImagePath)));
 			if(!Item.m_sTime.IsEmpty())
-				sTextBuffer.AppendFormat(_T("CreationTime: %s\r\n"), Item.m_sTime);
+				sTextBuffer.AppendFormat(_T("Creation Time: %s\r\n"), Item.m_sTime);
+			if(!Item.m_sFriendlyName.IsEmpty())
+				sTextBuffer.AppendFormat(_T("Friendly Name: %ls\r\n"), Item.m_sFriendlyName);
 			if(Item.m_pFilterGraph)
 			{
 				sTextBuffer.AppendFormat(_T("Filter Count: %d\r\n"), Item.m_nFilterCount);
@@ -451,6 +485,26 @@ public:
 			m_PropertiesButton.Click();
 			return 0;
 		}
+		LRESULT OnContextMenu(CWindow Window, CPoint Position)
+		{
+			if(Window == m_GraphListView)
+			{
+				CMenu ContainerMenu = AtlLoadMenu(IDD);
+				CMenuHandle Menu = ContainerMenu.GetSubMenu(0);
+				const UINT nCount = m_GraphListView.GetItemCount();
+				const UINT nSelectedCount = m_GraphListView.GetSelectedCount();
+				Menu.EnableMenuItem(IDC_FILTERGRAPHLIST_LIST_CHECK, MF_BYCOMMAND | (m_CheckButton.IsWindowEnabled() ? MF_ENABLED : MF_GRAYED | MF_DISABLED));
+				Menu.EnableMenuItem(IDC_FILTERGRAPHLIST_LIST_CHECKALL, MF_BYCOMMAND | ((nCount > 0) ? MF_ENABLED : MF_GRAYED | MF_DISABLED));
+				Menu.EnableMenuItem(IDC_FILTERGRAPHLIST_LIST_COPYTOCLIPBOARD, MF_BYCOMMAND | (m_CopyToClipboardButton.IsWindowEnabled() ? MF_ENABLED : MF_GRAYED | MF_DISABLED));
+				Menu.EnableMenuItem(IDC_FILTERGRAPHLIST_LIST_OPENGSN, MF_BYCOMMAND | ((nSelectedCount == 1) ? MF_ENABLED : MF_GRAYED | MF_DISABLED));
+				Menu.EnableMenuItem(IDC_FILTERGRAPHLIST_LIST_OPENGE, MF_BYCOMMAND | ((nSelectedCount == 1) ? MF_ENABLED : MF_GRAYED | MF_DISABLED));
+				Menu.EnableMenuItem(IDC_FILTERGRAPHLIST_LIST_REFRESH, MF_BYCOMMAND | (m_RefreshButton.IsWindowEnabled() ? MF_ENABLED : MF_GRAYED | MF_DISABLED));
+				Menu.EnableMenuItem(IDC_FILTERGRAPHLIST_LIST_PROPERTIES, MF_BYCOMMAND | (m_PropertiesButton.IsWindowEnabled() ? MF_ENABLED : MF_GRAYED | MF_DISABLED));
+				Menu.SetMenuDefaultItem(IDC_FILTERGRAPHLIST_LIST_PROPERTIES);
+				Menu.TrackPopupMenu(TPM_RIGHTBUTTON | TPM_LEFTALIGN | TPM_TOPALIGN, Position.x, Position.y, m_hWnd); 
+			}
+			return 0;
+		}
 		LRESULT OnRefresh(UINT, INT, HWND)
 		{
 			CWaitCursor WaitCursor;
@@ -462,6 +516,18 @@ public:
 		{
 			CWaitCursor WaitCursor;
 			for(INT nItem = m_GraphListView.GetNextItem(-1, LVNI_SELECTED); nItem >= 0; nItem = m_GraphListView.GetNextItem(nItem, LVNI_SELECTED))
+			{
+				CItem& Item = m_GraphListView.GetItemData(nItem);
+				if(Item.FilterGraphNeeded(m_pRunningObjectTable))
+					if(Item.Check())
+						m_GraphListView.RedrawItems(nItem, nItem);
+			}
+			return 0;
+		}
+		LRESULT OnCheckAll(UINT, INT, HWND)
+		{
+			CWaitCursor WaitCursor;
+			for(INT nItem = m_GraphListView.GetItemCount() - 1; nItem >= 0; nItem--)
 			{
 				CItem& Item = m_GraphListView.GetItemData(nItem);
 				if(Item.FilterGraphNeeded(m_pRunningObjectTable))
@@ -492,6 +558,28 @@ public:
 			CLocalObjectPtr<CFilterGraphHelper> pFilterGraphHelper;
 			pFilterGraphHelper->SetFilterGraph(Item.m_pFilterGraph);
 			_V(pFilterGraphHelper->DoPropertyFrameModal((LONG) (LONG_PTR) m_hWnd));
+			return 0;
+		}
+		LRESULT OnOpenGsn(UINT, INT, HWND)
+		{
+			const INT nItem = m_GraphListView.GetNextItem(-1, LVNI_SELECTED);
+			if(nItem < 0)
+				return 0;
+			CItem& Item = m_GraphListView.GetItemData(nItem);
+			if(!Item.FilterGraphNeeded(m_pRunningObjectTable))
+				return 0;
+			CFilterGraphHelper::OpenMonikerWithGsn(Item.m_sDisplayName, m_hWnd);
+			return 0;
+		}
+		LRESULT OnOpenGe(UINT, INT, HWND)
+		{
+			const INT nItem = m_GraphListView.GetNextItem(-1, LVNI_SELECTED);
+			if(nItem < 0)
+				return 0;
+			CItem& Item = m_GraphListView.GetItemData(nItem);
+			if(!Item.FilterGraphNeeded(m_pRunningObjectTable))
+				return 0;
+			CFilterGraphHelper::OpenMonikerWithGe(Item.m_sDisplayName, m_hWnd);
 			return 0;
 		}
 	};
@@ -531,6 +619,10 @@ public:
 		#pragma endregion
 		return TRUE;
 	}
+	INT_PTR DoModal(HWND hParentWindow)
+	{
+		return CPropertySheetWithAccelerators::DoModal(hParentWindow);
+	}
 
 // Window message handelrs
 	LRESULT OnSysCommand(UINT nCommand, CPoint)
@@ -550,3 +642,8 @@ public:
 	}
 };
 
+inline INT_PTR DoFilterGraphListPropertySheetModal(HWND hParentWindow)
+{
+	CFilterGraphListPropertySheet PropertySheet;
+	return PropertySheet.DoModal(hParentWindow);
+}

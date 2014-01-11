@@ -16,6 +16,10 @@ import "ocidl.idl";
 ]
 interface ISpy : IDispatch
 {
+	[id(1), propget] HRESULT MonikerDisplayName([out, retval] BSTR* psMonikerDisplayName);
+	[id(2), propget] HRESULT CreationTime([out, retval] DATE* pfTime);
+	[id(3), propget] HRESULT FriendlyName([out, retval] BSTR* psFriendlyName);
+	[id(3), propput] HRESULT FriendlyName([in] BSTR sFriendlyName);
 };
 [
 	object,

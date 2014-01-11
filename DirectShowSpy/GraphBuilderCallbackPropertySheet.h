@@ -1374,4 +1374,3 @@ public:
 		return 0;
 	}
 };
-
