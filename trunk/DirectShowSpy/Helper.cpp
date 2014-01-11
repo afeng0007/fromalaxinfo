@@ -28,6 +28,16 @@ HRESULT STDMETHODCALLTYPE Test() throw()
 		CGenericFilterGraph FilterGraph;
 		FilterGraph.CoCreateInstance();
 		__C(FilterGraph.m_pFilterGraph->RenderFile(_T("E:\\Media\\Robotica_1080.wmv"), NULL));
+		_ATLTRY
+		{
+			const CComQIPtr<ISpy> pSpy = FilterGraph.m_pFilterGraph;
+			if(pSpy)
+				__C(pSpy->put_FriendlyName(CComBSTR(_T("Test"))));
+		}
+		_ATLCATCHALL()
+		{
+			_Z_EXCEPTION();
+		}
 		CLocalObjectPtr<CFilterGraphHelper> pHelper;
 		pHelper->SetFilterGraph(FilterGraph.m_pFilterGraph);
 		pHelper->DoPropertyFrameModal(0);

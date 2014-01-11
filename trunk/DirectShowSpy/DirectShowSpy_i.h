@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0555 */
-/* at Fri Jan 10 11:37:20 2014
+/* at Sat Jan 11 18:11:25 2014
  */
 /* Compiler settings for DirectShowSpy.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
@@ -171,6 +171,18 @@ EXTERN_C const IID IID_ISpy;
     ISpy : public IDispatch
     {
     public:
+        virtual /* [propget][id] */ HRESULT STDMETHODCALLTYPE get_MonikerDisplayName( 
+            /* [retval][out] */ BSTR *psMonikerDisplayName) = 0;
+        
+        virtual /* [propget][id] */ HRESULT STDMETHODCALLTYPE get_CreationTime( 
+            /* [retval][out] */ DATE *pfTime) = 0;
+        
+        virtual /* [propget][id] */ HRESULT STDMETHODCALLTYPE get_FriendlyName( 
+            /* [retval][out] */ BSTR *psFriendlyName) = 0;
+        
+        virtual /* [propput][id] */ HRESULT STDMETHODCALLTYPE put_FriendlyName( 
+            /* [in] */ BSTR sFriendlyName) = 0;
+        
     };
     
 #else 	/* C style interface */
@@ -220,6 +232,22 @@ EXTERN_C const IID IID_ISpy;
             /* [out] */ EXCEPINFO *pExcepInfo,
             /* [out] */ UINT *puArgErr);
         
+        /* [propget][id] */ HRESULT ( STDMETHODCALLTYPE *get_MonikerDisplayName )( 
+            ISpy * This,
+            /* [retval][out] */ BSTR *psMonikerDisplayName);
+        
+        /* [propget][id] */ HRESULT ( STDMETHODCALLTYPE *get_CreationTime )( 
+            ISpy * This,
+            /* [retval][out] */ DATE *pfTime);
+        
+        /* [propget][id] */ HRESULT ( STDMETHODCALLTYPE *get_FriendlyName )( 
+            ISpy * This,
+            /* [retval][out] */ BSTR *psFriendlyName);
+        
+        /* [propput][id] */ HRESULT ( STDMETHODCALLTYPE *put_FriendlyName )( 
+            ISpy * This,
+            /* [in] */ BSTR sFriendlyName);
+        
         END_INTERFACE
     } ISpyVtbl;
 
@@ -255,6 +283,18 @@ EXTERN_C const IID IID_ISpy;
 #define ISpy_Invoke(This,dispIdMember,riid,lcid,wFlags,pDispParams,pVarResult,pExcepInfo,puArgErr)	\
     ( (This)->lpVtbl -> Invoke(This,dispIdMember,riid,lcid,wFlags,pDispParams,pVarResult,pExcepInfo,puArgErr) ) 
 
+
+#define ISpy_get_MonikerDisplayName(This,psMonikerDisplayName)	\
+    ( (This)->lpVtbl -> get_MonikerDisplayName(This,psMonikerDisplayName) ) 
+
+#define ISpy_get_CreationTime(This,pfTime)	\
+    ( (This)->lpVtbl -> get_CreationTime(This,pfTime) ) 
+
+#define ISpy_get_FriendlyName(This,psFriendlyName)	\
+    ( (This)->lpVtbl -> get_FriendlyName(This,psFriendlyName) ) 
+
+#define ISpy_put_FriendlyName(This,sFriendlyName)	\
+    ( (This)->lpVtbl -> put_FriendlyName(This,sFriendlyName) ) 
 
 #endif /* COBJMACROS */
 

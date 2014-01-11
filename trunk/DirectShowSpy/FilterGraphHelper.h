@@ -11,6 +11,8 @@
 #include "AboutDialog.h"
 #include "..\..\Repository-Private\Utilities\EmailTools\Message.h"
 
+INT_PTR DoFilterGraphListPropertySheetModal(HWND hParentWindow);
+
 ////////////////////////////////////////////////////////////
 // CFilterGraphHelper
 
@@ -50,7 +52,8 @@ public:
 
 	class CPropertyFrameDialog :
 		public CDialogImpl<CPropertyFrameDialog>,
-		public CDialogResize<CPropertyFrameDialog>
+		public CDialogResize<CPropertyFrameDialog>,
+		public CDialogWithAcceleratorsT<CPropertyFrameDialog>
 	{
 	public:
 		enum { IDD = IDD_FILTERGRAPHHELPER_PROPERTYFRAME };
@@ -67,6 +70,9 @@ public:
 		COMMAND_ID_HANDLER_EX(IDOK, OnOk)
 		COMMAND_ID_HANDLER_EX(IDCANCEL, OnCancel)
 		COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_APPLY, OnApply)
+		COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHHELPER_ACTION_OPENGSN, OnActionCommand)
+		COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHHELPER_ACTION_OPENGE, OnActionCommand)
+		COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHHELPER_ACTION_OPENLIST, OnActionCommand)
 		REFLECT_NOTIFICATIONS()
 	END_MSG_MAP()
 
@@ -168,6 +174,154 @@ public:
 				_Z4(atlTraceCOM, 4, _T("...\n"));
 				pMessage;
 				return E_NOTIMPL;
+			}
+		};
+
+		////////////////////////////////////////////////////
+		// CActionDialog
+
+		class CActionDialog :
+			public CDialogImpl<CActionDialog>,
+			public CDialogResize<CActionDialog>
+		{
+		public:
+			enum { IDD = IDD_FILTERGRAPHHELPER_ACTION };
+
+		BEGIN_MSG_MAP_EX(CActionDialog)
+			//CHAIN_MSG_MAP(CDialogImpl<CActionDialog>)
+			CHAIN_MSG_MAP(CDialogResize<CActionDialog>)
+			MSG_WM_INITDIALOG(OnInitDialog)
+			COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHHELPER_ACTION_SAVEAS, OnSaveAs)
+			COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHHELPER_ACTION_OPENGSN, OnOpenGsn)
+			COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHHELPER_ACTION_OPENGE, OnOpenGe)
+			COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHHELPER_ACTION_OPENLIST, OnOpenList)
+			REFLECT_NOTIFICATIONS()
+		END_MSG_MAP()
+
+		BEGIN_DLGRESIZE_MAP(CActionDialog)
+			//DLGRESIZE_CONTROL(IDC_FILTERGRAPHHELPER_ACTION_, DLSZ_SIZE_X | DLSZ_SIZE_Y)
+		END_DLGRESIZE_MAP()
+
+		private:
+			CPropertyFrameDialog* m_pOwner;
+			BOOL m_bActivating;
+			CStatic m_TitleStatic;
+			CFont m_TitleFont;
+			CButton m_SaveAsButton;
+			CRoHyperStatic m_SaveAsDescriptionStatic;
+			CButton m_OpenGsnButton;
+			CRoHyperStatic m_OpenGsnDescriptionStatic;
+			CButton m_OpenGeButton;
+			CRoHyperStatic m_OpenGeDescriptionStatic;
+			CButton m_OpenListButton;
+			CRoHyperStatic m_OpenListDescriptionStatic;
+			CStringW m_sFilterGraphMonikerDisplayName;
+			CRoMapT<INT_PTR, BOOL> m_ChangeMap;
+
+		public:
+		// CActionDialog
+
+		// Window Message Handler
+			LRESULT OnInitDialog(HWND, LPARAM lParam)
+			{
+				m_pOwner = (CPropertyFrameDialog*) lParam;
+				m_bActivating = TRUE;
+				_ATLTRY
+				{
+					CWaitCursor WaitCursor;
+					m_TitleStatic = GetDlgItem(IDC_FILTERGRAPHHELPER_ACTION_TITLE);
+					CreateTitleFont(m_TitleFont, m_TitleStatic);
+					m_SaveAsButton = GetDlgItem(IDC_FILTERGRAPHHELPER_ACTION_SAVEAS);
+					_W(m_SaveAsDescriptionStatic.SubclassWindow(GetDlgItem(IDC_FILTERGRAPHHELPER_ACTION_SAVEASDESCRIPTION)));
+					m_OpenGsnButton = GetDlgItem(IDC_FILTERGRAPHHELPER_ACTION_OPENGSN);
+					_W(m_OpenGsnDescriptionStatic.SubclassWindow(GetDlgItem(IDC_FILTERGRAPHHELPER_ACTION_OPENGSNDESCRIPTION)));
+					m_OpenGeButton = GetDlgItem(IDC_FILTERGRAPHHELPER_ACTION_OPENGE);
+					_W(m_OpenGeDescriptionStatic.SubclassWindow(GetDlgItem(IDC_FILTERGRAPHHELPER_ACTION_OPENGEDESCRIPTION)));
+					m_OpenListButton = GetDlgItem(IDC_FILTERGRAPHHELPER_ACTION_OPENLIST);
+					_W(m_OpenListDescriptionStatic.SubclassWindow(GetDlgItem(IDC_FILTERGRAPHHELPER_ACTION_OPENLISTDESCRIPTION)));
+					//DlgResize_Init(FALSE, FALSE);
+					_ATLTRY
+					{
+						m_sFilterGraphMonikerDisplayName.Empty();
+						const CComQIPtr<ISpy> pSpy = m_pOwner->m_Owner.GetFilterGraph();
+						if(pSpy)
+						{
+							CComBSTR sFilterGraphMonikerDisplayName;
+							__C(pSpy->get_MonikerDisplayName(&sFilterGraphMonikerDisplayName));
+							m_sFilterGraphMonikerDisplayName = sFilterGraphMonikerDisplayName;
+						}
+					}
+					_ATLCATCHALL()
+					{
+						_Z_EXCEPTION();
+					}
+					const BOOL bMonikerDisplayNameAvailable = !m_sFilterGraphMonikerDisplayName.IsEmpty();
+					m_OpenGsnButton.EnableWindow(bMonikerDisplayNameAvailable);
+					m_OpenGeButton.EnableWindow(bMonikerDisplayNameAvailable);
+					m_bActivating = FALSE;
+				}
+				_ATLCATCH(Exception)
+				{
+					for(CWindow Window = GetWindow(GW_CHILD); Window; Window = Window.GetWindow(GW_HWNDNEXT))
+						Window.EnableWindow(FALSE);
+					AtlExceptionMessageBox(m_hWnd, Exception);
+				}
+				return TRUE;
+			}
+			LRESULT OnSaveAs(UINT, INT, HWND)
+			{
+				CPath sPath;
+				static const COMDLG_FILTERSPEC g_pFilter[] = 
+				{
+					{ _T("GraphEdit Files"), _T("*.grf") },
+					{ _T("All Files"), _T("*.*") },
+				};
+				if(GetOsVersion() >= GetWinVistaOsVersion())
+				{
+					CShellFileSaveDialog Dialog(NULL, FOS_OVERWRITEPROMPT | FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST, _T("grf"), g_pFilter, DIM(g_pFilter));
+					if(Dialog.DoModal(m_hWnd) != IDOK)
+						return 0;
+					CString sPathString;
+					__C(Dialog.GetFilePath(sPathString));
+					sPath = (LPCTSTR) sPathString;
+				} else
+				{
+					CString sFilter;
+					CFileDialog Dialog(FALSE, _T("grf"), NULL, OFN_OVERWRITEPROMPT | OFN_HIDEREADONLY | OFN_PATHMUSTEXIST | OFN_EXPLORER | OFN_ENABLESIZING, GetLegacyFilter(g_pFilter, sFilter));
+					if(Dialog.DoModal(m_hWnd) != IDOK)
+						return 0;
+					sPath = Dialog.m_szFileName;
+				}
+				#pragma region Save
+				// NOTE: See http://msdn.microsoft.com/en-us/library/windows/desktop/dd377551
+				const CComQIPtr<IPersistStream> pPersistStream = m_pOwner->m_Owner.GetFilterGraph();
+				__D(pPersistStream, E_NOINTERFACE);
+				CComPtr<IStorage> pStorage;
+				{
+					__C(StgCreateDocfile(CStringW(sPath), STGM_CREATE | STGM_TRANSACTED | STGM_READWRITE | STGM_SHARE_EXCLUSIVE, 0, &pStorage));
+					CComPtr<IStream> pStream;
+					__C(pStorage->CreateStream(L"ActiveMovieGraph", STGM_WRITE | STGM_CREATE | STGM_SHARE_EXCLUSIVE, 0, 0, &pStream));
+					__C(pPersistStream->Save(pStream, TRUE));
+				}
+				__C(pStorage->Commit(STGC_DEFAULT));
+				#pragma endregion
+				MessageBeep(MB_OK);
+				return 0;
+			}
+			LRESULT OnOpenGsn(UINT, INT, HWND)
+			{
+				OpenMonikerWithGsn(m_sFilterGraphMonikerDisplayName, m_hWnd);
+				return 0;
+			}
+			LRESULT OnOpenGe(UINT, INT, HWND)
+			{
+				OpenMonikerWithGe(m_sFilterGraphMonikerDisplayName, m_hWnd);
+				return 0;
+			}
+			LRESULT OnOpenList(UINT, INT, HWND)
+			{
+				DoFilterGraphListPropertySheetModal(m_hWnd);
+				return 0;
 			}
 		};
 
@@ -425,12 +579,7 @@ public:
 				{
 					CWaitCursor WaitCursor;
 					m_TitleStatic = GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_TITLE);
-					CLogFont LogFont;
-					LogFont.SetHeight(12, CClientDC(m_hWnd));
-					LogFont.lfWeight = FW_BOLD;
-					_tcsncpy_s(LogFont.lfFaceName, _T("Verdana"), _TRUNCATE);
-					_W(m_TitleFont.CreateFontIndirect(&LogFont));
-					m_TitleStatic.SetFont(m_TitleFont);
+					CreateTitleFont(m_TitleFont, m_TitleStatic);
 					m_FromEdit = GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_FROM);
 					m_ToEdit = GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_TO);
 					m_MethodComboBox.Initialize(GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_METHOD));
@@ -560,6 +709,7 @@ public:
 				TYPE_FILTERS,
 				TYPE_FILTER,
 				TYPE_FILTERPROPERTYPAGE,
+				TYPE_ACTION,
 				TYPE_EMAIL,
 			} TYPE;
 
@@ -614,6 +764,7 @@ public:
 		BOOL m_bActivating; 
 		CRoTreeViewT<CData, CRoListControlDataTraitsT> m_TreeView;
 		CTreeItem m_FiltersItem;
+		CTreeItem m_ActionItem;
 		CTreeItem m_EmailItem;
 		CTabCtrl m_Tab;
 		CRoEdit m_TextEdit;
@@ -623,7 +774,20 @@ public:
 		CButton m_CancelButton;
 		CButton m_ApplyButton;
 		CObjectPtr<CPropertyPageSite> m_pCurrentSite;
+		CActionDialog m_ActionDialog;
 		CEmailDialog m_EmailDialog;
+
+		static VOID CreateTitleFont(CFont& Font, HWND hStaticWindow = NULL)
+		{
+			_A(!Font);
+			CLogFont LogFont;
+			LogFont.SetHeight(12);
+			LogFont.lfWeight = FW_BOLD;
+			_tcsncpy_s(LogFont.lfFaceName, _T("Verdana"), _TRUNCATE);
+			_W(Font.CreateFontIndirect(&LogFont));
+			if(hStaticWindow)
+				CStatic(hStaticWindow).SetFont(Font);
+		}
 
 	public:
 	// CPropertyFrameDialog
@@ -695,7 +859,10 @@ public:
 			m_FiltersItem.m_hTreeItem = FiltersItem;
 			m_FiltersItem.m_pTreeView = &m_TreeView;
 			#pragma endregion
-			CTreeItem EmailItem = m_TreeView.InsertItem(NULL, FiltersItem, CData(CData::TYPE_EMAIL), _T("Email"));
+			CTreeItem ActionItem = m_TreeView.InsertItem(NULL, FiltersItem, CData(CData::TYPE_ACTION), _T("Action"));
+			m_ActionItem.m_hTreeItem = ActionItem;
+			m_ActionItem.m_pTreeView = &m_TreeView;
+			CTreeItem EmailItem = m_TreeView.InsertItem(NULL, ActionItem, CData(CData::TYPE_EMAIL), _T("Email"));
 			m_EmailItem.m_hTreeItem = EmailItem;
 			m_EmailItem.m_pTreeView = &m_TreeView;
 		}
@@ -719,6 +886,10 @@ public:
 			__C(m_pCurrentSite->m_pPropertyPage->Apply());
 			HandleStatusChange(m_pCurrentSite);
 		}
+		INT_PTR DoModal(HWND hParentWindow = GetActiveWindow())
+		{
+			return CDialogWithAccelerators::DoModal(hParentWindow);
+		}
 
 	// CDialogResize
 		VOID DlgResize_UpdateLayout(INT nWidth, INT nHeight)
@@ -727,6 +898,7 @@ public:
 			const CRect Position = GetTextEditPosition();
 			if(m_pCurrentSite && m_pCurrentSite->m_pPropertyPage)
 				_V(m_pCurrentSite->m_pPropertyPage->Move(Position));
+			_W(m_ActionDialog.SetWindowPos(NULL, Position, SWP_NOZORDER | SWP_NOACTIVATE));
 			_W(m_EmailDialog.SetWindowPos(NULL, Position, SWP_NOZORDER | SWP_NOACTIVATE));
 		}
 
@@ -753,6 +925,10 @@ public:
 				_W(Menu.AppendMenu(MF_SEPARATOR));
 				_W(Menu.AppendMenu(MF_STRING, ID_APP_ABOUT, _T("&About...")));
 				#pragma endregion
+				#pragma region Icon
+				SetIcon(AtlLoadIconImage(IDI_MODULE, LR_COLOR, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON)), TRUE);
+				SetIcon(AtlLoadIconImage(IDI_MODULE, LR_COLOR, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON)), FALSE);
+				#pragma endregion 
 				m_TreeView.Initialize(GetDlgItem(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_TREE));
 				m_TextEdit = GetDlgItem(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_TEXT);
 				CRect TextPosition;
@@ -768,6 +944,7 @@ public:
 				m_OkButton = GetDlgItem(IDOK);
 				m_CancelButton = GetDlgItem(IDCANCEL);
 				m_ApplyButton = GetDlgItem(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_APPLY);
+				__E(m_ActionDialog.Create(m_hWnd, (LPARAM) this));
 				__E(m_EmailDialog.Create(m_hWnd, (LPARAM) this));
 				DlgResize_Init(TRUE);
 				UpdateTree();
@@ -815,9 +992,10 @@ public:
 			if(TreeItem)
 			{
 				CData& Data = m_TreeView.GetItemData(TreeItem);
+				if(Data.m_Type != CData::TYPE_ACTION)
+					m_ActionDialog.ShowWindow(SW_HIDE);
 				if(Data.m_Type != CData::TYPE_EMAIL)
 					m_EmailDialog.ShowWindow(SW_HIDE);
-				#pragma endregion
 				if(Data.m_pBaseFilter)
 				{
 					if(Data.m_pPropertyPage)
@@ -919,6 +1097,12 @@ public:
 					HideCurrentSite();
 					switch(Data.m_Type)
 					{
+					#pragma region TYPE_ACTION
+					case CData::TYPE_ACTION:
+						m_TextEdit.ShowWindow(SW_HIDE);
+						_W(m_ActionDialog.SetWindowPos(NULL, GetTextEditPosition(), SWP_NOZORDER | SWP_SHOWWINDOW));
+						break;
+					#pragma endregion
 					#pragma region TYPE_EMAIL
 					case CData::TYPE_EMAIL:
 						m_TextEdit.ShowWindow(SW_HIDE);
@@ -928,6 +1112,7 @@ public:
 					default:
 						m_TextEdit.ShowWindow(SW_SHOW);
 						m_TextEdit.SetValue(m_Owner.GetText());
+						m_ActionDialog.ShowWindow(SW_HIDE);
 						m_EmailDialog.ShowWindow(SW_HIDE);
 					}
 					m_ApplyButton.EnableWindow(FALSE);
@@ -936,6 +1121,7 @@ public:
 			{
 				HideCurrentSite();
 				m_TextEdit.ShowWindow(SW_HIDE);
+				m_ActionDialog.ShowWindow(SW_HIDE);
 				m_EmailDialog.ShowWindow(SW_HIDE);
 				m_ApplyButton.EnableWindow(FALSE);
 			}
@@ -1018,6 +1204,10 @@ public:
 				AtlMessageBoxEx(m_hWnd, (LPCTSTR) Ds::FormatResult(Exception), IDS_ERROR, MB_ICONERROR | MB_OK);
 			}
 			return 0;
+		}
+		LRESULT OnActionCommand(UINT, INT nIdentifier, HWND)
+		{
+			return m_ActionDialog.SendMessage(WM_COMMAND, nIdentifier);
 		}
 	};
 
@@ -1709,6 +1899,149 @@ public:
 	{
 		CRoCriticalSectionLock DataLock(m_DataCriticalSection);
 		return GetText(m_pFilterGraph);
+	}
+	static LPCTSTR GetPlatformName()
+	{
+		#if defined(_WIN64)
+			return _T("x64");
+		#else
+			return _T("Win32");
+		#endif // defined(_WIN64)
+	}
+	template <SIZE_T t_nItemCount>
+	static CString& GetLegacyFilter(const COMDLG_FILTERSPEC (&pItems)[t_nItemCount], CString& sFilter)
+	{
+		_A(sFilter.IsEmpty());
+		for(SIZE_T nIndex = 0; nIndex < t_nItemCount; nIndex++)
+		{
+			const COMDLG_FILTERSPEC& Item = pItems[nIndex];
+			sFilter += AtlFormatString(_T("%s (%s)|%s|"), Item.pszName, Item.pszSpec, Item.pszSpec);
+		}
+		sFilter.Replace(_T('|'), 0);
+		return sFilter;
+	}
+	static BOOL OpenMonikerWithGsn(LPCWSTR pszMonikerDisplayName, HWND hParentWindow = GetActiveWindow())
+	{
+		_A(pszMonikerDisplayName);
+		static const LPCTSTR g_pszValueName = _T("GraphStudioNext Path");
+		static const LPCTSTR g_pszFileName = _T("graphstudionext.exe");
+		const CString sValueName = AtlFormatString(_T("%s (%s)"), g_pszValueName, GetPlatformName());
+		CString sPath = _RegKeyHelper::QueryStringValue(HKEY_CURRENT_USER, REGISTRY_ROOT, sValueName);
+		if(!FileExists(sPath))
+			sPath.Empty();
+		#pragma region Current Directory
+		if(sPath.IsEmpty())
+		{
+			sPath = (LPCTSTR) Combine(GetPathDirectory(GetModulePath()), g_pszFileName);
+			if(!FileExists(sPath))
+				sPath.Empty();
+		}
+		#pragma endregion 
+		#pragma region Application Registry
+		if(sPath.IsEmpty())
+		{
+			#if defined(_WIN64)
+				static const LPCTSTR g_pszValueName = _T("exeLocation64");
+			#else
+				static const LPCTSTR g_pszValueName = _T("exeLocation");
+			#endif // defined(_WIN64)
+			sPath = _RegKeyHelper::QueryStringValue(HKEY_CURRENT_USER, _T("Software\\MONOGRAM\\GraphStudioNext"), g_pszValueName);
+			if(!FileExists(sPath))
+				sPath.Empty();
+		}
+		#pragma endregion 
+		if(sPath.IsEmpty())
+		{
+			#pragma region Prompt
+			static const COMDLG_FILTERSPEC g_pFilter[] = 
+			{
+				{ _T("Executable Files"), _T("*.exe") },
+				{ _T("All Files"), _T("*.*") },
+			};
+			if(GetOsVersion() >= GetWinVistaOsVersion())
+			{
+				CShellFileOpenDialog Dialog(g_pszFileName, FOS_FORCEFILESYSTEM | FOS_FILEMUSTEXIST, _T("exe"), g_pFilter, DIM(g_pFilter));
+				if(Dialog.DoModal(hParentWindow) != IDOK)
+					return FALSE;
+				__C(Dialog.GetFilePath(sPath));
+			} else
+			{
+				CString sFilter;
+				CFileDialog Dialog(TRUE, _T("exe"), NULL, OFN_HIDEREADONLY | OFN_FILEMUSTEXIST | OFN_EXPLORER | OFN_ENABLESIZING, GetLegacyFilter(g_pFilter, sFilter));
+				if(Dialog.DoModal(hParentWindow) != IDOK)
+					return FALSE;
+				sPath = Dialog.m_szFileName;
+			}
+			#pragma endregion 
+			_RegKeyHelper::SetStringValue(HKEY_CURRENT_USER, REGISTRY_ROOT, sValueName, sPath);
+		}
+		CWaitCursor WaitCursor;
+		CString sParameters = AtlFormatString(_T("-a \"%ls\""), pszMonikerDisplayName);
+		SHELLEXECUTEINFO Infomation;
+		ZeroMemory(&Infomation, sizeof Infomation);
+		Infomation.cbSize = sizeof Infomation;
+		Infomation.lpFile = sPath;
+		Infomation.lpParameters = sParameters;
+		Infomation.nShow = SW_SHOWNORMAL;
+		__E(ShellExecuteEx(&Infomation));
+		return TRUE;
+	}
+	static BOOL OpenMonikerWithGe(LPCWSTR pszMonikerDisplayName, HWND hParentWindow = GetActiveWindow())
+	{
+		static const LPCTSTR g_pszValueName = _T("GraphEdit Path");
+		static const LPCTSTR g_pszFileName = _T("graphedt.exe");
+		const CString sValueName = AtlFormatString(_T("%s (%s)"), g_pszValueName, GetPlatformName());
+		CString sPath = _RegKeyHelper::QueryStringValue(HKEY_CURRENT_USER, REGISTRY_ROOT, sValueName);
+		if(!FileExists(sPath))
+			sPath.Empty();
+		#pragma region Current Directory
+		if(sPath.IsEmpty())
+		{
+			sPath = (LPCTSTR) Combine(GetPathDirectory(GetModulePath()), g_pszFileName);
+			if(!FileExists(sPath))
+				sPath.Empty();
+		}
+		#pragma endregion 
+		// SUGG: Look for Windows SDK
+		if(sPath.IsEmpty())
+		{
+			#pragma region Prompt
+			static const COMDLG_FILTERSPEC g_pFilter[] = 
+			{
+				{ _T("Executable Files"), _T("*.exe") },
+				{ _T("All Files"), _T("*.*") },
+			};
+			if(GetOsVersion() >= GetWinVistaOsVersion())
+			{
+				CShellFileOpenDialog Dialog(g_pszFileName, FOS_FORCEFILESYSTEM | FOS_FILEMUSTEXIST, _T("exe"), g_pFilter, DIM(g_pFilter));
+				if(Dialog.DoModal(hParentWindow) != IDOK)
+					return FALSE;
+				__C(Dialog.GetFilePath(sPath));
+			} else
+			{
+				CString sFilter;
+				CFileDialog Dialog(TRUE, _T("exe"), NULL, OFN_HIDEREADONLY | OFN_FILEMUSTEXIST | OFN_EXPLORER | OFN_ENABLESIZING, GetLegacyFilter(g_pFilter, sFilter));
+				if(Dialog.DoModal(hParentWindow) != IDOK)
+					return FALSE;
+				sPath = Dialog.m_szFileName;
+			}
+			#pragma endregion 
+			_RegKeyHelper::SetStringValue(HKEY_CURRENT_USER, REGISTRY_ROOT, sValueName, sPath);
+		}
+		CStringW sFilterGraphMonikerDisplayName = pszMonikerDisplayName;
+		const INT nSeparatorPosition = sFilterGraphMonikerDisplayName.Find(L';');
+		if(nSeparatorPosition >= 0)
+			sFilterGraphMonikerDisplayName = sFilterGraphMonikerDisplayName.Left(nSeparatorPosition);
+		CWaitCursor WaitCursor;
+		CString sParameters = AtlFormatString(_T("-a %ls"), sFilterGraphMonikerDisplayName);
+		SHELLEXECUTEINFO Infomation;
+		ZeroMemory(&Infomation, sizeof Infomation);
+		Infomation.cbSize = sizeof Infomation;
+		Infomation.lpFile = sPath;
+		Infomation.lpParameters = sParameters;
+		Infomation.nShow = SW_SHOWNORMAL;
+		__E(ShellExecuteEx(&Infomation));
+		return TRUE;
 	}
 
 // IFilterGraphHelper

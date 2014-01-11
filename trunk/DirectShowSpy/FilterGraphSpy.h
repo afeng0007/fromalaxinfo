@@ -84,7 +84,7 @@ public:
 		mutable CRoCriticalSection m_DataCriticalSection;
 		T* m_pSpy;
 
-		CObjectPtr<T> GetSpy() const throw()
+		CObjectPtr<T> GetSpy() const
 		{
 			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
 			return m_pSpy;
@@ -92,16 +92,16 @@ public:
 
 	public:
 	// CAmGraphBuilderCallback
-		CAmGraphBuilderCallback() throw() :
+		CAmGraphBuilderCallback() :
 			m_pSpy(NULL)
 		{
 			_Z5(atlTraceRefcount, 5, _T("this 0x%p\n"), this);
 		}
-		~CAmGraphBuilderCallback() throw()
+		~CAmGraphBuilderCallback()
 		{
 			_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
 		}
-		VOID Initialize(T* pSpy) throw()
+		VOID Initialize(T* pSpy)
 		{
 			_A(pSpy);
 			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
@@ -109,12 +109,12 @@ public:
 			_A(!m_pSpy);
 			m_pSpy = pSpy;
 		}
-		VOID Terminate() throw()
+		VOID Terminate()
 		{
 			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
 			m_pSpy = NULL;
 		}
-		BOOL SetGraphBuilder(const CComQIPtr<IObjectWithSite> pObjectWithSite) throw()
+		BOOL SetGraphBuilder(const CComQIPtr<IObjectWithSite> pObjectWithSite)
 		{
 			if(!pObjectWithSite)
 				return FALSE;
@@ -124,13 +124,13 @@ public:
 			_Z4(atlTraceRefcount, 4, _T("nSetSiteResult 0x%08x\n"), nSetSiteResult);
 			return FALSE;
 		}
-		BOOL SetGraphBuilder(IUnknown* pObjectWithSiteUnknown) throw()
+		BOOL SetGraphBuilder(IUnknown* pObjectWithSiteUnknown)
 		{
 			return SetGraphBuilder(CComQIPtr<IObjectWithSite>(pObjectWithSiteUnknown));
 		}
 
 	// IAMGraphBuilderCallback
-        STDMETHOD(SelectedFilter)(IMoniker* pMoniker) throw()
+        STDMETHOD(SelectedFilter)(IMoniker* pMoniker)
 		{
 			_Z4(atlTraceCOM, 4, _T("this 0x%p, pMoniker %ls\n"), this, _FilterGraphHelper::GetMonikerDisplayName(pMoniker));
 			_ATLTRY
@@ -151,7 +151,7 @@ public:
 			}
 			return S_OK;
 		}
-		STDMETHOD(CreatedFilter)(IBaseFilter* pBaseFilter) throw()
+		STDMETHOD(CreatedFilter)(IBaseFilter* pBaseFilter)
 		{
 			_Z4(atlTraceCOM, 4, _T("this 0x%p, pBaseFilter 0x%p %ls \"%ls\"\n"), this, pBaseFilter, _FilterGraphHelper::GetFilterClassIdentifierString(pBaseFilter), _FilterGraphHelper::GetFilterName(pBaseFilter));
 			_ATLTRY
@@ -185,16 +185,19 @@ private:
 	CComPtr<IMediaEventEx> m_pInnerMediaEventEx;
 	_FilterGraphHelper::CRotRunningFilterGraph m_RunningFilterGraph;
 	INT m_nRunningFilterGraphReference;
+	SYSTEMTIME m_Time;
+	CStringW m_sMonikerDisplayName;
 	CComPtr<IUnknown> m_pTemporaryUnknown;
 	CObjectPtr<CAmGraphBuilderCallback> m_pPrivateAmGraphBuilderCallback;
 	mutable CRoCriticalSection m_DataCriticalSection;
 	CComPtr<IUnknown> m_pSite;
+	CStringW m_sFriendlyName;
 
-	BOOL IsAggregated() const throw()
+	BOOL IsAggregated() const
 	{
 		return (ULONG) m_dwRef >= 0x00001000;
 	}
-	VOID ReleaseTemporaryUnknown() throw()
+	VOID ReleaseTemporaryUnknown()
 	{
 		CComPtr<IUnknown> pUnknown;
 		Lock();
@@ -209,19 +212,25 @@ private:
 		m_nRunningFilterGraphReference = 0;
 		CInterlockedLong& nReferenceCount = reinterpret_cast<CInterlockedLong&>(m_dwRef);
 		const LONG nBeforeReferenceCount = m_dwRef;
+		SYSTEMTIME Time;
+		GetLocalTime(&Time);
+		CStringW sMonikerDisplayName;
 		static CConstIntegerRegistryValue g_nEnableRotMonikerItemNameSuffix(_T("Enable ROT Moniker Item Name Suffix")); // 0 Default (Enabled), 1 Disabled, 2 Enabled
 		if(g_nEnableRotMonikerItemNameSuffix != 1)
 		{
 			TCHAR pszPath[MAX_PATH] = { 0 };
 			_W(GetModuleFileName(NULL, pszPath, DIM(pszPath)));
 			LPCTSTR pszName = FindFileName(pszPath);
-			SYSTEMTIME Time;
-			GetLocalTime(&Time);
 			CString sItemName = AtlFormatString(_T("%s; process: %s, time: %02d-%02d-%02d"), m_RunningFilterGraph.GetDefaultMonikerItemName(GetControllingUnknown()), pszName, Time.wHour, Time.wMinute, Time.wSecond);
-			m_RunningFilterGraph.SetFilterGraph(GetControllingUnknown(), CStringW(sItemName));
+			m_RunningFilterGraph.SetFilterGraph(GetControllingUnknown(), CStringW(sItemName), &sMonikerDisplayName);
 		} else
-			m_RunningFilterGraph.SetFilterGraph(GetControllingUnknown());
-		_Z4(atlTraceRefcount, 4, _T("this 0x%p, m_bIsAggregated %d, m_dwRef %d\n"), this, m_bIsAggregated, m_dwRef);
+			m_RunningFilterGraph.SetFilterGraph(GetControllingUnknown(), &sMonikerDisplayName);
+		_Z4(atlTraceRefcount, 4, _T("this 0x%p, m_bIsAggregated %d, m_dwRef %d, sMonikerDisplayName \"%ls\"\n"), this, m_bIsAggregated, m_dwRef, sMonikerDisplayName);
+		{
+			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+			m_Time = Time;
+			m_sMonikerDisplayName = sMonikerDisplayName;
+		}
 		if(!m_bIsAggregated)
 		{
 			m_nRunningFilterGraphReference++;
@@ -235,7 +244,7 @@ private:
 		}
 		Release();
 	}
-	VOID ResetRunningFilterGraph() throw()
+	VOID ResetRunningFilterGraph()
 	{
 		if(!m_RunningFilterGraph.GetCookie())
 			return;
@@ -243,9 +252,13 @@ private:
 			AddRef();
 		_Z4(atlTraceRefcount, 4, _T("this 0x%p, m_dwRef 0x%x\n"), this, m_dwRef);
 		m_RunningFilterGraph.SetFilterGraph(NULL);
+		{
+			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+			m_sMonikerDisplayName.Empty();
+		}
 		_Z4(atlTraceRefcount, 4, _T("this 0x%p, m_dwRef 0x%x\n"), this, m_dwRef);
 	}
-	HRESULT InternalQueryFilterGraph3Interface(REFIID InterfaceIdentifier, VOID** ppvObject) throw()
+	HRESULT InternalQueryFilterGraph3Interface(REFIID InterfaceIdentifier, VOID** ppvObject)
 	{
 		_A(InterfaceIdentifier == __uuidof(IFilterGraph3));
 		_A(ppvObject);
@@ -259,11 +272,11 @@ private:
 		pT->InternalAddRef();
 		return S_OK;
 	}
-	static HRESULT WINAPI QueryFilterGraph3Interface(VOID* pvThis, REFIID InterfaceIdentifier, VOID** ppvObject, DWORD_PTR) throw()
+	static HRESULT WINAPI QueryFilterGraph3Interface(VOID* pvThis, REFIID InterfaceIdentifier, VOID** ppvObject, DWORD_PTR)
 	{
 		return ((CSpy*) pvThis)->InternalQueryFilterGraph3Interface(InterfaceIdentifier, ppvObject);
 	}
-	HRESULT HookMediaControlAddSourceFilter(BSTR sFileName, IBaseFilter** ppBaseFilter, BOOL* pbDefault) throw()
+	HRESULT HookMediaControlAddSourceFilter(BSTR sFileName, IBaseFilter** ppBaseFilter, BOOL* pbDefault)
 	{
 		_A(pbDefault);
 		HOOK_PROLOG(CFilterGraphAddRemoveHookHost)
@@ -275,7 +288,7 @@ private:
 
 public:
 // CSpyT
-	static LPCTSTR GetOriginalLibraryName() throw()
+	static LPCTSTR GetOriginalLibraryName()
 	{
 		return _T("quartz.dll");
 	}
@@ -283,7 +296,7 @@ public:
 	{
 		return _StringHelper::GetLine(T::IDR, 2);
 	}
-	static HRESULT WINAPI UpdateRegistry(BOOL bRegister) throw()
+	static HRESULT WINAPI UpdateRegistry(BOOL bRegister)
 	{
 		_Z2(atlTraceRegistrar, 2, _T("bRegister %d\n"), bRegister);
 		_ATLTRY
@@ -296,16 +309,17 @@ public:
 		}
 		return S_OK;
 	}
-	CSpyT() throw()	:
+	CSpyT()	:
 		m_hQuartzModule(NULL)
 	{
 		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		ZeroMemory(&m_Time, sizeof m_Time);
 	}
-	~CSpyT() throw()
+	~CSpyT()
 	{
 		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
 	}
-	HRESULT FinalConstruct() throw()
+	HRESULT FinalConstruct()
 	{
 		m_bIsAggregated = IsAggregated();
 		if(!m_bIsAggregated)
@@ -418,7 +432,7 @@ public:
 				return E_UNEXPECTED;
 		return S_OK;
 	}
-	VOID FinalRelease() throw()
+	VOID FinalRelease()
 	{
 		_Z5(atlTraceRefcount, 5, _T("m_dwRef 0x%x\n"), m_dwRef);
 		_A(!m_pTemporaryUnknown);
@@ -478,7 +492,7 @@ public:
 		}
 		#pragma endregion
 	}
-	HRESULT QueryObjectWithSiteInterface(REFIID InterfaceIdentifier, LPVOID* ppvObject) throw()
+	HRESULT QueryObjectWithSiteInterface(REFIID InterfaceIdentifier, LPVOID* ppvObject)
 	{
 		_A(InterfaceIdentifier == __uuidof(IObjectWithSite));
 		_A(ppvObject);
@@ -490,11 +504,11 @@ public:
 		_A(m_pInnerUnknown);
 		return m_pInnerUnknown->QueryInterface(InterfaceIdentifier, ppvObject);
 	}
-	static HRESULT WINAPI QueryObjectWithSiteInterface(VOID* pvInstance, REFIID InterfaceIdentifier, LPVOID* ppvObject, DWORD_PTR) throw()
+	static HRESULT WINAPI QueryObjectWithSiteInterface(VOID* pvInstance, REFIID InterfaceIdentifier, LPVOID* ppvObject, DWORD_PTR)
 	{
 		return ((CSpy*) pvInstance)->QueryObjectWithSiteInterface(InterfaceIdentifier, ppvObject);
 	}
-	CComPtr<IUnknown> GetSite() const throw()
+	CComPtr<IUnknown> GetSite() const
 	{
 		CRoCriticalSectionLock DataLock(m_DataCriticalSection);
 		return m_pSite;
@@ -519,7 +533,7 @@ public:
 		}
 		return FALSE;
 	}
-	static BOOL LookupEventCodeName(LONG nEventCode, LPCSTR& pszName) throw()
+	static BOOL LookupEventCodeName(LONG nEventCode, LPCSTR& pszName)
 	{
 		// NOTE: See Windows SDK evcode.h
 		static const struct { LONG nEventCode; LPCSTR pszName; } g_pMap[] = 
@@ -572,9 +586,73 @@ public:
 	}
 
 // ISpy
+    STDMETHOD(get_MonikerDisplayName)(BSTR* psMonikerDisplayName)
+	{
+		_Z4(atlTraceCOM, 4, _T("this 0x%p\n"), this);
+		_ATLTRY
+		{
+			__D(psMonikerDisplayName, E_POINTER);
+			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+			*psMonikerDisplayName = CComBSTR(m_sMonikerDisplayName).Detach();
+		}
+		_ATLCATCHALL()
+		{
+			_Z_EXCEPTION();
+		}
+		return S_OK;
+	}
+	STDMETHOD(get_CreationTime)(DATE* pfTime)
+	{
+		_Z4(atlTraceCOM, 4, _T("this 0x%p\n"), this);
+		_ATLTRY
+		{
+			__D(pfTime, E_POINTER);
+			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+			FILETIME LocalFileTime, FileTime;
+			_W(SystemTimeToFileTime(&m_Time, &LocalFileTime));
+			_W(LocalFileTimeToFileTime(&LocalFileTime, &FileTime));
+			SYSTEMTIME Time;
+			_W(FileTimeToSystemTime(&FileTime, &Time));
+			_W(SystemTimeToVariantTime(&Time, pfTime));
+		}
+		_ATLCATCHALL()
+		{
+			_Z_EXCEPTION();
+		}
+		return S_OK;
+	}
+	STDMETHOD(get_FriendlyName)(BSTR* psFriendlyName)
+	{
+		_Z4(atlTraceCOM, 4, _T("this 0x%p\n"), this);
+		_ATLTRY
+		{
+			__D(psFriendlyName, E_POINTER);
+			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+			*psFriendlyName = CComBSTR(m_sFriendlyName).Detach();
+		}
+		_ATLCATCHALL()
+		{
+			_Z_EXCEPTION();
+		}
+		return S_OK;
+	}
+	STDMETHOD(put_FriendlyName)(BSTR sFriendlyName)
+	{
+		_Z4(atlTraceCOM, 4, _T("this 0x%p, sFriendlyName \"%s\"\n"), this, CString(sFriendlyName));
+		_ATLTRY
+		{
+			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+			m_sFriendlyName = sFriendlyName;
+		}
+		_ATLCATCHALL()
+		{
+			_Z_EXCEPTION();
+		}
+		return S_OK;
+	}
 
 // IFilterGraph
-	STDMETHOD(AddFilter)(IBaseFilter* pBaseFilter, LPCWSTR pszName) throw()
+	STDMETHOD(AddFilter)(IBaseFilter* pBaseFilter, LPCWSTR pszName)
 	{
 		_Z4(atlTraceCOM, 4, _T("this 0x%p, pBaseFilter 0x%p %ls, pszName \"%s\"\n"), this, pBaseFilter, _FilterGraphHelper::GetFilterClassIdentifierString(pBaseFilter), CString(pszName));
 		ReleaseTemporaryUnknown();
@@ -594,7 +672,7 @@ public:
 			}
 		return nResult;
 	}
-    STDMETHOD(RemoveFilter)(IBaseFilter* pBaseFilter) throw()
+    STDMETHOD(RemoveFilter)(IBaseFilter* pBaseFilter)
 	{
 		_Z4(atlTraceCOM, 4, _T("this 0x%p, pBaseFilter 0x%p\n"), this, pBaseFilter);
 		if(pBaseFilter)
@@ -612,17 +690,17 @@ public:
 		HOOK_EPILOG()
 		return m_pInnerFilterGraph2->RemoveFilter(pBaseFilter);
 	}
-    STDMETHOD(EnumFilters)(IEnumFilters** ppEnumFilters) throw()
+    STDMETHOD(EnumFilters)(IEnumFilters** ppEnumFilters)
 	{
 		_Z4(atlTraceCOM, 4, _T("...\n"));
 		return m_pInnerFilterGraph2->EnumFilters(ppEnumFilters);
 	}
-    STDMETHOD(FindFilterByName)(LPCWSTR pszName, IBaseFilter** ppFilter) throw()
+    STDMETHOD(FindFilterByName)(LPCWSTR pszName, IBaseFilter** ppFilter)
 	{
 		_Z4(atlTraceCOM, 4, _T("pszName \"%s\"\n"), CString(pszName));
 		return m_pInnerFilterGraph2->FindFilterByName(pszName, ppFilter);
 	}
-    STDMETHOD(ConnectDirect)(IPin* pOutputPin, IPin* pInputPin, const AM_MEDIA_TYPE* pMediaType) throw()
+    STDMETHOD(ConnectDirect)(IPin* pOutputPin, IPin* pInputPin, const AM_MEDIA_TYPE* pMediaType)
 	{
 		_Z4(atlTraceCOM, 4, _T("...\n"));
 		if(pOutputPin && pInputPin)
@@ -641,7 +719,7 @@ public:
 		HOOK_EPILOG()
 		return m_pInnerFilterGraph2->ConnectDirect(pOutputPin, pInputPin, pMediaType);
 	}
-    STDMETHOD(Reconnect)(IPin* pPin) throw()
+    STDMETHOD(Reconnect)(IPin* pPin)
 	{
 		_Z4(atlTraceCOM, 4, _T("...\n"));
 		HOOK_PROLOG(CFilterGraphConnectHookHost)
@@ -649,7 +727,7 @@ public:
 		HOOK_EPILOG()
 		return m_pInnerFilterGraph2->Reconnect(pPin);
 	}
-    STDMETHOD(Disconnect)(IPin* pPin) throw()
+    STDMETHOD(Disconnect)(IPin* pPin)
 	{
 		_Z4(atlTraceCOM, 4, _T("...\n"));
 		HOOK_PROLOG(CFilterGraphConnectHookHost)
@@ -657,14 +735,14 @@ public:
 		HOOK_EPILOG()
 		return m_pInnerFilterGraph2->Disconnect(pPin);
 	}
-    STDMETHOD(SetDefaultSyncSource)() throw()
+    STDMETHOD(SetDefaultSyncSource)()
 	{
 		_Z4(atlTraceCOM, 4, _T("...\n"));
 		return m_pInnerFilterGraph2->SetDefaultSyncSource();
 	}
 
 // IGraphBuilder
-    STDMETHOD(Connect)(IPin* pOutputPin, IPin* pInputPin) throw()
+    STDMETHOD(Connect)(IPin* pOutputPin, IPin* pInputPin)
 	{
 		_Z4(atlTraceCOM, 4, _T("pOutputPin 0x%p, pInputPin 0x%p\n"), pOutputPin, pInputPin);
 		if(pOutputPin && pInputPin)
@@ -684,17 +762,17 @@ public:
 		HOOK_EPILOG()
 		return m_pInnerFilterGraph2->Connect(pOutputPin, pInputPin);
 	}
-    STDMETHOD(Render)(IPin* pOutputPin) throw()
+    STDMETHOD(Render)(IPin* pOutputPin)
 	{
 		_Z4(atlTraceCOM, 4, _T("...\n"));
 		return m_pInnerFilterGraph2->Render(pOutputPin);
 	}
-    STDMETHOD(RenderFile)(LPCWSTR pszFileName, LPCWSTR pszPlayListFileName) throw()
+    STDMETHOD(RenderFile)(LPCWSTR pszFileName, LPCWSTR pszPlayListFileName)
 	{
 		_Z4(atlTraceCOM, 4, _T("pszFileName \"%s\", pszPlayListFileName \"%s\"\n"), CString(pszFileName), CString(pszPlayListFileName));
 		return m_pInnerFilterGraph2->RenderFile(pszFileName, pszPlayListFileName);
 	}
-    STDMETHOD(AddSourceFilter)(LPCWSTR pszFileName, LPCWSTR pszFilterName, IBaseFilter** ppBaseFilter) throw()
+    STDMETHOD(AddSourceFilter)(LPCWSTR pszFileName, LPCWSTR pszFilterName, IBaseFilter** ppBaseFilter)
 	{
 		_Z4(atlTraceCOM, 4, _T("pszFileName \"%s\", pszFilterName \"%s\"\n"), CString(pszFileName), CString(pszFilterName));
 		ReleaseTemporaryUnknown();
@@ -703,24 +781,24 @@ public:
 		HOOK_EPILOG()
 		return m_pInnerFilterGraph2->AddSourceFilter(pszFileName, pszFilterName, ppBaseFilter);
 	}
-	STDMETHOD(SetLogFile)(DWORD_PTR hFile) throw()
+	STDMETHOD(SetLogFile)(DWORD_PTR hFile)
 	{
 		_Z4(atlTraceCOM, 4, _T("...\n"));
 		return m_pInnerFilterGraph2->SetLogFile(hFile);
 	}
-	STDMETHOD(Abort)() throw()
+	STDMETHOD(Abort)()
 	{
 		_Z4(atlTraceCOM, 4, _T("...\n"));
 		return m_pInnerFilterGraph2->Abort();
 	}
-	STDMETHOD(ShouldOperationContinue)() throw()
+	STDMETHOD(ShouldOperationContinue)()
 	{
 		_Z4(atlTraceCOM, 4, _T("...\n"));
 		return m_pInnerFilterGraph2->ShouldOperationContinue();
 	}
 
 // IFilterGraph2
-	STDMETHOD(AddSourceFilterForMoniker)(IMoniker* pMoniker, IBindCtx* pBindCtx, LPCWSTR pszFilterName, IBaseFilter** ppBaseFilter) throw()
+	STDMETHOD(AddSourceFilterForMoniker)(IMoniker* pMoniker, IBindCtx* pBindCtx, LPCWSTR pszFilterName, IBaseFilter** ppBaseFilter)
 	{
 		_Z4(atlTraceCOM, 4, _T("pszFilterName \"%s\"\n"), CString(pszFilterName));
 		ReleaseTemporaryUnknown();
@@ -729,7 +807,7 @@ public:
 		HOOK_EPILOG()
 		return m_pInnerFilterGraph2->AddSourceFilterForMoniker(pMoniker, pBindCtx, pszFilterName, ppBaseFilter);
 	}
-	STDMETHOD(ReconnectEx)(IPin* pPin, const AM_MEDIA_TYPE* pMediaType) throw()
+	STDMETHOD(ReconnectEx)(IPin* pPin, const AM_MEDIA_TYPE* pMediaType)
 	{
 		_Z4(atlTraceCOM, 4, _T("...\n"));
 		HOOK_PROLOG(CFilterGraphConnectHookHost)
@@ -737,14 +815,14 @@ public:
 		HOOK_EPILOG()
 		return m_pInnerFilterGraph2->ReconnectEx(pPin, pMediaType);
 	}
-	STDMETHOD(RenderEx)(IPin* pOutputPin, DWORD nFlags, DWORD* pnContext) throw()
+	STDMETHOD(RenderEx)(IPin* pOutputPin, DWORD nFlags, DWORD* pnContext)
 	{
 		_Z4(atlTraceCOM, 4, _T("nFlags 0x%x\n"), nFlags);
 		return m_pInnerFilterGraph2->RenderEx(pOutputPin, nFlags, pnContext);
 	}
 
 // IFilterGraph3
-    STDMETHOD(SetSyncSourceEx)(IReferenceClock* pFilterGraphReferenceClock, IReferenceClock* pFilterReferenceClock, IBaseFilter* pBaseFilter) throw()
+    STDMETHOD(SetSyncSourceEx)(IReferenceClock* pFilterGraphReferenceClock, IReferenceClock* pFilterReferenceClock, IBaseFilter* pBaseFilter)
 	{
 		_Z4(atlTraceCOM, 4, _T("...\n"));
 		_A(m_pInnerFilterGraph3);
@@ -752,7 +830,7 @@ public:
 	}
 
 // IMediaControl
-	STDMETHOD(Run)() throw()
+	STDMETHOD(Run)()
 	{
 		_Z4(atlTraceCOM, 4, _T("...\n"));
 		_ATLTRY
@@ -772,7 +850,7 @@ public:
 		_Z4(atlTraceGeneral, 4, _T("nRunResult 0x%08x\n"), nRunResult);
 		return nRunResult;
 	}
-	STDMETHOD(Pause)() throw()
+	STDMETHOD(Pause)()
 	{
 		_Z4(atlTraceCOM, 4, _T("...\n"));
 		_ATLTRY
@@ -790,7 +868,7 @@ public:
 		HOOK_EPILOG()
 		return m_pInnerMediaControl->Pause();
 	}
-	STDMETHOD(Stop)() throw()
+	STDMETHOD(Stop)()
 	{
 		_Z4(atlTraceCOM, 4, _T("...\n"));
 		HOOK_PROLOG(CFilterGraphStateControlHookHost)
@@ -798,17 +876,17 @@ public:
 		HOOK_EPILOG()
 		return m_pInnerMediaControl->Stop();
 	}
-	STDMETHOD(GetState)(LONG nTimeout, OAFilterState* pState) throw()
+	STDMETHOD(GetState)(LONG nTimeout, OAFilterState* pState)
 	{
 		_Z5(atlTraceCOM, 5, _T("nTimeout %d\n"), nTimeout);
 		return m_pInnerMediaControl->GetState(nTimeout, pState);
 	}
-	STDMETHOD(RenderFile)(BSTR sFileName) throw()
+	STDMETHOD(RenderFile)(BSTR sFileName)
 	{
 		_Z4(atlTraceCOM, 4, _T("sFileName \"%s\"\n"), CString(sFileName));
 		return m_pInnerMediaControl->RenderFile(sFileName);
 	}
-    STDMETHOD(AddSourceFilter)(BSTR sFileName, IDispatch** ppDispatch) throw()
+    STDMETHOD(AddSourceFilter)(BSTR sFileName, IDispatch** ppDispatch)
 	{
 		_Z4(atlTraceCOM, 4, _T("sFileName \"%s\"\n"), CString(sFileName));
 		ReleaseTemporaryUnknown();
@@ -836,26 +914,26 @@ public:
 		}
 		return m_pInnerMediaControl->AddSourceFilter(sFileName, ppDispatch);
 	}
-	STDMETHOD(get_FilterCollection)(IDispatch** ppDispatch) throw()
+	STDMETHOD(get_FilterCollection)(IDispatch** ppDispatch)
 	{
 		_Z4(atlTraceCOM, 4, _T("...\n"));
 		ReleaseTemporaryUnknown();
 		return m_pInnerMediaControl->get_FilterCollection(ppDispatch);
 	}
-	STDMETHOD(get_RegFilterCollection)(IDispatch** ppDispatch) throw()
+	STDMETHOD(get_RegFilterCollection)(IDispatch** ppDispatch)
 	{
 		_Z4(atlTraceCOM, 4, _T("...\n"));
 		ReleaseTemporaryUnknown();
 		return m_pInnerMediaControl->get_RegFilterCollection(ppDispatch);
 	}
-	STDMETHOD(StopWhenReady)() throw()
+	STDMETHOD(StopWhenReady)()
 	{
 		_Z4(atlTraceCOM, 4, _T("...\n"));
 		return m_pInnerMediaControl->StopWhenReady();
 	}
 
 // IMediaEventSink
-    STDMETHOD(Notify)(LONG nEventCode, LONG_PTR nParameter1, LONG_PTR nParameter2) throw()
+    STDMETHOD(Notify)(LONG nEventCode, LONG_PTR nParameter1, LONG_PTR nParameter2)
 	{
 		#if TRUE
 			LPCSTR pszEventName = NULL;
@@ -880,12 +958,12 @@ public:
 	}
 
 // IMediaEvent
-	STDMETHOD(GetEventHandle)(OAEVENT* pnEventHandle) throw()
+	STDMETHOD(GetEventHandle)(OAEVENT* pnEventHandle)
 	{
 		_Z4(atlTraceCOM, 4, _T("...\n"));
 		return m_pInnerMediaEventEx->GetEventHandle(pnEventHandle);
 	}
-	STDMETHOD(GetEvent)(LONG* pnEventCode, LONG_PTR* pnParameter1, LONG_PTR* pnParameter2, LONG nTimeout) throw()
+	STDMETHOD(GetEvent)(LONG* pnEventCode, LONG_PTR* pnParameter1, LONG_PTR* pnParameter2, LONG nTimeout)
 	{
 		_Z4(atlTraceCOM, nTimeout ? 4 : 5, _T("nTimeout %d\n"), nTimeout);
 		const HRESULT nGetEventResult = m_pInnerMediaEventEx->GetEvent(pnEventCode, pnParameter1, pnParameter2, nTimeout);
@@ -893,7 +971,7 @@ public:
 			_Z4(atlTraceCOM, (nGetEventResult != E_ABORT) ? 4 : 5, _T("nGetEventResult 0x%x, *pnEventCode 0x%02X, *pnParameter1 0x%p, *pnParameter2 0x%p\n"), nGetEventResult, *pnEventCode, *pnParameter1, *pnParameter2);
 		return nGetEventResult;
 	}
-	STDMETHOD(WaitForCompletion)(LONG nTimeout, LONG* pnEventCode) throw()
+	STDMETHOD(WaitForCompletion)(LONG nTimeout, LONG* pnEventCode)
 	{
 		_Z4(atlTraceCOM, 4, _T("nTimeout %d\n"), nTimeout);
 		const HRESULT nWaitForCompletionResult = m_pInnerMediaEventEx->WaitForCompletion(nTimeout, pnEventCode);
@@ -901,7 +979,7 @@ public:
 			_Z4(atlTraceCOM, 4, _T("nWaitForCompletionResult 0x%x, *pnEventCode 0x%02X\n"), nWaitForCompletionResult, *pnEventCode);
 		return nWaitForCompletionResult;
 	}
-	STDMETHOD(CancelDefaultHandling)(LONG nEventCode) throw()
+	STDMETHOD(CancelDefaultHandling)(LONG nEventCode)
 	{
 		#if TRUE
 			LPCSTR pszEventName = NULL;
@@ -913,7 +991,7 @@ public:
 		_Z4(atlTraceCOM, 4, _T("nEventCode 0x%02X\n"), nEventCode);
 		return m_pInnerMediaEventEx->CancelDefaultHandling(nEventCode);
 	}
-	STDMETHOD(RestoreDefaultHandling)(LONG nEventCode) throw()
+	STDMETHOD(RestoreDefaultHandling)(LONG nEventCode)
 	{
 		#if TRUE
 			LPCSTR pszEventName = NULL;
@@ -925,31 +1003,31 @@ public:
 		_Z4(atlTraceCOM, 4, _T("nEventCode 0x%02X\n"), nEventCode);
 		return m_pInnerMediaEventEx->RestoreDefaultHandling(nEventCode);
 	}
-	STDMETHOD(FreeEventParams)(LONG nEventCode, LONG_PTR nParameter1, LONG_PTR nParameter2) throw()
+	STDMETHOD(FreeEventParams)(LONG nEventCode, LONG_PTR nParameter1, LONG_PTR nParameter2)
 	{
 		_Z4(atlTraceCOM, 4, _T("nEventCode 0x%02X, nParameter1 0x%p, nParameter2 0x%p\n"), nEventCode, nParameter1, nParameter2);
 		return m_pInnerMediaEventEx->FreeEventParams(nEventCode, nParameter1, nParameter2);
 	}
        
 // IMediaEventEx
-	STDMETHOD(SetNotifyWindow)(OAHWND nWindowHandle, LONG nMessage, LONG_PTR nParameter) throw()
+	STDMETHOD(SetNotifyWindow)(OAHWND nWindowHandle, LONG nMessage, LONG_PTR nParameter)
 	{
 		_Z4(atlTraceCOM, 4, _T("nWindowHandle 0x%08x, nMessage 0x%04x, nParameter %p\n"), nWindowHandle, nMessage, nParameter);
 		return m_pInnerMediaEventEx->SetNotifyWindow(nWindowHandle, nMessage, nParameter);
 	}
-	STDMETHOD(SetNotifyFlags)(LONG nNotifyFlags) throw()
+	STDMETHOD(SetNotifyFlags)(LONG nNotifyFlags)
 	{
 		_Z4(atlTraceCOM, 4, _T("nNotifyFlags 0x%x\n"), nNotifyFlags);
 		return m_pInnerMediaEventEx->SetNotifyFlags(nNotifyFlags);
 	}
-	STDMETHOD(GetNotifyFlags)(LONG* pnNotifyFlags) throw()
+	STDMETHOD(GetNotifyFlags)(LONG* pnNotifyFlags)
 	{
 		_Z4(atlTraceCOM, 4, _T("...\n"));
 		return m_pInnerMediaEventEx->GetNotifyFlags(pnNotifyFlags);
 	}
 
 // IObjectWithSite
-	STDMETHOD(SetSite)(IUnknown* pSite) throw()
+	STDMETHOD(SetSite)(IUnknown* pSite)
 	{
 		_Z4(atlTraceCOM, 4, _T("pSite 0x%p\n"), pSite);
 		_ATLTRY
@@ -963,7 +1041,7 @@ public:
 		}
 		return S_OK;
 	}
-    STDMETHOD(GetSite)(REFIID InterfaceIdentifier, VOID** ppvSite) throw()
+    STDMETHOD(GetSite)(REFIID InterfaceIdentifier, VOID** ppvSite)
 	{
 		_Z4(atlTraceCOM, 4, _T("InterfaceIdentifier %ls\n"), _PersistHelper::StringFromInterfaceIdentifier(InterfaceIdentifier));
 		_ATLTRY
