@@ -58,3 +58,6 @@ copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.exe" .
 
 rem SupportTools
 rem DirectShowTools
+
+copy /b /y "D:\Projects\_Miscellanous\graph-studio-next.googlecode.com\bin\graphstudionext.exe" .
+copy /b /y "D:\Projects\_Miscellanous\graph-studio-next.googlecode.com\bin\graphstudionext64.exe" .
