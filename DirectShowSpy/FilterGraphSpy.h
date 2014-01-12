@@ -8,6 +8,9 @@
 #include "DirectShowSpy_i.h"
 #include "Common.h"
 
+HRESULT FilterGraphHelper_OpenGraphStudioNext(LONG nParentWindowHandle, LPCWSTR pszMonikerDisplayName, VARIANT_BOOL* pbResult);
+HRESULT FilterGraphHelper_OpenGraphEdit(LONG nParentWindowHandle, LPCWSTR pszMonikerDisplayName, VARIANT_BOOL* pbResult);
+
 ////////////////////////////////////////////////////////////
 // CSpyT
 
@@ -584,6 +587,11 @@ public:
 			}
 		return FALSE;
 	}
+	CStringW GetMonikerDisplayName() const
+	{
+		CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+		return m_sMonikerDisplayName;
+	}
 
 // ISpy
     STDMETHOD(get_MonikerDisplayName)(BSTR* psMonikerDisplayName)
@@ -592,8 +600,7 @@ public:
 		_ATLTRY
 		{
 			__D(psMonikerDisplayName, E_POINTER);
-			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
-			*psMonikerDisplayName = CComBSTR(m_sMonikerDisplayName).Detach();
+			*psMonikerDisplayName = CComBSTR(GetMonikerDisplayName()).Detach();
 		}
 		_ATLCATCHALL()
 		{
@@ -643,6 +650,32 @@ public:
 		{
 			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
 			m_sFriendlyName = sFriendlyName;
+		}
+		_ATLCATCHALL()
+		{
+			_Z_EXCEPTION();
+		}
+		return S_OK;
+	}
+	STDMETHOD(OpenGraphStudioNext)(LONG nParentWindowHandle, VARIANT_BOOL* pbResult)
+	{
+		_Z4(atlTraceCOM, 4, _T("this 0x%p, nParentWindowHandle 0x%08X\n"), this, nParentWindowHandle);
+		_ATLTRY
+		{
+			return FilterGraphHelper_OpenGraphStudioNext(nParentWindowHandle, GetMonikerDisplayName(), pbResult);
+		}
+		_ATLCATCHALL()
+		{
+			_Z_EXCEPTION();
+		}
+		return S_OK;
+	}
+	STDMETHOD(OpenGraphEdit)(LONG nParentWindowHandle, VARIANT_BOOL* pbResult)
+	{
+		_Z4(atlTraceCOM, 4, _T("this 0x%p, nParentWindowHandle 0x%08X\n"), this, nParentWindowHandle);
+		_ATLTRY
+		{
+			return FilterGraphHelper_OpenGraphEdit(nParentWindowHandle, GetMonikerDisplayName(), pbResult);
 		}
 		_ATLCATCHALL()
 		{

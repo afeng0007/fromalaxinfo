@@ -57,7 +57,9 @@
     <None Include="GenericClass.rgs">
       <Filter>Resource Files</Filter>
     </None>
-    <None Include="..\..\Repository-Private\Utilities\EmailTools\_Bin\Win32\Release\EmailTools\EmailTools.tlb" />
+    <None Include="..\..\Repository-Private\Utilities\EmailTools\_Bin\Win32\Release\EmailTools\EmailTools.tlb">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Midl Include="DirectShowSpy.idl">

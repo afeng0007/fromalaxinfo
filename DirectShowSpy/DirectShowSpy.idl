@@ -20,6 +20,8 @@ interface ISpy : IDispatch
 	[id(2), propget] HRESULT CreationTime([out, retval] DATE* pfTime);
 	[id(3), propget] HRESULT FriendlyName([out, retval] BSTR* psFriendlyName);
 	[id(3), propput] HRESULT FriendlyName([in] BSTR sFriendlyName);
+	[id(4)] HRESULT OpenGraphStudioNext([in] LONG nParentWindowHandle, [out, retval] VARIANT_BOOL* pbResult);
+	[id(5)] HRESULT OpenGraphEdit([in] LONG nParentWindowHandle, [out, retval] VARIANT_BOOL* pbResult);
 };
 [
 	object,
@@ -60,6 +62,9 @@ interface IFilterGraphHelper : IDispatch
 	[id(DISPID_VALUE), propput] HRESULT FilterGraph([in] IUnknown* pFilterGraphUnknown);
 	[id(1), propget] HRESULT Text([out, retval] BSTR* psText);
 	[id(2)] HRESULT DoPropertyFrameModal([in] LONG nParentWindowHandle);
+	[id(3)] HRESULT DoFilterGraphListModal([in] LONG nParentWindowHandle);
+	[id(4)] HRESULT OpenGraphStudioNext([in] LONG nParentWindowHandle, [in] BSTR sMonikerDisplayName, [out, retval] VARIANT_BOOL* pbResult);
+	[id(5)] HRESULT OpenGraphEdit([in] LONG nParentWindowHandle, [in] BSTR sMonikerDisplayName, [out, retval] VARIANT_BOOL* pbResult);
 };
 [
 	uuid(B9EC374B-834B-4DA9-BFB5-C1872CE736FF),

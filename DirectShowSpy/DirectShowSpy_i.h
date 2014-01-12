@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0555 */
-/* at Sat Jan 11 18:11:25 2014
+/* at Sun Jan 12 11:51:42 2014
  */
 /* Compiler settings for DirectShowSpy.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
@@ -183,6 +183,14 @@ EXTERN_C const IID IID_ISpy;
         virtual /* [propput][id] */ HRESULT STDMETHODCALLTYPE put_FriendlyName( 
             /* [in] */ BSTR sFriendlyName) = 0;
         
+        virtual /* [id] */ HRESULT STDMETHODCALLTYPE OpenGraphStudioNext( 
+            /* [in] */ LONG nParentWindowHandle,
+            /* [retval][out] */ VARIANT_BOOL *pbResult) = 0;
+        
+        virtual /* [id] */ HRESULT STDMETHODCALLTYPE OpenGraphEdit( 
+            /* [in] */ LONG nParentWindowHandle,
+            /* [retval][out] */ VARIANT_BOOL *pbResult) = 0;
+        
     };
     
 #else 	/* C style interface */
@@ -248,6 +256,16 @@ EXTERN_C const IID IID_ISpy;
             ISpy * This,
             /* [in] */ BSTR sFriendlyName);
         
+        /* [id] */ HRESULT ( STDMETHODCALLTYPE *OpenGraphStudioNext )( 
+            ISpy * This,
+            /* [in] */ LONG nParentWindowHandle,
+            /* [retval][out] */ VARIANT_BOOL *pbResult);
+        
+        /* [id] */ HRESULT ( STDMETHODCALLTYPE *OpenGraphEdit )( 
+            ISpy * This,
+            /* [in] */ LONG nParentWindowHandle,
+            /* [retval][out] */ VARIANT_BOOL *pbResult);
+        
         END_INTERFACE
     } ISpyVtbl;
 
@@ -295,6 +313,12 @@ EXTERN_C const IID IID_ISpy;
 
 #define ISpy_put_FriendlyName(This,sFriendlyName)	\
     ( (This)->lpVtbl -> put_FriendlyName(This,sFriendlyName) ) 
+
+#define ISpy_OpenGraphStudioNext(This,nParentWindowHandle,pbResult)	\
+    ( (This)->lpVtbl -> OpenGraphStudioNext(This,nParentWindowHandle,pbResult) ) 
+
+#define ISpy_OpenGraphEdit(This,nParentWindowHandle,pbResult)	\
+    ( (This)->lpVtbl -> OpenGraphEdit(This,nParentWindowHandle,pbResult) ) 
 
 #endif /* COBJMACROS */
 
@@ -556,6 +580,19 @@ EXTERN_C const IID IID_IFilterGraphHelper;
         virtual /* [id] */ HRESULT STDMETHODCALLTYPE DoPropertyFrameModal( 
             /* [in] */ LONG nParentWindowHandle) = 0;
         
+        virtual /* [id] */ HRESULT STDMETHODCALLTYPE DoFilterGraphListModal( 
+            /* [in] */ LONG nParentWindowHandle) = 0;
+        
+        virtual /* [id] */ HRESULT STDMETHODCALLTYPE OpenGraphStudioNext( 
+            /* [in] */ LONG nParentWindowHandle,
+            /* [in] */ BSTR sMonikerDisplayName,
+            /* [retval][out] */ VARIANT_BOOL *pbResult) = 0;
+        
+        virtual /* [id] */ HRESULT STDMETHODCALLTYPE OpenGraphEdit( 
+            /* [in] */ LONG nParentWindowHandle,
+            /* [in] */ BSTR sMonikerDisplayName,
+            /* [retval][out] */ VARIANT_BOOL *pbResult) = 0;
+        
     };
     
 #else 	/* C style interface */
@@ -621,6 +658,22 @@ EXTERN_C const IID IID_IFilterGraphHelper;
             IFilterGraphHelper * This,
             /* [in] */ LONG nParentWindowHandle);
         
+        /* [id] */ HRESULT ( STDMETHODCALLTYPE *DoFilterGraphListModal )( 
+            IFilterGraphHelper * This,
+            /* [in] */ LONG nParentWindowHandle);
+        
+        /* [id] */ HRESULT ( STDMETHODCALLTYPE *OpenGraphStudioNext )( 
+            IFilterGraphHelper * This,
+            /* [in] */ LONG nParentWindowHandle,
+            /* [in] */ BSTR sMonikerDisplayName,
+            /* [retval][out] */ VARIANT_BOOL *pbResult);
+        
+        /* [id] */ HRESULT ( STDMETHODCALLTYPE *OpenGraphEdit )( 
+            IFilterGraphHelper * This,
+            /* [in] */ LONG nParentWindowHandle,
+            /* [in] */ BSTR sMonikerDisplayName,
+            /* [retval][out] */ VARIANT_BOOL *pbResult);
+        
         END_INTERFACE
     } IFilterGraphHelperVtbl;
 
@@ -668,6 +721,15 @@ EXTERN_C const IID IID_IFilterGraphHelper;
 
 #define IFilterGraphHelper_DoPropertyFrameModal(This,nParentWindowHandle)	\
     ( (This)->lpVtbl -> DoPropertyFrameModal(This,nParentWindowHandle) ) 
+
+#define IFilterGraphHelper_DoFilterGraphListModal(This,nParentWindowHandle)	\
+    ( (This)->lpVtbl -> DoFilterGraphListModal(This,nParentWindowHandle) ) 
+
+#define IFilterGraphHelper_OpenGraphStudioNext(This,nParentWindowHandle,sMonikerDisplayName,pbResult)	\
+    ( (This)->lpVtbl -> OpenGraphStudioNext(This,nParentWindowHandle,sMonikerDisplayName,pbResult) ) 
+
+#define IFilterGraphHelper_OpenGraphEdit(This,nParentWindowHandle,sMonikerDisplayName,pbResult)	\
+    ( (This)->lpVtbl -> OpenGraphEdit(This,nParentWindowHandle,sMonikerDisplayName,pbResult) ) 
 
 #endif /* COBJMACROS */
 

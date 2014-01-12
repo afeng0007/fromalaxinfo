@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0555 */
-/* at Sat Jan 11 18:11:25 2014
+/* at Sun Jan 12 11:51:42 2014
  */
 /* Compiler settings for DirectShowSpy.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
@@ -49,8 +49,8 @@
 
 #include "DirectShowSpy_i.h"
 
-#define TYPE_FORMAT_STRING_SIZE   83                                
-#define PROC_FORMAT_STRING_SIZE   253                               
+#define TYPE_FORMAT_STRING_SIZE   87                                
+#define PROC_FORMAT_STRING_SIZE   469                               
 #define EXPR_FORMAT_STRING_SIZE   1                                 
 #define TRANSMIT_AS_TABLE_SIZE    0            
 #define WIRE_MARSHAL_TABLE_SIZE   1            
@@ -260,95 +260,290 @@ static const DirectShowSpy_MIDL_PROC_FORMAT_STRING DirectShowSpy__MIDL_ProcForma
 /* 142 */	0x8,		/* FC_LONG */
 			0x0,		/* 0 */
 
-	/* Procedure get_FilterGraph */
+	/* Procedure OpenGraphStudioNext */
 
 /* 144 */	0x33,		/* FC_AUTO_HANDLE */
 			0x6c,		/* Old Flags:  object, Oi2 */
 /* 146 */	NdrFcLong( 0x0 ),	/* 0 */
-/* 150 */	NdrFcShort( 0x7 ),	/* 7 */
-/* 152 */	NdrFcShort( 0xc ),	/* x86 Stack size/offset = 12 */
-/* 154 */	NdrFcShort( 0x0 ),	/* 0 */
-/* 156 */	NdrFcShort( 0x8 ),	/* 8 */
-/* 158 */	0x45,		/* Oi2 Flags:  srv must size, has return, has ext, */
-			0x2,		/* 2 */
+/* 150 */	NdrFcShort( 0xb ),	/* 11 */
+/* 152 */	NdrFcShort( 0x10 ),	/* x86 Stack size/offset = 16 */
+/* 154 */	NdrFcShort( 0x8 ),	/* 8 */
+/* 156 */	NdrFcShort( 0x22 ),	/* 34 */
+/* 158 */	0x44,		/* Oi2 Flags:  has return, has ext, */
+			0x3,		/* 3 */
 /* 160 */	0x8,		/* 8 */
 			0x1,		/* Ext Flags:  new corr desc, */
 /* 162 */	NdrFcShort( 0x0 ),	/* 0 */
 /* 164 */	NdrFcShort( 0x0 ),	/* 0 */
 /* 166 */	NdrFcShort( 0x0 ),	/* 0 */
 
-	/* Parameter ppFilterGraphUnknown */
+	/* Parameter nParentWindowHandle */
 
-/* 168 */	NdrFcShort( 0x13 ),	/* Flags:  must size, must free, out, */
+/* 168 */	NdrFcShort( 0x48 ),	/* Flags:  in, base type, */
 /* 170 */	NdrFcShort( 0x4 ),	/* x86 Stack size/offset = 4 */
-/* 172 */	NdrFcShort( 0x3c ),	/* Type Offset=60 */
+/* 172 */	0x8,		/* FC_LONG */
+			0x0,		/* 0 */
+
+	/* Parameter pbResult */
+
+/* 174 */	NdrFcShort( 0x2150 ),	/* Flags:  out, base type, simple ref, srv alloc size=8 */
+/* 176 */	NdrFcShort( 0x8 ),	/* x86 Stack size/offset = 8 */
+/* 178 */	0x6,		/* FC_SHORT */
+			0x0,		/* 0 */
 
 	/* Return value */
 
-/* 174 */	NdrFcShort( 0x70 ),	/* Flags:  out, return, base type, */
-/* 176 */	NdrFcShort( 0x8 ),	/* x86 Stack size/offset = 8 */
-/* 178 */	0x8,		/* FC_LONG */
+/* 180 */	NdrFcShort( 0x70 ),	/* Flags:  out, return, base type, */
+/* 182 */	NdrFcShort( 0xc ),	/* x86 Stack size/offset = 12 */
+/* 184 */	0x8,		/* FC_LONG */
+			0x0,		/* 0 */
+
+	/* Procedure OpenGraphEdit */
+
+/* 186 */	0x33,		/* FC_AUTO_HANDLE */
+			0x6c,		/* Old Flags:  object, Oi2 */
+/* 188 */	NdrFcLong( 0x0 ),	/* 0 */
+/* 192 */	NdrFcShort( 0xc ),	/* 12 */
+/* 194 */	NdrFcShort( 0x10 ),	/* x86 Stack size/offset = 16 */
+/* 196 */	NdrFcShort( 0x8 ),	/* 8 */
+/* 198 */	NdrFcShort( 0x22 ),	/* 34 */
+/* 200 */	0x44,		/* Oi2 Flags:  has return, has ext, */
+			0x3,		/* 3 */
+/* 202 */	0x8,		/* 8 */
+			0x1,		/* Ext Flags:  new corr desc, */
+/* 204 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 206 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 208 */	NdrFcShort( 0x0 ),	/* 0 */
+
+	/* Parameter nParentWindowHandle */
+
+/* 210 */	NdrFcShort( 0x48 ),	/* Flags:  in, base type, */
+/* 212 */	NdrFcShort( 0x4 ),	/* x86 Stack size/offset = 4 */
+/* 214 */	0x8,		/* FC_LONG */
+			0x0,		/* 0 */
+
+	/* Parameter pbResult */
+
+/* 216 */	NdrFcShort( 0x2150 ),	/* Flags:  out, base type, simple ref, srv alloc size=8 */
+/* 218 */	NdrFcShort( 0x8 ),	/* x86 Stack size/offset = 8 */
+/* 220 */	0x6,		/* FC_SHORT */
+			0x0,		/* 0 */
+
+	/* Return value */
+
+/* 222 */	NdrFcShort( 0x70 ),	/* Flags:  out, return, base type, */
+/* 224 */	NdrFcShort( 0xc ),	/* x86 Stack size/offset = 12 */
+/* 226 */	0x8,		/* FC_LONG */
+			0x0,		/* 0 */
+
+	/* Procedure get_FilterGraph */
+
+/* 228 */	0x33,		/* FC_AUTO_HANDLE */
+			0x6c,		/* Old Flags:  object, Oi2 */
+/* 230 */	NdrFcLong( 0x0 ),	/* 0 */
+/* 234 */	NdrFcShort( 0x7 ),	/* 7 */
+/* 236 */	NdrFcShort( 0xc ),	/* x86 Stack size/offset = 12 */
+/* 238 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 240 */	NdrFcShort( 0x8 ),	/* 8 */
+/* 242 */	0x45,		/* Oi2 Flags:  srv must size, has return, has ext, */
+			0x2,		/* 2 */
+/* 244 */	0x8,		/* 8 */
+			0x1,		/* Ext Flags:  new corr desc, */
+/* 246 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 248 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 250 */	NdrFcShort( 0x0 ),	/* 0 */
+
+	/* Parameter ppFilterGraphUnknown */
+
+/* 252 */	NdrFcShort( 0x13 ),	/* Flags:  must size, must free, out, */
+/* 254 */	NdrFcShort( 0x4 ),	/* x86 Stack size/offset = 4 */
+/* 256 */	NdrFcShort( 0x40 ),	/* Type Offset=64 */
+
+	/* Return value */
+
+/* 258 */	NdrFcShort( 0x70 ),	/* Flags:  out, return, base type, */
+/* 260 */	NdrFcShort( 0x8 ),	/* x86 Stack size/offset = 8 */
+/* 262 */	0x8,		/* FC_LONG */
 			0x0,		/* 0 */
 
 	/* Procedure put_FilterGraph */
 
-/* 180 */	0x33,		/* FC_AUTO_HANDLE */
+/* 264 */	0x33,		/* FC_AUTO_HANDLE */
 			0x6c,		/* Old Flags:  object, Oi2 */
-/* 182 */	NdrFcLong( 0x0 ),	/* 0 */
-/* 186 */	NdrFcShort( 0x8 ),	/* 8 */
-/* 188 */	NdrFcShort( 0xc ),	/* x86 Stack size/offset = 12 */
-/* 190 */	NdrFcShort( 0x0 ),	/* 0 */
-/* 192 */	NdrFcShort( 0x8 ),	/* 8 */
-/* 194 */	0x46,		/* Oi2 Flags:  clt must size, has return, has ext, */
+/* 266 */	NdrFcLong( 0x0 ),	/* 0 */
+/* 270 */	NdrFcShort( 0x8 ),	/* 8 */
+/* 272 */	NdrFcShort( 0xc ),	/* x86 Stack size/offset = 12 */
+/* 274 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 276 */	NdrFcShort( 0x8 ),	/* 8 */
+/* 278 */	0x46,		/* Oi2 Flags:  clt must size, has return, has ext, */
 			0x2,		/* 2 */
-/* 196 */	0x8,		/* 8 */
+/* 280 */	0x8,		/* 8 */
 			0x1,		/* Ext Flags:  new corr desc, */
-/* 198 */	NdrFcShort( 0x0 ),	/* 0 */
-/* 200 */	NdrFcShort( 0x0 ),	/* 0 */
-/* 202 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 282 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 284 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 286 */	NdrFcShort( 0x0 ),	/* 0 */
 
 	/* Parameter pFilterGraphUnknown */
 
-/* 204 */	NdrFcShort( 0xb ),	/* Flags:  must size, must free, in, */
-/* 206 */	NdrFcShort( 0x4 ),	/* x86 Stack size/offset = 4 */
-/* 208 */	NdrFcShort( 0x40 ),	/* Type Offset=64 */
+/* 288 */	NdrFcShort( 0xb ),	/* Flags:  must size, must free, in, */
+/* 290 */	NdrFcShort( 0x4 ),	/* x86 Stack size/offset = 4 */
+/* 292 */	NdrFcShort( 0x44 ),	/* Type Offset=68 */
 
 	/* Return value */
 
-/* 210 */	NdrFcShort( 0x70 ),	/* Flags:  out, return, base type, */
-/* 212 */	NdrFcShort( 0x8 ),	/* x86 Stack size/offset = 8 */
-/* 214 */	0x8,		/* FC_LONG */
+/* 294 */	NdrFcShort( 0x70 ),	/* Flags:  out, return, base type, */
+/* 296 */	NdrFcShort( 0x8 ),	/* x86 Stack size/offset = 8 */
+/* 298 */	0x8,		/* FC_LONG */
 			0x0,		/* 0 */
 
 	/* Procedure DoPropertyFrameModal */
 
-/* 216 */	0x33,		/* FC_AUTO_HANDLE */
+/* 300 */	0x33,		/* FC_AUTO_HANDLE */
 			0x6c,		/* Old Flags:  object, Oi2 */
-/* 218 */	NdrFcLong( 0x0 ),	/* 0 */
-/* 222 */	NdrFcShort( 0xa ),	/* 10 */
-/* 224 */	NdrFcShort( 0xc ),	/* x86 Stack size/offset = 12 */
-/* 226 */	NdrFcShort( 0x8 ),	/* 8 */
-/* 228 */	NdrFcShort( 0x8 ),	/* 8 */
-/* 230 */	0x44,		/* Oi2 Flags:  has return, has ext, */
+/* 302 */	NdrFcLong( 0x0 ),	/* 0 */
+/* 306 */	NdrFcShort( 0xa ),	/* 10 */
+/* 308 */	NdrFcShort( 0xc ),	/* x86 Stack size/offset = 12 */
+/* 310 */	NdrFcShort( 0x8 ),	/* 8 */
+/* 312 */	NdrFcShort( 0x8 ),	/* 8 */
+/* 314 */	0x44,		/* Oi2 Flags:  has return, has ext, */
 			0x2,		/* 2 */
-/* 232 */	0x8,		/* 8 */
+/* 316 */	0x8,		/* 8 */
 			0x1,		/* Ext Flags:  new corr desc, */
-/* 234 */	NdrFcShort( 0x0 ),	/* 0 */
-/* 236 */	NdrFcShort( 0x0 ),	/* 0 */
-/* 238 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 318 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 320 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 322 */	NdrFcShort( 0x0 ),	/* 0 */
 
 	/* Parameter nParentWindowHandle */
 
-/* 240 */	NdrFcShort( 0x48 ),	/* Flags:  in, base type, */
-/* 242 */	NdrFcShort( 0x4 ),	/* x86 Stack size/offset = 4 */
-/* 244 */	0x8,		/* FC_LONG */
+/* 324 */	NdrFcShort( 0x48 ),	/* Flags:  in, base type, */
+/* 326 */	NdrFcShort( 0x4 ),	/* x86 Stack size/offset = 4 */
+/* 328 */	0x8,		/* FC_LONG */
 			0x0,		/* 0 */
 
 	/* Return value */
 
-/* 246 */	NdrFcShort( 0x70 ),	/* Flags:  out, return, base type, */
-/* 248 */	NdrFcShort( 0x8 ),	/* x86 Stack size/offset = 8 */
-/* 250 */	0x8,		/* FC_LONG */
+/* 330 */	NdrFcShort( 0x70 ),	/* Flags:  out, return, base type, */
+/* 332 */	NdrFcShort( 0x8 ),	/* x86 Stack size/offset = 8 */
+/* 334 */	0x8,		/* FC_LONG */
+			0x0,		/* 0 */
+
+	/* Procedure DoFilterGraphListModal */
+
+/* 336 */	0x33,		/* FC_AUTO_HANDLE */
+			0x6c,		/* Old Flags:  object, Oi2 */
+/* 338 */	NdrFcLong( 0x0 ),	/* 0 */
+/* 342 */	NdrFcShort( 0xb ),	/* 11 */
+/* 344 */	NdrFcShort( 0xc ),	/* x86 Stack size/offset = 12 */
+/* 346 */	NdrFcShort( 0x8 ),	/* 8 */
+/* 348 */	NdrFcShort( 0x8 ),	/* 8 */
+/* 350 */	0x44,		/* Oi2 Flags:  has return, has ext, */
+			0x2,		/* 2 */
+/* 352 */	0x8,		/* 8 */
+			0x1,		/* Ext Flags:  new corr desc, */
+/* 354 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 356 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 358 */	NdrFcShort( 0x0 ),	/* 0 */
+
+	/* Parameter nParentWindowHandle */
+
+/* 360 */	NdrFcShort( 0x48 ),	/* Flags:  in, base type, */
+/* 362 */	NdrFcShort( 0x4 ),	/* x86 Stack size/offset = 4 */
+/* 364 */	0x8,		/* FC_LONG */
+			0x0,		/* 0 */
+
+	/* Return value */
+
+/* 366 */	NdrFcShort( 0x70 ),	/* Flags:  out, return, base type, */
+/* 368 */	NdrFcShort( 0x8 ),	/* x86 Stack size/offset = 8 */
+/* 370 */	0x8,		/* FC_LONG */
+			0x0,		/* 0 */
+
+	/* Procedure OpenGraphStudioNext */
+
+/* 372 */	0x33,		/* FC_AUTO_HANDLE */
+			0x6c,		/* Old Flags:  object, Oi2 */
+/* 374 */	NdrFcLong( 0x0 ),	/* 0 */
+/* 378 */	NdrFcShort( 0xc ),	/* 12 */
+/* 380 */	NdrFcShort( 0x14 ),	/* x86 Stack size/offset = 20 */
+/* 382 */	NdrFcShort( 0x8 ),	/* 8 */
+/* 384 */	NdrFcShort( 0x22 ),	/* 34 */
+/* 386 */	0x46,		/* Oi2 Flags:  clt must size, has return, has ext, */
+			0x4,		/* 4 */
+/* 388 */	0x8,		/* 8 */
+			0x5,		/* Ext Flags:  new corr desc, srv corr check, */
+/* 390 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 392 */	NdrFcShort( 0x1 ),	/* 1 */
+/* 394 */	NdrFcShort( 0x0 ),	/* 0 */
+
+	/* Parameter nParentWindowHandle */
+
+/* 396 */	NdrFcShort( 0x48 ),	/* Flags:  in, base type, */
+/* 398 */	NdrFcShort( 0x4 ),	/* x86 Stack size/offset = 4 */
+/* 400 */	0x8,		/* FC_LONG */
+			0x0,		/* 0 */
+
+	/* Parameter sMonikerDisplayName */
+
+/* 402 */	NdrFcShort( 0x8b ),	/* Flags:  must size, must free, in, by val, */
+/* 404 */	NdrFcShort( 0x8 ),	/* x86 Stack size/offset = 8 */
+/* 406 */	NdrFcShort( 0x32 ),	/* Type Offset=50 */
+
+	/* Parameter pbResult */
+
+/* 408 */	NdrFcShort( 0x2150 ),	/* Flags:  out, base type, simple ref, srv alloc size=8 */
+/* 410 */	NdrFcShort( 0xc ),	/* x86 Stack size/offset = 12 */
+/* 412 */	0x6,		/* FC_SHORT */
+			0x0,		/* 0 */
+
+	/* Return value */
+
+/* 414 */	NdrFcShort( 0x70 ),	/* Flags:  out, return, base type, */
+/* 416 */	NdrFcShort( 0x10 ),	/* x86 Stack size/offset = 16 */
+/* 418 */	0x8,		/* FC_LONG */
+			0x0,		/* 0 */
+
+	/* Procedure OpenGraphEdit */
+
+/* 420 */	0x33,		/* FC_AUTO_HANDLE */
+			0x6c,		/* Old Flags:  object, Oi2 */
+/* 422 */	NdrFcLong( 0x0 ),	/* 0 */
+/* 426 */	NdrFcShort( 0xd ),	/* 13 */
+/* 428 */	NdrFcShort( 0x14 ),	/* x86 Stack size/offset = 20 */
+/* 430 */	NdrFcShort( 0x8 ),	/* 8 */
+/* 432 */	NdrFcShort( 0x22 ),	/* 34 */
+/* 434 */	0x46,		/* Oi2 Flags:  clt must size, has return, has ext, */
+			0x4,		/* 4 */
+/* 436 */	0x8,		/* 8 */
+			0x5,		/* Ext Flags:  new corr desc, srv corr check, */
+/* 438 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 440 */	NdrFcShort( 0x1 ),	/* 1 */
+/* 442 */	NdrFcShort( 0x0 ),	/* 0 */
+
+	/* Parameter nParentWindowHandle */
+
+/* 444 */	NdrFcShort( 0x48 ),	/* Flags:  in, base type, */
+/* 446 */	NdrFcShort( 0x4 ),	/* x86 Stack size/offset = 4 */
+/* 448 */	0x8,		/* FC_LONG */
+			0x0,		/* 0 */
+
+	/* Parameter sMonikerDisplayName */
+
+/* 450 */	NdrFcShort( 0x8b ),	/* Flags:  must size, must free, in, by val, */
+/* 452 */	NdrFcShort( 0x8 ),	/* x86 Stack size/offset = 8 */
+/* 454 */	NdrFcShort( 0x32 ),	/* Type Offset=50 */
+
+	/* Parameter pbResult */
+
+/* 456 */	NdrFcShort( 0x2150 ),	/* Flags:  out, base type, simple ref, srv alloc size=8 */
+/* 458 */	NdrFcShort( 0xc ),	/* x86 Stack size/offset = 12 */
+/* 460 */	0x6,		/* FC_SHORT */
+			0x0,		/* 0 */
+
+	/* Return value */
+
+/* 462 */	NdrFcShort( 0x70 ),	/* Flags:  out, return, base type, */
+/* 464 */	NdrFcShort( 0x10 ),	/* x86 Stack size/offset = 16 */
+/* 466 */	0x8,		/* FC_LONG */
 			0x0,		/* 0 */
 
 			0x0
@@ -405,21 +600,25 @@ static const DirectShowSpy_MIDL_TYPE_FORMAT_STRING DirectShowSpy__MIDL_TypeForma
 /* 56 */	NdrFcShort( 0x0 ),	/* 0 */
 /* 58 */	NdrFcShort( 0xfff4 ),	/* Offset= -12 (46) */
 /* 60 */	
-			0x11, 0x10,	/* FC_RP [pointer_deref] */
-/* 62 */	NdrFcShort( 0x2 ),	/* Offset= 2 (64) */
+			0x11, 0xc,	/* FC_RP [alloced_on_stack] [simple_pointer] */
+/* 62 */	0x6,		/* FC_SHORT */
+			0x5c,		/* FC_PAD */
 /* 64 */	
+			0x11, 0x10,	/* FC_RP [pointer_deref] */
+/* 66 */	NdrFcShort( 0x2 ),	/* Offset= 2 (68) */
+/* 68 */	
 			0x2f,		/* FC_IP */
 			0x5a,		/* FC_CONSTANT_IID */
-/* 66 */	NdrFcLong( 0x0 ),	/* 0 */
-/* 70 */	NdrFcShort( 0x0 ),	/* 0 */
-/* 72 */	NdrFcShort( 0x0 ),	/* 0 */
-/* 74 */	0xc0,		/* 192 */
-			0x0,		/* 0 */
-/* 76 */	0x0,		/* 0 */
-			0x0,		/* 0 */
-/* 78 */	0x0,		/* 0 */
+/* 70 */	NdrFcLong( 0x0 ),	/* 0 */
+/* 74 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 76 */	NdrFcShort( 0x0 ),	/* 0 */
+/* 78 */	0xc0,		/* 192 */
 			0x0,		/* 0 */
 /* 80 */	0x0,		/* 0 */
+			0x0,		/* 0 */
+/* 82 */	0x0,		/* 0 */
+			0x0,		/* 0 */
+/* 84 */	0x0,		/* 0 */
 			0x46,		/* 70 */
 
 			0x0
@@ -461,7 +660,9 @@ static const unsigned short ISpy_FormatStringOffsetTable[] =
     0,
     36,
     72,
-    108
+    108,
+    144,
+    186
     };
 
 static const MIDL_STUBLESS_PROXY_INFO ISpy_ProxyInfo =
@@ -485,7 +686,7 @@ static const MIDL_SERVER_INFO ISpy_ServerInfo =
     0,
     0,
     0};
-CINTERFACE_PROXY_VTABLE(11) _ISpyProxyVtbl = 
+CINTERFACE_PROXY_VTABLE(13) _ISpyProxyVtbl = 
 {
     &ISpy_ProxyInfo,
     &IID_ISpy,
@@ -499,7 +700,9 @@ CINTERFACE_PROXY_VTABLE(11) _ISpyProxyVtbl =
     (void *) (INT_PTR) -1 /* ISpy::get_MonikerDisplayName */ ,
     (void *) (INT_PTR) -1 /* ISpy::get_CreationTime */ ,
     (void *) (INT_PTR) -1 /* ISpy::get_FriendlyName */ ,
-    (void *) (INT_PTR) -1 /* ISpy::put_FriendlyName */
+    (void *) (INT_PTR) -1 /* ISpy::put_FriendlyName */ ,
+    (void *) (INT_PTR) -1 /* ISpy::OpenGraphStudioNext */ ,
+    (void *) (INT_PTR) -1 /* ISpy::OpenGraphEdit */
 };
 
 
@@ -512,6 +715,8 @@ static const PRPC_STUB_FUNCTION ISpy_table[] =
     NdrStubCall2,
     NdrStubCall2,
     NdrStubCall2,
+    NdrStubCall2,
+    NdrStubCall2,
     NdrStubCall2
 };
 
@@ -519,7 +724,7 @@ CInterfaceStubVtbl _ISpyStubVtbl =
 {
     &IID_ISpy,
     &ISpy_ServerInfo,
-    11,
+    13,
     &ISpy_table[-3],
     CStdStubBuffer_DELEGATING_METHODS
 };
@@ -667,10 +872,13 @@ static const unsigned short IFilterGraphHelper_FormatStringOffsetTable[] =
     (unsigned short) -1,
     (unsigned short) -1,
     (unsigned short) -1,
-    144,
-    180,
+    228,
+    264,
     72,
-    216
+    300,
+    336,
+    372,
+    420
     };
 
 static const MIDL_STUBLESS_PROXY_INFO IFilterGraphHelper_ProxyInfo =
@@ -694,7 +902,7 @@ static const MIDL_SERVER_INFO IFilterGraphHelper_ServerInfo =
     0,
     0,
     0};
-CINTERFACE_PROXY_VTABLE(11) _IFilterGraphHelperProxyVtbl = 
+CINTERFACE_PROXY_VTABLE(14) _IFilterGraphHelperProxyVtbl = 
 {
     &IFilterGraphHelper_ProxyInfo,
     &IID_IFilterGraphHelper,
@@ -708,7 +916,10 @@ CINTERFACE_PROXY_VTABLE(11) _IFilterGraphHelperProxyVtbl =
     (void *) (INT_PTR) -1 /* IFilterGraphHelper::get_FilterGraph */ ,
     (void *) (INT_PTR) -1 /* IFilterGraphHelper::put_FilterGraph */ ,
     (void *) (INT_PTR) -1 /* IFilterGraphHelper::get_Text */ ,
-    (void *) (INT_PTR) -1 /* IFilterGraphHelper::DoPropertyFrameModal */
+    (void *) (INT_PTR) -1 /* IFilterGraphHelper::DoPropertyFrameModal */ ,
+    (void *) (INT_PTR) -1 /* IFilterGraphHelper::DoFilterGraphListModal */ ,
+    (void *) (INT_PTR) -1 /* IFilterGraphHelper::OpenGraphStudioNext */ ,
+    (void *) (INT_PTR) -1 /* IFilterGraphHelper::OpenGraphEdit */
 };
 
 
@@ -721,6 +932,9 @@ static const PRPC_STUB_FUNCTION IFilterGraphHelper_table[] =
     NdrStubCall2,
     NdrStubCall2,
     NdrStubCall2,
+    NdrStubCall2,
+    NdrStubCall2,
+    NdrStubCall2,
     NdrStubCall2
 };
 
@@ -728,7 +942,7 @@ CInterfaceStubVtbl _IFilterGraphHelperStubVtbl =
 {
     &IID_IFilterGraphHelper,
     &IFilterGraphHelper_ServerInfo,
-    11,
+    14,
     &IFilterGraphHelper_table[-3],
     CStdStubBuffer_DELEGATING_METHODS
 };
