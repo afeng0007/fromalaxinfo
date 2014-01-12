@@ -13,6 +13,8 @@
 
 INT_PTR DoFilterGraphListPropertySheetModal(HWND hParentWindow);
 
+HRESULT FilterGraphHelper_DoPropertyFrameModal(LONG nParentWindowHandle);
+HRESULT FilterGraphHelper_DoFilterGraphListModal(LONG nParentWindowHandle);
 HRESULT FilterGraphHelper_OpenGraphStudioNext(LONG nParentWindowHandle, LPCWSTR pszMonikerDisplayName, VARIANT_BOOL* pbResult);
 HRESULT FilterGraphHelper_OpenGraphEdit(LONG nParentWindowHandle, LPCWSTR pszMonikerDisplayName, VARIANT_BOOL* pbResult);
 
@@ -2252,6 +2254,17 @@ public:
 
 OBJECT_ENTRY_AUTO(__uuidof(FilterGraphHelper), CFilterGraphHelper)
 
+inline HRESULT FilterGraphHelper_DoPropertyFrameModal(LONG nParentWindowHandle, IUnknown* pFilterGraphUnknown)
+{
+	CLocalObjectPtr<CFilterGraphHelper> pFilterGraphHelper;
+	pFilterGraphHelper->SetFilterGraph(pFilterGraphUnknown);
+	return pFilterGraphHelper->DoPropertyFrameModal(nParentWindowHandle);
+}
+inline HRESULT FilterGraphHelper_DoFilterGraphListModal(LONG nParentWindowHandle)
+{
+	CLocalObjectPtr<CFilterGraphHelper> pFilterGraphHelper;
+	return pFilterGraphHelper->DoFilterGraphListModal(nParentWindowHandle);
+}
 inline HRESULT FilterGraphHelper_OpenGraphStudioNext(LONG nParentWindowHandle, LPCWSTR pszMonikerDisplayName, VARIANT_BOOL* pbResult)
 {
 	CLocalObjectPtr<CFilterGraphHelper> pFilterGraphHelper;

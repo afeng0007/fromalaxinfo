@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0555 */
-/* at Sun Jan 12 11:51:42 2014
+/* at Sun Jan 12 13:41:41 2014
  */
 /* Compiler settings for DirectShowSpy.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
@@ -183,6 +183,12 @@ EXTERN_C const IID IID_ISpy;
         virtual /* [propput][id] */ HRESULT STDMETHODCALLTYPE put_FriendlyName( 
             /* [in] */ BSTR sFriendlyName) = 0;
         
+        virtual /* [id] */ HRESULT STDMETHODCALLTYPE DoPropertyFrameModal( 
+            /* [in] */ LONG nParentWindowHandle) = 0;
+        
+        virtual /* [id] */ HRESULT STDMETHODCALLTYPE DoFilterGraphListModal( 
+            /* [in] */ LONG nParentWindowHandle) = 0;
+        
         virtual /* [id] */ HRESULT STDMETHODCALLTYPE OpenGraphStudioNext( 
             /* [in] */ LONG nParentWindowHandle,
             /* [retval][out] */ VARIANT_BOOL *pbResult) = 0;
@@ -256,6 +262,14 @@ EXTERN_C const IID IID_ISpy;
             ISpy * This,
             /* [in] */ BSTR sFriendlyName);
         
+        /* [id] */ HRESULT ( STDMETHODCALLTYPE *DoPropertyFrameModal )( 
+            ISpy * This,
+            /* [in] */ LONG nParentWindowHandle);
+        
+        /* [id] */ HRESULT ( STDMETHODCALLTYPE *DoFilterGraphListModal )( 
+            ISpy * This,
+            /* [in] */ LONG nParentWindowHandle);
+        
         /* [id] */ HRESULT ( STDMETHODCALLTYPE *OpenGraphStudioNext )( 
             ISpy * This,
             /* [in] */ LONG nParentWindowHandle,
@@ -313,6 +327,12 @@ EXTERN_C const IID IID_ISpy;
 
 #define ISpy_put_FriendlyName(This,sFriendlyName)	\
     ( (This)->lpVtbl -> put_FriendlyName(This,sFriendlyName) ) 
+
+#define ISpy_DoPropertyFrameModal(This,nParentWindowHandle)	\
+    ( (This)->lpVtbl -> DoPropertyFrameModal(This,nParentWindowHandle) ) 
+
+#define ISpy_DoFilterGraphListModal(This,nParentWindowHandle)	\
+    ( (This)->lpVtbl -> DoFilterGraphListModal(This,nParentWindowHandle) ) 
 
 #define ISpy_OpenGraphStudioNext(This,nParentWindowHandle,pbResult)	\
     ( (This)->lpVtbl -> OpenGraphStudioNext(This,nParentWindowHandle,pbResult) ) 
