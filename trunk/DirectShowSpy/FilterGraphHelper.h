@@ -13,6 +13,9 @@
 
 INT_PTR DoFilterGraphListPropertySheetModal(HWND hParentWindow);
 
+HRESULT FilterGraphHelper_OpenGraphStudioNext(LONG nParentWindowHandle, LPCWSTR pszMonikerDisplayName, VARIANT_BOOL* pbResult);
+HRESULT FilterGraphHelper_OpenGraphEdit(LONG nParentWindowHandle, LPCWSTR pszMonikerDisplayName, VARIANT_BOOL* pbResult);
+
 ////////////////////////////////////////////////////////////
 // CFilterGraphHelper
 
@@ -63,6 +66,7 @@ public:
 		CHAIN_MSG_MAP(CDialogResize<CPropertyFrameDialog>)
 		MSG_WM_INITDIALOG(OnInitDialog)
 		MSG_WM_DESTROY(OnDestroy)
+		MSG_TVN_GETINFOTIP(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_TREE, OnTreeViewGetInfoTip)
 		MSG_TVN_SELCHANGED(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_TREE, OnTreeViewSelChanged)
 		MSG_TVN_ITEMEXPANDING(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_TREE, OnTreeViewItemExplanding)
 		MSG_TVN_DBLCLK(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_TREE, OnTreeViewDblClk)
@@ -257,7 +261,9 @@ public:
 					}
 					const BOOL bMonikerDisplayNameAvailable = !m_sFilterGraphMonikerDisplayName.IsEmpty();
 					m_OpenGsnButton.EnableWindow(bMonikerDisplayNameAvailable);
+					m_OpenGsnDescriptionStatic.EnableWindow(bMonikerDisplayNameAvailable);
 					m_OpenGeButton.EnableWindow(bMonikerDisplayNameAvailable);
+					m_OpenGeDescriptionStatic.EnableWindow(bMonikerDisplayNameAvailable);
 					m_bActivating = FALSE;
 				}
 				_ATLCATCH(Exception)
@@ -349,12 +355,14 @@ public:
 			COMMAND_HANDLER_EX(IDC_FILTERGRAPHHELPER_EMAIL_PASSWORD, EN_CHANGE, OnChanged)
 			COMMAND_HANDLER_EX(IDC_FILTERGRAPHHELPER_EMAIL_BODY, EN_CHANGE, OnChanged)
 			COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHHELPER_EMAIL_SEND, OnSend)
+			NOTIFY_HANDLER_EX(IDC_FILTERGRAPHHELPER_EMAIL_CLEANUP, CRoHyperStatic::NC_ANCHORCLICKED, OnCleanupStaticAnchorClicked)
 			REFLECT_NOTIFICATIONS()
 		END_MSG_MAP()
 
 		BEGIN_DLGRESIZE_MAP(CEmailDialog)
 			DLGRESIZE_CONTROL(IDC_FILTERGRAPHHELPER_EMAIL_BODY, DLSZ_SIZE_X | DLSZ_SIZE_Y)
 			DLGRESIZE_CONTROL(IDC_FILTERGRAPHHELPER_EMAIL_SEND, DLSZ_MOVE_X | DLSZ_MOVE_Y)
+			DLGRESIZE_CONTROL(IDC_FILTERGRAPHHELPER_EMAIL_CLEANUP, DLSZ_MOVE_Y)
 		END_DLGRESIZE_MAP()
 
 		private:
@@ -370,6 +378,7 @@ public:
 			CRoEdit m_PasswordEdit;
 			CRoEdit m_BodyEdit;
 			CButton m_SendButton;
+			CRoHyperStatic m_CleanupStatic;
 			CString m_sFilterGraphText;
 			CRoMapT<INT_PTR, BOOL> m_ChangeMap;
 
@@ -590,6 +599,7 @@ public:
 					m_BodyEdit = GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_BODY);
 					m_BodyEdit.SetFont(m_pOwner->m_TextFont);
 					m_SendButton = GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_SEND);
+					_W(m_CleanupStatic.SubclassWindow(GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_CLEANUP)));
 					DlgResize_Init(FALSE, FALSE);
 					InitializeControlsFromRegistry();
 					InitializeBody();
@@ -687,8 +697,16 @@ public:
 				CString sSubject = AtlFormatString(_T("DirectShow Filter Graph by %s"), AtlLoadString(IDS_PROJNAME));
 				__C(pMessage->put_Subject(CComBSTR(sSubject)));
 				__C(pMessage->Send());
-				MessageBeep(MB_OK);
 				_RegKeyHelper::SetStringValue(HKEY_CURRENT_USER, REGISTRY_ROOT, _T("Email Message Template"), CString(sMessageString));
+				AtlOptionalMessageBoxEx(m_hWnd, _T("CFilterGraphHelper::CPropertyFrameDialog::CEmailDialog::CredentialsSaved"), _T("The email was sent") _T("\r\n\r\n") _T("The credentials were written into registry for further reuse. Use Erase Cached Credentials link to delete them from registry."), IDS_INFORMATION, MB_ICONINFORMATION | MB_OK);
+				MessageBeep(MB_OK);
+				return 0;
+			}
+			LRESULT OnCleanupStaticAnchorClicked(NMHDR*)
+			{
+				_RegKeyHelper::DeleteValue(HKEY_CURRENT_USER, REGISTRY_ROOT, _T("Email Message Template"));
+				AtlOptionalMessageBoxEx(m_hWnd, _T("CFilterGraphHelper::CPropertyFrameDialog::CEmailDialog::SavedCredentialsDeleted"), _T("Cached email credentials are removed from registry."), IDS_INFORMATION, MB_ICONINFORMATION | MB_OK);
+				MessageBeep(MB_OK);
 				return 0;
 			}
 		};
@@ -716,7 +734,10 @@ public:
 		public:
 			TYPE m_Type;
 			CComPtr<IBaseFilter> m_pBaseFilter;
-			CLSID m_ClassIdentifier;
+			CLSID m_BaseFilterClassIdentifier;
+			CString m_sBaseFilterClassDescription;
+			CString m_sBaseFilterModulePath;
+			CLSID m_PropertyPageClassIdentifier;
 			CComPtr<IPropertyPage> m_pPropertyPage;
 			CObjectPtr<CPropertyPageSite> m_pSite;
 			BOOL m_bSiteActivated;
@@ -725,19 +746,37 @@ public:
 		// CData
 			CData(TYPE Type = TYPE_UNKNOWN) :
 				m_Type(Type),
-				m_ClassIdentifier(CLSID_NULL)
+				m_BaseFilterClassIdentifier(CLSID_NULL),
+				m_PropertyPageClassIdentifier(CLSID_NULL)
 			{
 			}
 			CData(IBaseFilter* pBaseFilter) :
 				m_Type(TYPE_FILTER),
 				m_pBaseFilter(pBaseFilter),
-				m_ClassIdentifier(CLSID_NULL)
+				m_BaseFilterClassIdentifier(CLSID_NULL),
+				m_PropertyPageClassIdentifier(CLSID_NULL)
 			{
+				_ATLTRY
+				{
+					CLSID ClassIdentifier = CLSID_NULL;
+					if(SUCCEEDED(pBaseFilter->GetClassID(&ClassIdentifier)) && ClassIdentifier != CLSID_NULL)
+					{
+						m_BaseFilterClassIdentifier = ClassIdentifier;
+						const CString sClassIdentifier(_PersistHelper::StringFromIdentifier(ClassIdentifier));
+						m_sBaseFilterClassDescription = _RegKeyHelper::QueryStringValue(HKEY_CLASSES_ROOT, AtlFormatString(_T("CLSID\\%s"), sClassIdentifier));
+						m_sBaseFilterModulePath = _RegKeyHelper::QueryStringValue(HKEY_CLASSES_ROOT, AtlFormatString(_T("CLSID\\%s\\InprocServer32"), sClassIdentifier));
+					}
+				}
+				_ATLCATCHALL()
+				{
+					_Z_EXCEPTION();
+				}
 			}
-			CData(IBaseFilter* pBaseFilter, const CLSID& ClassIdentifier, IPropertyPage* pPropertyPage) :
+			CData(IBaseFilter* pBaseFilter, const CLSID& PropertyPageClassIdentifier, IPropertyPage* pPropertyPage) :
 				m_Type(TYPE_FILTERPROPERTYPAGE),
 				m_pBaseFilter(pBaseFilter),
-				m_ClassIdentifier(ClassIdentifier),
+				m_BaseFilterClassIdentifier(CLSID_NULL),
+				m_PropertyPageClassIdentifier(PropertyPageClassIdentifier),
 				m_pPropertyPage(pPropertyPage),
 				m_bSiteActivated(FALSE)
 			{
@@ -814,7 +853,11 @@ public:
 			for(SIZE_T nIndex = 0; nIndex < FilterArray.GetCount(); nIndex++)
 			{
 				const CComPtr<IBaseFilter>& pBaseFilter = FilterArray[nIndex];
-				CTreeItem FilterItem = m_TreeView.InsertItem(FiltersItem, PreviousFilterItem, CData(pBaseFilter), CString(_FilterGraphHelper::GetFilterName(pBaseFilter)));
+				CData Data(pBaseFilter);
+				CString sText(_FilterGraphHelper::GetFilterName(pBaseFilter));
+				if(!Data.m_sBaseFilterClassDescription.IsEmpty() && sText.Find(Data.m_sBaseFilterClassDescription) < 0)
+					sText += AtlFormatString(_T(" (%s)"), Data.m_sBaseFilterClassDescription);
+				CTreeItem FilterItem = m_TreeView.InsertItem(FiltersItem, PreviousFilterItem, Data, sText);
 				PreviousFilterItem = FilterItem;
 				#pragma region Property Page
 				const CComQIPtr<ISpecifyPropertyPages> pSpecifyPropertyPages = pBaseFilter;
@@ -982,6 +1025,46 @@ public:
 				}
 				Data.m_pSite->Terminate();
 			}
+			#pragma endregion
+			return 0;
+		}
+		LRESULT OnTreeViewGetInfoTip(NMTVGETINFOTIP* pHeader)
+		{
+			_A(pHeader);
+			if(!pHeader->hItem) 
+				return 0;
+			CData& Data = m_TreeView.GetItemData(pHeader->hItem);
+			CString sInfoTip;
+			if(Data.m_pBaseFilter)
+			{
+				if(!Data.m_pPropertyPage)
+				{
+					sInfoTip.AppendFormat(_T("Name: %ls") _T("\r\n"), _FilterGraphHelper::GetFilterName(Data.m_pBaseFilter));
+					if(Data.m_BaseFilterClassIdentifier != CLSID_NULL)
+						sInfoTip.AppendFormat(_T("Class Identifier: %ls") _T("\r\n"), _PersistHelper::StringFromIdentifier(Data.m_BaseFilterClassIdentifier));
+					if(!Data.m_sBaseFilterClassDescription.IsEmpty())
+						sInfoTip.AppendFormat(_T("Class Description: %s") _T("\r\n"), Data.m_sBaseFilterClassDescription);
+					if(!Data.m_sBaseFilterModulePath.IsEmpty())
+						sInfoTip.AppendFormat(_T("Module Path: %s") _T("\r\n"), Data.m_sBaseFilterModulePath);
+				} else
+				{
+					// TODO: ...
+				}
+			}
+			sInfoTip.TrimRight(_T("\t\n\r "));
+			_tcsncpy_s(pHeader->pszText, pHeader->cchTextMax, sInfoTip, _TRUNCATE);
+			#pragma region Clipboard Copy
+			if(GetKeyState(VK_CONTROL) < 0 && GetKeyState(VK_SHIFT) < 0)
+				_ATLTRY
+				{
+					SetClipboardText(m_hWnd, sInfoTip);
+					MessageBeep(MB_OK);
+				}
+				_ATLCATCHALL()
+				{
+					_Z_EXCEPTION();
+					MessageBeep(MB_ICONERROR);
+				}
 			#pragma endregion
 			return 0;
 		}
@@ -2090,13 +2173,13 @@ public:
 	}
 	STDMETHOD(DoPropertyFrameModal)(LONG nParentWindowHandle)
 	{
-		_Z4(atlTraceCOM, 4, _T("...\n"));
+		_Z4(atlTraceCOM, 4, _T("nParentWindowHandle 0x%08X\n"), nParentWindowHandle);
 		_ATLTRY
 		{
 			CWindow ParentWindow = (HWND) (LONG_PTR) nParentWindowHandle;
 			if(!ParentWindow)
 				ParentWindow = GetActiveWindow();
-			__D(!ParentWindow || ParentWindow.IsWindow(), E_INVALIDARG);
+			//__D(!ParentWindow || ParentWindow.IsWindow(), E_INVALIDARG);
 			const CComQIPtr<IFilterGraph2> pFilterGraph2 = GetFilterGraph();
 			__D(pFilterGraph2, E_NOINTERFACE);
 			CPropertyFrameDialog PropertyFrameDialog(this);
@@ -2108,6 +2191,74 @@ public:
 		}
 		return S_OK;
 	}
+	STDMETHOD(DoFilterGraphListModal)(LONG nParentWindowHandle)
+	{
+		_Z4(atlTraceCOM, 4, _T("nParentWindowHandle 0x%08X\n"), nParentWindowHandle);
+		_ATLTRY
+		{
+			CWindow ParentWindow = (HWND) (LONG_PTR) nParentWindowHandle;
+			if(!ParentWindow)
+				ParentWindow = GetActiveWindow();
+			//__D(!ParentWindow || ParentWindow.IsWindow(), E_INVALIDARG);
+			DoFilterGraphListPropertySheetModal(ParentWindow);
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return S_OK;
+	}
+	STDMETHOD(OpenGraphStudioNext)(LONG nParentWindowHandle, BSTR sMonikerDisplayName, VARIANT_BOOL* pbResult)
+	{
+		_Z4(atlTraceCOM, 4, _T("nParentWindowHandle 0x%08X, sMonikerDisplayName \"%s\"\n"), nParentWindowHandle, CString(sMonikerDisplayName));
+		_ATLTRY
+		{
+			__D(sMonikerDisplayName && *sMonikerDisplayName, E_INVALIDARG);
+			CWindow ParentWindow = (HWND) (LONG_PTR) nParentWindowHandle;
+			if(!ParentWindow)
+				ParentWindow = GetActiveWindow();
+			//__D(!ParentWindow || ParentWindow.IsWindow(), E_INVALIDARG);
+			const BOOL bResult = OpenMonikerWithGsn(sMonikerDisplayName, ParentWindow);
+			if(pbResult)
+				*pbResult = bResult ? ATL_VARIANT_TRUE : ATL_VARIANT_FALSE;
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return S_OK;
+	}
+	STDMETHOD(OpenGraphEdit)(LONG nParentWindowHandle, BSTR sMonikerDisplayName, VARIANT_BOOL* pbResult)
+	{
+		_Z4(atlTraceCOM, 4, _T("nParentWindowHandle 0x%08X, sMonikerDisplayName \"%s\"\n"), nParentWindowHandle, CString(sMonikerDisplayName));
+		_ATLTRY
+		{
+			__D(sMonikerDisplayName && *sMonikerDisplayName, E_INVALIDARG);
+			CWindow ParentWindow = (HWND) (LONG_PTR) nParentWindowHandle;
+			if(!ParentWindow)
+				ParentWindow = GetActiveWindow();
+			//__D(!ParentWindow || ParentWindow.IsWindow(), E_INVALIDARG);
+			const BOOL bResult = OpenMonikerWithGe(sMonikerDisplayName, ParentWindow);
+			if(pbResult)
+				*pbResult = bResult ? ATL_VARIANT_TRUE : ATL_VARIANT_FALSE;
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return S_OK;
+	}
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(FilterGraphHelper), CFilterGraphHelper)
+
+inline HRESULT FilterGraphHelper_OpenGraphStudioNext(LONG nParentWindowHandle, LPCWSTR pszMonikerDisplayName, VARIANT_BOOL* pbResult)
+{
+	CLocalObjectPtr<CFilterGraphHelper> pFilterGraphHelper;
+	return pFilterGraphHelper->OpenGraphStudioNext(nParentWindowHandle, CComBSTR(pszMonikerDisplayName), pbResult);
+}
+inline HRESULT FilterGraphHelper_OpenGraphEdit(LONG nParentWindowHandle, LPCWSTR pszMonikerDisplayName, VARIANT_BOOL* pbResult)
+{
+	CLocalObjectPtr<CFilterGraphHelper> pFilterGraphHelper;
+	return pFilterGraphHelper->OpenGraphEdit(nParentWindowHandle, CComBSTR(pszMonikerDisplayName), pbResult);
+}
