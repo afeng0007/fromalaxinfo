@@ -657,6 +657,33 @@ public:
 		}
 		return S_OK;
 	}
+	STDMETHOD(DoPropertyFrameModal)(LONG nParentWindowHandle)
+	{
+		_Z4(atlTraceCOM, 4, _T("this 0x%p, nParentWindowHandle 0x%08X\n"), this, nParentWindowHandle);
+		_ATLTRY
+		{
+			T* pT = static_cast<T*>(this);
+			return FilterGraphHelper_DoPropertyFrameModal(nParentWindowHandle, (IFilterGraph*) CComQIPtr<IFilterGraph>(pT));
+		}
+		_ATLCATCHALL()
+		{
+			_Z_EXCEPTION();
+		}
+		return S_OK;
+	}
+	STDMETHOD(DoFilterGraphListModal)(LONG nParentWindowHandle)
+	{
+		_Z4(atlTraceCOM, 4, _T("this 0x%p, nParentWindowHandle 0x%08X\n"), this, nParentWindowHandle);
+		_ATLTRY
+		{
+			return FilterGraphHelper_DoFilterGraphListModal(nParentWindowHandle);
+		}
+		_ATLCATCHALL()
+		{
+			_Z_EXCEPTION();
+		}
+		return S_OK;
+	}
 	STDMETHOD(OpenGraphStudioNext)(LONG nParentWindowHandle, VARIANT_BOOL* pbResult)
 	{
 		_Z4(atlTraceCOM, 4, _T("this 0x%p, nParentWindowHandle 0x%08X\n"), this, nParentWindowHandle);
