@@ -1,0 +1,20 @@
+// DispEventSample03.idl : IDL source for DispEventSample03.exe
+//
+
+// This file will be processed by the MIDL tool to
+// produce the type library (DispEventSample03.tlb) and marshalling code.
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	uuid(08520D05-60AB-4CDD-81EA-10E470E84F21),
+	version(1.0),
+	helpstring("DispEventSample03 1.0 Type Library")
+]
+library DispEventSample03Lib
+{
+	importlib("stdole32.tlb");
+	importlib("stdole2.tlb");
+
+};

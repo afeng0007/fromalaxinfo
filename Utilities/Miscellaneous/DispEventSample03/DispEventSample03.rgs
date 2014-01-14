@@ -1,0 +1,11 @@
+HKCR
+{
+	NoRemove AppID
+	{
+		{8FE18E33-CCE0-4A21-8580-F78FECDD3663} = s 'DispEventSample03'
+		'DispEventSample03.EXE'
+		{
+			val AppID = s {8FE18E33-CCE0-4A21-8580-F78FECDD3663}
+		}
+	}
+}
