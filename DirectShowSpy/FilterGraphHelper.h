@@ -10,6 +10,8 @@
 #include "Common.h"
 #include "AboutDialog.h"
 #include "..\..\Repository-Private\Utilities\EmailTools\Message.h"
+#define  BZ_NO_STDIO
+#include "..\..\Repository-Private\Utilities\DeflateTools\Bzip2Item.h"
 
 INT_PTR DoFilterGraphListPropertySheetModal(HWND hParentWindow);
 
@@ -334,6 +336,296 @@ public:
 		};
 
 		////////////////////////////////////////////////////
+		// CEmailLogDialog
+
+		class CEmailLogDialog :
+			public CDialogImpl<CEmailLogDialog>,
+			public CDialogResize<CEmailLogDialog>
+		{
+		public:
+			enum { IDD = IDD_FILTERGRAPHHELPER_EMAIL_LOG };
+
+		BEGIN_MSG_MAP_EX(CEmailLogDialog)
+			//CHAIN_MSG_MAP(CDialogImpl<CEmailLogDialog>)
+			CHAIN_MSG_MAP(CDialogResize<CEmailLogDialog>)
+			MSG_WM_INITDIALOG(OnInitDialog)
+			MSG_LVN_GETDISPINFO(IDC_FILTERGRAPHHELPER_EMAIL_LOG_FILE, OnFileListViewGetDispInfo)
+			//MSG_LVN_GETINFOTIP()
+			MSG_LVN_ITEMCHANGED(IDC_FILTERGRAPHHELPER_EMAIL_LOG_FILE, OnFileListViewItemChanged)
+			//COMMAND_HANDLER_EX(IDC_FILTERGRAPHHELPER_EMAIL_LOG_TRUNCATE, CBN_CHANGE, OnChanged)
+			//COMMAND_HANDLER_EX(IDC_FILTERGRAPHHELPER_EMAIL_LOG_DELETE, CBN_CHANGE, OnChanged)
+			REFLECT_NOTIFICATIONS()
+		END_MSG_MAP()
+
+		BEGIN_DLGRESIZE_MAP(CEmailLogDialog)
+			DLGRESIZE_CONTROL(IDC_FILTERGRAPHHELPER_EMAIL_LOG_FILE, DLSZ_SIZE_X | DLSZ_SIZE_Y)
+			DLGRESIZE_CONTROL(IDC_FILTERGRAPHHELPER_EMAIL_LOG_TRUNCATETITLE, DLSZ_MOVE_Y)
+			DLGRESIZE_CONTROL(IDC_FILTERGRAPHHELPER_EMAIL_LOG_TRUNCATE, DLSZ_MOVE_Y)
+			DLGRESIZE_CONTROL(IDC_FILTERGRAPHHELPER_EMAIL_LOG_DELETETITLE, DLSZ_MOVE_Y)
+			DLGRESIZE_CONTROL(IDC_FILTERGRAPHHELPER_EMAIL_LOG_DELETE, DLSZ_MOVE_Y)
+		END_DLGRESIZE_MAP()
+
+		public:
+
+			////////////////////////////////////////////////
+			// CFileData
+
+			class CFileData
+			{
+			public:
+				UINT m_nLocation;
+				CPath m_sPath;
+				ULONGLONG m_nSize;
+				FILETIME m_UpdateTime;
+
+			public:
+			// CFileData
+				CFileData(UINT nLocation, LPCTSTR pszDirectory, WIN32_FIND_DATA FindData)
+				{
+					m_nLocation = nLocation;
+					m_sPath.Combine(pszDirectory, FindData.cFileName);
+					m_nSize = ((ULONGLONG) FindData.nFileSizeHigh << 32) + FindData.nFileSizeLow;
+					m_UpdateTime = FindData.ftLastWriteTime;
+				}
+				FILETIME GetLocalUpdateTime() const
+				{
+					FILETIME UpdateTime;
+					_W(FileTimeToLocalFileTime(&m_UpdateTime, &UpdateTime));
+					return UpdateTime;
+				}
+			};
+
+			////////////////////////////////////////////////
+			// CFileDataSortTraits
+
+			class CFileDataSortTraits :
+				public CDefaultSortTraitsT<CFileData>
+			{
+			public:
+			// CFileDataSortTraits
+				static INT_PTR CompareElements(const CFileData& FileData1, const CFileData& FileData2, PARAMETERARGUMENT Parameter)
+				{
+					const INT nLocation = FileData1.m_nLocation - FileData2.m_nLocation;
+					if(nLocation)
+						return nLocation;
+					return _tcsicmp(FindFileName(FileData1.m_sPath), FindFileName(FileData2.m_sPath));
+				}
+			};
+
+			////////////////////////////////////////////////
+			// CFileDataArray
+
+			class CFileDataArray :
+				public CRoArrayT<CFileData>
+			{
+			public:
+			// CFileDataArray
+				static BOOL CompareLocation(const CFileData& FileData, UINT nLocation)
+				{
+					return FileData.m_nLocation == nLocation;
+				}
+				SIZE_T GetCountForLocation(UINT nLocation)
+				{
+					return GetCountThatT<UINT>(&CFileDataArray::CompareLocation, nLocation);
+				}
+			};
+
+			////////////////////////////////////////////////
+			// CSelectedFileData
+
+			class CSelectedFileData
+			{
+			public:
+				CPath m_sPath;
+				CString m_sName;
+
+			public:
+			// CSelectedFileData
+			};
+
+		private:
+			CPropertyFrameDialog* m_pOwner;
+			BOOL m_bActivating;
+			CStatic m_TitleStatic;
+			CFont m_TitleFont;
+			CRoListViewT<CFileData, CRoListControlDataTraitsT> m_FileListView;
+			INT m_nFileListViewGroupViewEnabled;
+			CRoComboBoxT<> m_TruncateComboBox;
+			CRoComboBoxT<> m_DeleteComboBox;
+			CRoMapT<INT_PTR, BOOL> m_ChangeMap;
+
+		public:
+		// CEmailLogDialog
+			CEmailLogDialog()
+			{
+			}
+			VOID UpdateControls()
+			{
+			}
+			VOID InitializeFileListView()
+			{
+				CWindowRedraw FileListViewRedraw(m_FileListView);
+				m_FileListView.DeleteAllItems();
+				m_FileListView.DeleteAllGroups();
+				#pragma region File
+				CFileDataArray FileDataArray;
+				static DWORD g_pnLocations[] = 
+				{
+					CSIDL_COMMON_APPDATA,
+					CSIDL_APPDATA,
+				};
+				for(SIZE_T nLocationIndex = 0; nLocationIndex < DIM(g_pnLocations); nLocationIndex++)
+					_ATLTRY
+					{
+						TCHAR pszDirectory[MAX_PATH] = { 0 };
+						if(!SHGetSpecialFolderPath(NULL, pszDirectory, g_pnLocations[nLocationIndex], FALSE))
+							continue;
+						CFindFiles FindFiles;
+						for(BOOL bFound = FindFiles.FindFirstFile(pszDirectory, _T("*.log")); bFound; bFound = FindFiles.FindNextFile())
+						{
+							const WIN32_FIND_DATA& Data = FindFiles.GetFindData();
+							FileDataArray.Add(CFileData((UINT) nLocationIndex, pszDirectory, Data));
+						}
+					}
+					_ATLCATCHALL()
+					{
+						_Z_EXCEPTION();
+					}
+				_SortHelper::QuickSort<CFileDataSortTraits>(FileDataArray);
+				if(m_nFileListViewGroupViewEnabled >= 0)
+				{
+					if(FileDataArray.GetCountForLocation(0))
+						m_FileListView.InsertGroup(0, 0, _T("Local Machine (Common AppData)"));
+					if(FileDataArray.GetCountForLocation(1))
+						m_FileListView.InsertGroup(1, 1, _T("Current User (AppData)"));
+				}
+				CPath sPrivateLogFileName = FindFileName(GetModulePath());
+				sPrivateLogFileName.RenameExtension(_T(".log"));
+				for(SIZE_T nIndex = 0; nIndex < FileDataArray.GetCount(); nIndex++)
+				{
+					CFileData& FileData = FileDataArray[nIndex];
+					INT nItem;
+					if(m_nFileListViewGroupViewEnabled >= 0)
+						nItem = m_FileListView.InsertGroupItem(m_FileListView.GetItemCount(), FileData.m_nLocation, FileData);
+					else
+						nItem = m_FileListView.InsertItem(m_FileListView.GetItemCount(), FileData);
+					if(_tcsicmp(FindFileName(FileData.m_sPath), sPrivateLogFileName) == 0)
+						m_FileListView.SetCheckState(nItem, TRUE);
+				}
+			}
+			SIZE_T GetFiles(CRoArrayT<CSelectedFileData>& Array)
+			{
+				_A(Array.IsEmpty());
+				for(INT nItem = 0; nItem < m_FileListView.GetItemCount(); nItem++)
+				{
+					if(!m_FileListView.GetCheckState(nItem))
+						continue;
+					const CFileData& FileData = m_FileListView.GetItemData(nItem);
+					CSelectedFileData SelectedFileData;
+					SelectedFileData.m_sPath = FileData.m_sPath;
+					CPath sName = FindFileName(FileData.m_sPath);
+					if(FileData.m_nLocation == 1)
+					{
+						CString sExtention = FindExtension(sName);
+						sName.RemoveExtension();
+						sName = (LPCTSTR) AtlFormatString(_T("%s (%s)%s"), sName, _T("Current User"), sExtention);
+					}
+					SelectedFileData.m_sName = (LPCTSTR) sName;
+					Array.Add(SelectedFileData);
+				}
+				return Array.GetCount();
+			}
+			ULONGLONG GetTruncateSize()
+			{
+				static const ULONGLONG g_pnTruncateSizes[] = 
+				{
+					 1i64 << 20, //  1 MB
+					10i64 << 20, // 10 MB
+					25i64 << 20, // 25 MB
+					50i64 << 20, // 50 MB
+				};
+				const INT nItem = m_TruncateComboBox.GetCurSel();
+				_A(nItem >= 0 && nItem < DIM(g_pnTruncateSizes));
+				return g_pnTruncateSizes[nItem];
+			}
+			BOOL GetDelete()
+			{
+				return m_DeleteComboBox.GetCurSel() == 1;
+			}
+
+		// Window Message Handler
+			LRESULT OnInitDialog(HWND, LPARAM lParam)
+			{
+				m_pOwner = (CPropertyFrameDialog*) lParam;
+				m_bActivating = TRUE;
+				_ATLTRY
+				{
+					CWaitCursor WaitCursor;
+					m_TitleStatic = GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_LOG_TITLE);
+					CreateTitleFont(m_TitleFont, m_TitleStatic);
+					m_FileListView.Initialize(GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_LOG_FILE));
+					m_nFileListViewGroupViewEnabled = m_FileListView.EnableGroupView(TRUE);
+					m_TruncateComboBox.Initialize(GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_LOG_TRUNCATE));
+					m_DeleteComboBox.Initialize(GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_LOG_DELETE));
+					DlgResize_Init(FALSE, FALSE);
+					InitializeFileListView();
+					m_FileListView.SetColumnWidth(3, LVSCW_AUTOSIZE);
+					m_TruncateComboBox.SetCurSel(2);
+					m_DeleteComboBox.SetCurSel(0);
+					UpdateControls();
+					m_bActivating = FALSE;
+				}
+				_ATLCATCH(Exception)
+				{
+					for(CWindow Window = GetWindow(GW_CHILD); Window; Window = Window.GetWindow(GW_HWNDNEXT))
+						Window.EnableWindow(FALSE);
+					AtlExceptionMessageBox(m_hWnd, Exception);
+				}
+				return TRUE;
+			}
+			LRESULT OnChanged(UINT, INT_PTR nIdentifier, HWND)
+			{
+				if(m_bActivating)
+					return 0;
+				m_ChangeMap[nIdentifier] = TRUE;
+				UpdateControls();
+				return 0;
+			}
+			LRESULT OnChanged(NMHDR* pHeader)
+			{
+				return OnChanged(pHeader->code, pHeader->idFrom, pHeader->hwndFrom);
+			}
+			LRESULT OnFileListViewGetDispInfo(NMLVDISPINFO* pHeader)
+			{
+				const CFileData& FileData = m_FileListView.DataFromParameter(pHeader->item.lParam);
+				if(pHeader->item.mask & LVIF_TEXT)
+				{
+					CString& sTextBuffer = m_FileListView.GetTextBufferString(TRUE);
+					switch(pHeader->item.iSubItem)
+					{
+					case 1: // Size
+						sTextBuffer = _StringHelper::FormatNumber((LONGLONG) FileData.m_nSize);
+						break;
+					case 2: // Update Time
+						sTextBuffer = _StringHelper::FormatDateTime(FileData.GetLocalUpdateTime());
+						break;
+					case 3: // Directory
+						sTextBuffer = (LPCTSTR) GetPathDirectory(FileData.m_sPath);
+						break;
+					default: // File Name
+						sTextBuffer = FindFileName(FileData.m_sPath);
+					}
+					pHeader->item.pszText = m_FileListView.GetTextBuffer();
+				}
+				return 0;
+			}
+			LRESULT OnFileListViewItemChanged(NMLISTVIEW* pHeader)
+			{
+				return m_FileListView.OnReflectedItemChanged(pHeader);
+			}
+		};
+
+		////////////////////////////////////////////////////
 		// CEmailDialog
 
 		class CEmailDialog :
@@ -359,6 +651,8 @@ public:
 			COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHHELPER_EMAIL_SEND, OnSend)
 			NOTIFY_HANDLER_EX(IDC_FILTERGRAPHHELPER_EMAIL_CLEANUP, CRoHyperStatic::NC_ANCHORCLICKED, OnCleanupStaticAnchorClicked)
 			REFLECT_NOTIFICATIONS()
+		ALT_MSG_MAP(IDC_FILTERGRAPHHELPER_EMAIL_FROM)
+			MSG_WM_PASTE(OnFromEditPaste)
 		END_MSG_MAP()
 
 		BEGIN_DLGRESIZE_MAP(CEmailDialog)
@@ -372,7 +666,7 @@ public:
 			BOOL m_bActivating;
 			CStatic m_TitleStatic;
 			CFont m_TitleFont;
-			CRoEdit m_FromEdit;
+			CContainedWindowT<CRoEdit> m_FromEdit;
 			CRoEdit m_ToEdit;
 			CRoComboBoxT<> m_MethodComboBox;
 			CRoEdit m_HostEdit;
@@ -386,11 +680,12 @@ public:
 
 		public:
 		// CEmailDialog
-			VOID InitializeControlsFromRegistry()
+			CEmailDialog() :
+				m_FromEdit(this, IDC_FILTERGRAPHHELPER_EMAIL_FROM)
 			{
-				const CString sMessageString = _RegKeyHelper::QueryStringValue(HKEY_CURRENT_USER, REGISTRY_ROOT, _T("Email Message Template"));
-				if(sMessageString.IsEmpty())
-					return;
+			}
+			BOOL InitializeControlsFromMessageString(const CString& sMessageString)
+			{
 				_ATLTRY
 				{
 					CObjectPtr<CMessage> pMessage;
@@ -447,7 +742,16 @@ public:
 				_ATLCATCHALL()
 				{
 					_Z_EXCEPTION();
+					return FALSE;
 				}
+				return TRUE;
+			}
+			VOID InitializeControlsFromRegistry()
+			{
+				const CString sMessageString = _RegKeyHelper::QueryStringValue(HKEY_CURRENT_USER, REGISTRY_ROOT, _T("Email Message Template"));
+				if(sMessageString.IsEmpty())
+					return;
+				InitializeControlsFromMessageString(sMessageString);
 			}
 			VOID InitializeBody()
 			{
@@ -500,10 +804,7 @@ public:
 					//Version.wSuiteMask, Version.wProductType
 					sText += AtlFormatString(_T(" * ") _T("Version: %s") _T("\r\n"), _StringHelper::Join(VersionArray, _T("; ")));
 					#pragma endregion 
-					TCHAR pszComputerName[256] = { 0 };
-					DWORD nComputerNameLength = DIM(pszComputerName);
-					GetComputerName(pszComputerName, &nComputerNameLength);
-					sText += AtlFormatString(_T(" * ") _T("Computer Name: %s") _T("\r\n"), I(pszComputerName));
+					sText += AtlFormatString(_T(" * ") _T("Computer Name: %s") _T("\r\n"), I(GetComputerName()));
 					TCHAR pszUserName[256] = { 0 };
 					DWORD nUserNameLength = DIM(pszUserName);
 					GetUserName(pszUserName, &nUserNameLength);
@@ -580,6 +881,13 @@ public:
 				}
 				m_SendButton.EnableWindow(bAllowSend);
 			}
+			static CString GetComputerName()
+			{
+				TCHAR pszComputerName[256] = { 0 };
+				DWORD nComputerNameLength = DIM(pszComputerName);
+				::GetComputerName(pszComputerName, &nComputerNameLength);
+				return pszComputerName;
+			}
 
 		// Window Message Handler
 			LRESULT OnInitDialog(HWND, LPARAM lParam)
@@ -591,7 +899,7 @@ public:
 					CWaitCursor WaitCursor;
 					m_TitleStatic = GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_TITLE);
 					CreateTitleFont(m_TitleFont, m_TitleStatic);
-					m_FromEdit = GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_FROM);
+					_W(m_FromEdit.SubclassWindow(GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_FROM)));
 					m_ToEdit = GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_TO);
 					m_MethodComboBox.Initialize(GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_METHOD));
 					m_MethodComboBox.SetCurSel(0);
@@ -638,6 +946,30 @@ public:
 			LRESULT OnChanged(NMHDR* pHeader)
 			{
 				return OnChanged(pHeader->code, pHeader->idFrom, pHeader->hwndFrom);
+			}
+			LRESULT OnFromEditPaste()
+			{
+				_ATLTRY
+				{
+					CString sText;
+					if(GetClipboardText(m_hWnd, sText))
+					{
+						const INT nLength = sText.GetLength();
+						if(nLength >= 128 && nLength < 8192)
+						{
+							sText.Trim();
+							const BOOL bResult = InitializeControlsFromMessageString(sText);
+							UpdateControls();
+							if(bResult)
+								return 0;
+						}
+					}
+				}
+				_ATLCATCHALL()
+				{
+					MessageBeep(MB_ICONERROR);
+				}
+				return 0;
 			}
 			LRESULT OnSend(UINT, INT, HWND)
 			{
@@ -696,18 +1028,66 @@ public:
 				sText += _T("\r\n") _T("\r\n") _T("* * *") _T("\r\n") _T("\r\n");
 				sText += m_sFilterGraphText;
 				__C(pMessage->put_Body(CComBSTR(sText)));
-				CString sSubject = AtlFormatString(_T("DirectShow Filter Graph by %s"), AtlLoadString(IDS_PROJNAME));
+				CString sSubject = AtlFormatString(_T("DirectShow Filter Graph from %s by %s"), GetComputerName(), AtlLoadString(IDS_PROJNAME));
 				__C(pMessage->put_Subject(CComBSTR(sSubject)));
+				#pragma region Attachment
+				CRoArrayT<CPath> DeleteArray;
+				{
+					CEmailLogDialog& EmailLogDialog = m_pOwner->m_EmailLogDialog;
+					CRoArrayT<CEmailLogDialog::CSelectedFileData> Array;
+					if(EmailLogDialog.GetFiles(Array))
+					{
+						const ULONGLONG nTruncateSize = EmailLogDialog.GetTruncateSize();
+						const BOOL bDelete = EmailLogDialog.GetDelete();
+						for(SIZE_T nIndex = 0; nIndex < Array.GetCount(); nIndex++)
+							_ATLTRY
+							{
+								CEmailLogDialog::CSelectedFileData& FileData = Array[nIndex];
+								CLocalObjectPtr<CBzip2Item> pItem;
+								pItem->LoadFromFile(FileData.m_sPath, nTruncateSize);
+								CHeapPtr<BYTE> pnData;
+								SIZE_T nDataSize;
+								pItem->GetData(pnData, nDataSize);
+								if(nDataSize)
+								{
+									CObjectPtr<CMessage::CComAttachment> pAttachment = pMessage->GetAttachments()->Add();
+									_ATLTRY
+									{
+										pAttachment->SetType(L"application/bzip2");
+										pAttachment->SetDisposition(L"attachment");
+										pAttachment->SetName(CStringW(FileData.m_sName + _T(".bz2")));
+										CLocalObjectPtr<CUnmanagedMemoryStream> pStream;
+										pStream->Initialize(pnData, nDataSize);
+										pAttachment->LoadFromStream(pStream);
+									}
+									_ATLCATCHALL()
+									{
+										_V(pMessage->GetAttachments()->Remove(pAttachment));
+										_ATLRETHROW;
+									}
+								}
+								if(bDelete)
+									DeleteArray.Add(FileData.m_sPath);
+							}
+							_ATLCATCHALL()
+							{
+								_Z_EXCEPTION()
+							}
+					}
+				}
+				#pragma endregion 
 				__C(pMessage->Send());
+				for(SIZE_T nIndex = 0; nIndex < DeleteArray.GetCount(); nIndex++)
+					DeleteFile(DeleteArray[nIndex]);
 				_RegKeyHelper::SetStringValue(HKEY_CURRENT_USER, REGISTRY_ROOT, _T("Email Message Template"), CString(sMessageString));
-				AtlOptionalMessageBoxEx(m_hWnd, _T("CFilterGraphHelper::CPropertyFrameDialog::CEmailDialog::CredentialsSaved"), _T("The email was sent") _T("\r\n\r\n") _T("The credentials were written into registry for further reuse. Use Erase Cached Credentials link to delete them from registry."), IDS_INFORMATION, MB_ICONINFORMATION | MB_OK);
+				AtlOptionalMessageBoxEx(m_hWnd, _T("CFilterGraphHelper::CPropertyFrameDialog::CEmailDialog::CredentialsSaved"), _T("The email was sent.") _T("\r\n\r\n") _T("The credentials were written into registry for further reuse. Use Erase Cached Credentials link to delete them from registry."), IDS_INFORMATION, MB_ICONINFORMATION | MB_OK);
 				MessageBeep(MB_OK);
 				return 0;
 			}
 			LRESULT OnCleanupStaticAnchorClicked(NMHDR*)
 			{
 				_RegKeyHelper::DeleteValue(HKEY_CURRENT_USER, REGISTRY_ROOT, _T("Email Message Template"));
-				AtlOptionalMessageBoxEx(m_hWnd, _T("CFilterGraphHelper::CPropertyFrameDialog::CEmailDialog::SavedCredentialsDeleted"), _T("Cached email credentials are removed from registry."), IDS_INFORMATION, MB_ICONINFORMATION | MB_OK);
+				AtlOptionalMessageBoxEx(m_hWnd, _T("CFilterGraphHelper::CPropertyFrameDialog::CEmailDialog::SavedCredentialsDeleted"), _T("Cached email credentials were removed from registry."), IDS_INFORMATION, MB_ICONINFORMATION | MB_OK);
 				MessageBeep(MB_OK);
 				return 0;
 			}
@@ -731,6 +1111,7 @@ public:
 				TYPE_FILTERPROPERTYPAGE,
 				TYPE_ACTION,
 				TYPE_EMAIL,
+				TYPE_EMAIL_LOG,
 			} TYPE;
 
 		public:
@@ -807,6 +1188,7 @@ public:
 		CTreeItem m_FiltersItem;
 		CTreeItem m_ActionItem;
 		CTreeItem m_EmailItem;
+		CTreeItem m_EmailLogItem;
 		CTabCtrl m_Tab;
 		CRoEdit m_TextEdit;
 		CRect m_TextPosition;
@@ -817,6 +1199,7 @@ public:
 		CObjectPtr<CPropertyPageSite> m_pCurrentSite;
 		CActionDialog m_ActionDialog;
 		CEmailDialog m_EmailDialog;
+		CEmailLogDialog m_EmailLogDialog;
 
 		static VOID CreateTitleFont(CFont& Font, HWND hStaticWindow = NULL)
 		{
@@ -910,6 +1293,10 @@ public:
 			CTreeItem EmailItem = m_TreeView.InsertItem(NULL, ActionItem, CData(CData::TYPE_EMAIL), _T("Email"));
 			m_EmailItem.m_hTreeItem = EmailItem;
 			m_EmailItem.m_pTreeView = &m_TreeView;
+			CTreeItem EmailLogItem = m_TreeView.InsertItem(EmailItem, NULL, CData(CData::TYPE_EMAIL_LOG), _T("Log Files"));
+			m_EmailLogItem.m_hTreeItem = EmailLogItem;
+			m_EmailLogItem.m_pTreeView = &m_TreeView;
+			m_TreeView.Expand(EmailItem);
 		}
 		VOID HideCurrentSite()
 		{
@@ -945,6 +1332,7 @@ public:
 				_V(m_pCurrentSite->m_pPropertyPage->Move(Position));
 			_W(m_ActionDialog.SetWindowPos(NULL, Position, SWP_NOZORDER | SWP_NOACTIVATE));
 			_W(m_EmailDialog.SetWindowPos(NULL, Position, SWP_NOZORDER | SWP_NOACTIVATE));
+			_W(m_EmailLogDialog.SetWindowPos(NULL, Position, SWP_NOZORDER | SWP_NOACTIVATE));
 		}
 
 	// Window Message Handler
@@ -991,6 +1379,7 @@ public:
 				m_ApplyButton = GetDlgItem(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_APPLY);
 				__E(m_ActionDialog.Create(m_hWnd, (LPARAM) this));
 				__E(m_EmailDialog.Create(m_hWnd, (LPARAM) this));
+				__E(m_EmailLogDialog.Create(m_hWnd, (LPARAM) this));
 				DlgResize_Init(TRUE);
 				UpdateTree();
 				m_FiltersItem.Select();
@@ -1081,6 +1470,8 @@ public:
 					m_ActionDialog.ShowWindow(SW_HIDE);
 				if(Data.m_Type != CData::TYPE_EMAIL)
 					m_EmailDialog.ShowWindow(SW_HIDE);
+				if(Data.m_Type != CData::TYPE_EMAIL_LOG)
+					m_EmailLogDialog.ShowWindow(SW_HIDE);
 				if(Data.m_pBaseFilter)
 				{
 					if(Data.m_pPropertyPage)
@@ -1194,11 +1585,18 @@ public:
 						_W(m_EmailDialog.SetWindowPos(NULL, GetTextEditPosition(), SWP_NOZORDER | SWP_SHOWWINDOW));
 						break;
 					#pragma endregion
+					#pragma region TYPE_EMAIL_LOG
+					case CData::TYPE_EMAIL_LOG:
+						m_TextEdit.ShowWindow(SW_HIDE);
+						_W(m_EmailLogDialog.SetWindowPos(NULL, GetTextEditPosition(), SWP_NOZORDER | SWP_SHOWWINDOW));
+						break;
+					#pragma endregion
 					default:
 						m_TextEdit.ShowWindow(SW_SHOW);
 						m_TextEdit.SetValue(m_Owner.GetText());
 						m_ActionDialog.ShowWindow(SW_HIDE);
 						m_EmailDialog.ShowWindow(SW_HIDE);
+						m_EmailLogDialog.ShowWindow(SW_HIDE);
 					}
 					m_ApplyButton.EnableWindow(FALSE);
 				}
@@ -1208,6 +1606,7 @@ public:
 				m_TextEdit.ShowWindow(SW_HIDE);
 				m_ActionDialog.ShowWindow(SW_HIDE);
 				m_EmailDialog.ShowWindow(SW_HIDE);
+				m_EmailLogDialog.ShowWindow(SW_HIDE);
 				m_ApplyButton.EnableWindow(FALSE);
 			}
 			return 0;
