@@ -78,6 +78,7 @@ public:
 		COMMAND_ID_HANDLER_EX(IDOK, OnOk)
 		COMMAND_ID_HANDLER_EX(IDCANCEL, OnCancel)
 		COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_APPLY, OnApply)
+		COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_TREE_WALKUP, OnTreeWalkUp)
 		COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHHELPER_ACTION_OPENGSN, OnActionCommand)
 		COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHHELPER_ACTION_OPENGE, OnActionCommand)
 		COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHHELPER_ACTION_OPENLIST, OnActionCommand)
@@ -481,9 +482,14 @@ public:
 						if(!SHGetSpecialFolderPath(NULL, pszDirectory, g_pnLocations[nLocationIndex], FALSE))
 							continue;
 						CFindFiles FindFiles;
-						for(BOOL bFound = FindFiles.FindFirstFile(pszDirectory, _T("*.log")); bFound; bFound = FindFiles.FindNextFile())
+						for(BOOL bFound = FindFiles.FindFirstFile(pszDirectory, _T("*.*")); bFound; bFound = FindFiles.FindNextFile())
 						{
 							const WIN32_FIND_DATA& Data = FindFiles.GetFindData();
+							if(Data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
+								continue; // Directory
+							LPCTSTR pszExtension = FindExtension(Data.cFileName);
+							if(!pszExtension || !(_tcsicmp(pszExtension, _T(".log")) == 0 || _tcsicmp(pszExtension, _T(".dmp")) == 0))
+								continue; // Extension Mismatch
 							FileDataArray.Add(CFileData((UINT) nLocationIndex, pszDirectory, Data));
 						}
 					}
@@ -1687,6 +1693,16 @@ public:
 				_Z_ATLEXCEPTION(Exception);
 				AtlMessageBoxEx(m_hWnd, (LPCTSTR) Ds::FormatResult(Exception), IDS_ERROR, MB_ICONERROR | MB_OK);
 			}
+			return 0;
+		}
+		LRESULT OnTreeWalkUp(UINT, INT, HWND)
+		{
+			CTreeItem TreeItem = m_TreeView.GetSelectedItem();
+			CTreeItem ParentTreeItem = TreeItem.GetParent();
+			if(!ParentTreeItem)
+				return 0;
+			m_TreeView.SetFocus();
+			m_TreeView.Select(ParentTreeItem, TVGN_CARET);
 			return 0;
 		}
 		LRESULT OnActionCommand(UINT, INT nIdentifier, HWND)
