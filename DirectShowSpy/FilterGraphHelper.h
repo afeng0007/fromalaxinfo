@@ -1037,7 +1037,8 @@ public:
 				CString sSubject = AtlFormatString(_T("DirectShow Filter Graph from %s by %s"), GetComputerName(), AtlLoadString(IDS_PROJNAME));
 				__C(pMessage->put_Subject(CComBSTR(sSubject)));
 				#pragma region Attachment
-				CRoArrayT<CPath> DeleteArray;
+				CRoArrayT<CPath> DeletePathArray;
+				CRoArrayT<CString> FailurePathArray;
 				{
 					CEmailLogDialog& EmailLogDialog = m_pOwner->m_EmailLogDialog;
 					CRoArrayT<CEmailLogDialog::CSelectedFileData> Array;
@@ -1046,9 +1047,10 @@ public:
 						const ULONGLONG nTruncateSize = EmailLogDialog.GetTruncateSize();
 						const BOOL bDelete = EmailLogDialog.GetDelete();
 						for(SIZE_T nIndex = 0; nIndex < Array.GetCount(); nIndex++)
+						{
+							CEmailLogDialog::CSelectedFileData& FileData = Array[nIndex];
 							_ATLTRY
 							{
-								CEmailLogDialog::CSelectedFileData& FileData = Array[nIndex];
 								CLocalObjectPtr<CBzip2Item> pItem;
 								pItem->LoadFromFile(FileData.m_sPath, nTruncateSize);
 								CHeapPtr<BYTE> pnData;
@@ -1073,19 +1075,26 @@ public:
 									}
 								}
 								if(bDelete)
-									DeleteArray.Add(FileData.m_sPath);
+									DeletePathArray.Add(FileData.m_sPath);
 							}
 							_ATLCATCHALL()
 							{
-								_Z_EXCEPTION()
+								_Z_EXCEPTION();
+								FailurePathArray.Add((LPCTSTR) FileData.m_sPath);
 							}
+						}
 					}
 				}
 				#pragma endregion 
 				__C(pMessage->Send());
-				for(SIZE_T nIndex = 0; nIndex < DeleteArray.GetCount(); nIndex++)
-					DeleteFile(DeleteArray[nIndex]);
+				for(SIZE_T nIndex = 0; nIndex < DeletePathArray.GetCount(); nIndex++)
+					DeleteFile(DeletePathArray[nIndex]);
 				_RegKeyHelper::SetStringValue(HKEY_CURRENT_USER, REGISTRY_ROOT, _T("Email Message Template"), CString(sMessageString));
+				if(!FailurePathArray.IsEmpty())
+				{
+					const CString sMessage = AtlFormatString(_T("It was unable to attach the following files:") _T("\r\n\r\n") _T("%s"), _StringHelper::Join(FailurePathArray, _T("\r\n")));
+					AtlMessageBoxEx(m_hWnd, (LPCTSTR) sMessage, IDS_WARNING, MB_ICONWARNING | MB_OK);
+				}
 				AtlOptionalMessageBoxEx(m_hWnd, _T("CFilterGraphHelper::CPropertyFrameDialog::CEmailDialog::CredentialsSaved"), _T("The email was sent.") _T("\r\n\r\n") _T("The credentials were written into registry for further reuse. Use Erase Cached Credentials link to delete them from registry."), IDS_INFORMATION, MB_ICONINFORMATION | MB_OK);
 				MessageBeep(MB_OK);
 				return 0;
