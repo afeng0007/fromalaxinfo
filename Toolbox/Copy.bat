@@ -30,6 +30,11 @@ copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.%C%" ".\Hardware Specific"
 copy /b /y "%A%\Utilities\%B%\_Bin\%B%-Win32.%C%" .
 copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.%C%" .
 
+@set B=FilePropertyStore
+@set C=exe
+copy /b /y "%A%\Utilities\%B%\_Bin\%B%-Win32.%C%" .
+copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.%C%" .
+
 @set B=BuildOutputHelper
 copy /b /y "%A%\Utilities\%B%\_Bin\Win32\Development Release Trace\%B%.exe" .
 
@@ -48,8 +53,9 @@ copy /b /y "%A%\Utilities\%B%\_Bin\%B%-Win32.exe" .
 copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.exe" .
 
 @set B=DirectShowSpy
-copy /b /y "%A%\%B%\_Bin\%B%-Win32.dll" .
-copy /b /y "%A%\%B%\_Bin\%B%-x64.dll" .
+@set C=dll
+copy /b /y "%A%\%B%\_Bin\%B%-Win32.%C%" .
+copy /b /y "%A%\%B%\_Bin\%B%-x64.%C%" .
 copy /b /y "%A%\%B%\_Bin\%B%-*.bat" .
 
 @set B=StressEvr
