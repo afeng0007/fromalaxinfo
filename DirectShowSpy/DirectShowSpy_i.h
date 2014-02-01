@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0555 */
-/* at Sat Jan 18 13:18:17 2014
+/* at Sat Feb 01 17:41:18 2014
  */
 /* Compiler settings for DirectShowSpy.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
@@ -145,6 +145,24 @@ typedef struct FilterGraphHelper FilterGraphHelper;
 #endif /* __cplusplus */
 
 #endif 	/* __FilterGraphHelper_FWD_DEFINED__ */
+
+
+#ifndef __IRunPropertyBagAware_FWD_DEFINED__
+#define __IRunPropertyBagAware_FWD_DEFINED__
+typedef interface IRunPropertyBagAware IRunPropertyBagAware;
+#endif 	/* __IRunPropertyBagAware_FWD_DEFINED__ */
+
+
+#ifndef __RunPropertyBagPropertyPage_FWD_DEFINED__
+#define __RunPropertyBagPropertyPage_FWD_DEFINED__
+
+#ifdef __cplusplus
+typedef class RunPropertyBagPropertyPage RunPropertyBagPropertyPage;
+#else
+typedef struct RunPropertyBagPropertyPage RunPropertyBagPropertyPage;
+#endif /* __cplusplus */
+
+#endif 	/* __RunPropertyBagPropertyPage_FWD_DEFINED__ */
 
 
 /* header files for imported files */
@@ -1199,6 +1217,135 @@ EXTERN_C const CLSID CLSID_FilterGraphHelper;
 
 class DECLSPEC_UUID("5A9A684C-A891-4032-8D31-FF6EAB5A0C1E")
 FilterGraphHelper;
+#endif
+
+#ifndef __IRunPropertyBagAware_INTERFACE_DEFINED__
+#define __IRunPropertyBagAware_INTERFACE_DEFINED__
+
+/* interface IRunPropertyBagAware */
+/* [unique][helpstring][nonextensible][uuid][object] */ 
+
+
+EXTERN_C const IID IID_IRunPropertyBagAware;
+
+#if defined(__cplusplus) && !defined(CINTERFACE)
+    
+    MIDL_INTERFACE("E267813C-8F29-4D69-A776-CD462494FCE4")
+    IRunPropertyBagAware : public IDispatch
+    {
+    public:
+        virtual /* [id][propget] */ HRESULT STDMETHODCALLTYPE get_Value( 
+            /* [retval][out] */ IUnknown **ppPropertyBagUnknown) = 0;
+        
+    };
+    
+#else 	/* C style interface */
+
+    typedef struct IRunPropertyBagAwareVtbl
+    {
+        BEGIN_INTERFACE
+        
+        HRESULT ( STDMETHODCALLTYPE *QueryInterface )( 
+            IRunPropertyBagAware * This,
+            /* [in] */ REFIID riid,
+            /* [annotation][iid_is][out] */ 
+            __RPC__deref_out  void **ppvObject);
+        
+        ULONG ( STDMETHODCALLTYPE *AddRef )( 
+            IRunPropertyBagAware * This);
+        
+        ULONG ( STDMETHODCALLTYPE *Release )( 
+            IRunPropertyBagAware * This);
+        
+        HRESULT ( STDMETHODCALLTYPE *GetTypeInfoCount )( 
+            IRunPropertyBagAware * This,
+            /* [out] */ UINT *pctinfo);
+        
+        HRESULT ( STDMETHODCALLTYPE *GetTypeInfo )( 
+            IRunPropertyBagAware * This,
+            /* [in] */ UINT iTInfo,
+            /* [in] */ LCID lcid,
+            /* [out] */ ITypeInfo **ppTInfo);
+        
+        HRESULT ( STDMETHODCALLTYPE *GetIDsOfNames )( 
+            IRunPropertyBagAware * This,
+            /* [in] */ REFIID riid,
+            /* [size_is][in] */ LPOLESTR *rgszNames,
+            /* [range][in] */ UINT cNames,
+            /* [in] */ LCID lcid,
+            /* [size_is][out] */ DISPID *rgDispId);
+        
+        /* [local] */ HRESULT ( STDMETHODCALLTYPE *Invoke )( 
+            IRunPropertyBagAware * This,
+            /* [in] */ DISPID dispIdMember,
+            /* [in] */ REFIID riid,
+            /* [in] */ LCID lcid,
+            /* [in] */ WORD wFlags,
+            /* [out][in] */ DISPPARAMS *pDispParams,
+            /* [out] */ VARIANT *pVarResult,
+            /* [out] */ EXCEPINFO *pExcepInfo,
+            /* [out] */ UINT *puArgErr);
+        
+        /* [id][propget] */ HRESULT ( STDMETHODCALLTYPE *get_Value )( 
+            IRunPropertyBagAware * This,
+            /* [retval][out] */ IUnknown **ppPropertyBagUnknown);
+        
+        END_INTERFACE
+    } IRunPropertyBagAwareVtbl;
+
+    interface IRunPropertyBagAware
+    {
+        CONST_VTBL struct IRunPropertyBagAwareVtbl *lpVtbl;
+    };
+
+    
+
+#ifdef COBJMACROS
+
+
+#define IRunPropertyBagAware_QueryInterface(This,riid,ppvObject)	\
+    ( (This)->lpVtbl -> QueryInterface(This,riid,ppvObject) ) 
+
+#define IRunPropertyBagAware_AddRef(This)	\
+    ( (This)->lpVtbl -> AddRef(This) ) 
+
+#define IRunPropertyBagAware_Release(This)	\
+    ( (This)->lpVtbl -> Release(This) ) 
+
+
+#define IRunPropertyBagAware_GetTypeInfoCount(This,pctinfo)	\
+    ( (This)->lpVtbl -> GetTypeInfoCount(This,pctinfo) ) 
+
+#define IRunPropertyBagAware_GetTypeInfo(This,iTInfo,lcid,ppTInfo)	\
+    ( (This)->lpVtbl -> GetTypeInfo(This,iTInfo,lcid,ppTInfo) ) 
+
+#define IRunPropertyBagAware_GetIDsOfNames(This,riid,rgszNames,cNames,lcid,rgDispId)	\
+    ( (This)->lpVtbl -> GetIDsOfNames(This,riid,rgszNames,cNames,lcid,rgDispId) ) 
+
+#define IRunPropertyBagAware_Invoke(This,dispIdMember,riid,lcid,wFlags,pDispParams,pVarResult,pExcepInfo,puArgErr)	\
+    ( (This)->lpVtbl -> Invoke(This,dispIdMember,riid,lcid,wFlags,pDispParams,pVarResult,pExcepInfo,puArgErr) ) 
+
+
+#define IRunPropertyBagAware_get_Value(This,ppPropertyBagUnknown)	\
+    ( (This)->lpVtbl -> get_Value(This,ppPropertyBagUnknown) ) 
+
+#endif /* COBJMACROS */
+
+
+#endif 	/* C style interface */
+
+
+
+
+#endif 	/* __IRunPropertyBagAware_INTERFACE_DEFINED__ */
+
+
+EXTERN_C const CLSID CLSID_RunPropertyBagPropertyPage;
+
+#ifdef __cplusplus
+
+class DECLSPEC_UUID("76127943-D22E-4C4E-9D9B-173C224D0EE4")
+RunPropertyBagPropertyPage;
 #endif
 #endif /* __AlaxInfoDirectShowSpy_LIBRARY_DEFINED__ */
 

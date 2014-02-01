@@ -158,4 +158,23 @@ library AlaxInfoDirectShowSpy
 	{
 		[default] interface IFilterGraphHelper;
 	};
+	[
+		object,
+		uuid(E267813C-8F29-4D69-A776-CD462494FCE4),
+		nonextensible,
+		helpstring("IRunPropertyBagAware Interface"),
+		pointer_default(unique)
+	]
+	interface IRunPropertyBagAware : IDispatch
+	{
+		[propget, id(DISPID_VALUE)] HRESULT Value([out, retval] IUnknown** ppPropertyBagUnknown);
+	};
+	[
+		uuid(76127943-D22E-4C4E-9D9B-173C224D0EE4),
+		helpstring("RunPropertyBagPropertyPage Class")
+	]
+	coclass RunPropertyBagPropertyPage
+	{
+		[default] interface IUnknown; //IPropertyPage;
+	};
 };

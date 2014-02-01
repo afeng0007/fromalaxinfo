@@ -23,6 +23,239 @@ HRESULT FilterGraphHelper_OpenGraphEdit(LONG nParentWindowHandle, LPCWSTR pszMon
 ////////////////////////////////////////////////////////////
 // CFilterGraphHelper
 
+////////////////////////////////////////////////////////////
+// CRunPropertyBagPropertyPage
+
+class ATL_NO_VTABLE CRunPropertyBagPropertyPage :
+	public CComObjectRootEx<CComSingleThreadModel>,
+	public CComCoClass<CRunPropertyBagPropertyPage, &__uuidof(RunPropertyBagPropertyPage)>,
+	public COlePropertyPageT<CRunPropertyBagPropertyPage>,
+	public CDialogResize<CRunPropertyBagPropertyPage>
+{
+public:
+	enum { IDR = IDR_GENERIC_RUNPROPERTYBAGPROPERTYPAGE };
+	enum { IDD = IDD_GENERIC_RUNPROPERTYBAG };
+
+BEGIN_COM_MAP(CRunPropertyBagPropertyPage)
+	COM_INTERFACE_ENTRY(IPropertyPage2)
+	COM_INTERFACE_ENTRY(IPropertyPage)
+END_COM_MAP()
+
+BEGIN_MSG_MAP_EX(CRunPropertyBagPropertyPage)
+	CHAIN_MSG_MAP(COlePropertyPage)
+	CHAIN_MSG_MAP(CDialogResize<CRunPropertyBagPropertyPage>)
+	MSG_WM_INITDIALOG(OnInitDialog)
+	MSG_WM_DESTROY(OnDestroy)
+	COMMAND_ID_HANDLER_EX(IDC_GENERIC_RUNPROPERTYBAG_REFRESH, OnRefresh)
+	REFLECT_NOTIFICATIONS()
+END_MSG_MAP()
+
+BEGIN_DLGRESIZE_MAP(CRunPropertyBagPropertyPage)
+	DLGRESIZE_CONTROL(IDC_GENERIC_RUNPROPERTYBAG_INTRODUCTION, DLSZ_SIZE_X)
+	DLGRESIZE_CONTROL(IDC_GENERIC_RUNPROPERTYBAG_TEXT, DLSZ_SIZE_X | DLSZ_SIZE_Y)
+	DLGRESIZE_CONTROL(IDC_GENERIC_RUNPROPERTYBAG_REFRESH, DLSZ_MOVE_Y)
+END_DLGRESIZE_MAP()
+
+public:
+
+	////////////////////////////////////////////////////////
+	// CSimpleSortTraitsT
+
+	class CNameSortTraits :
+		public CSimpleSortTraitsT<CString>
+	{
+	public:
+	// CNameSortTraits
+		static INT_PTR CompareElements(const CString& sElementA, const CString& sElementB, PARAMETERARGUMENT Parameter)
+		{
+			return _tcsicmp(sElementA, sElementB);
+		}
+	};
+
+private:
+	BOOL m_bActivating;
+	CRoEdit m_TextEdit;
+	CFont m_TextFont;
+	CRoMapT<INT_PTR, BOOL> m_ChangeMap;
+
+public:
+// CRunPropertyBagPropertyPage
+	static CString GetObjectFriendlyName()
+	{
+		return _StringHelper::GetLine(IDR, 2);
+	}
+	static HRESULT WINAPI UpdateRegistry(BOOL bRegister)
+	{
+		_Z2(atlTraceRegistrar, 2, _T("bRegister %d\n"), bRegister);
+		return DefaultUpdateRegistry(bRegister);
+	}
+	CRunPropertyBagPropertyPage()
+	{
+		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+	}
+	~CRunPropertyBagPropertyPage()
+	{
+		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+	}
+	VOID UpdateControls()
+	{
+	}
+	static CString GetText(IPropertyBag2* pPropertyBag2)
+	{
+		_A(pPropertyBag2);
+		CString sText;
+		ULONG nPropertyCount = 0;
+		__C(pPropertyBag2->CountProperties(&nPropertyCount));
+		_Z4(atlTraceGeneral, 4, _T("nPropertyCount %d\n"), nPropertyCount);
+		if(nPropertyCount)
+		{
+			CTempBufferT<PROPBAG2> pPropBags(nPropertyCount);
+			ZeroMemory((PROPBAG2*) pPropBags, nPropertyCount * sizeof *pPropBags);
+			ULONG nPropBagCount = 0;
+			__C(pPropertyBag2->GetPropertyInfo(0, nPropertyCount, pPropBags, &nPropBagCount));
+			_Z4(atlTraceGeneral, 4, _T("nPropBagCount %d\n"), nPropBagCount);
+			CRoListT<CComHeapPtr<OLECHAR>> NameList;
+			for(ULONG nIndex = 0; nIndex < nPropBagCount; nIndex++)
+				NameList.GetAt(NameList.AddTail()).Attach(pPropBags[nIndex].pstrName);
+			CRoArrayT<CComVariantArray> ValueArray;
+			__D(ValueArray.SetCount(nPropBagCount), E_OUTOFMEMORY);
+			CTempBufferT<HRESULT> pnResults(nPropBagCount);
+			__C(pPropertyBag2->Read(nPropBagCount, pPropBags, NULL, ValueArray.GetData(), pnResults));
+			CRoMapT<CString, CComVariantArray> Map;
+			CRoArrayT<CString> NameArray;
+			for(ULONG nIndex = 0; nIndex < nPropBagCount; nIndex++)
+				if(SUCCEEDED(pnResults[nIndex]))
+				{
+					CString sName(pPropBags[nIndex].pstrName);
+					_Z4(atlTraceGeneral, 4, _T("sName \"%s\"\n"), sName);
+					NameArray.Add(sName);
+					_W(Map.SetAt(sName, ValueArray[nIndex]));
+				}
+			_SortHelper::QuickSort<CNameSortTraits>(NameArray);
+			for(SIZE_T nIndex = 0; nIndex < NameArray.GetCount(); nIndex++)
+			{
+				const CString& sName = NameArray[nIndex];
+				_Z4(atlTraceGeneral, 4, _T("sName \"%s\"\n"), sName);
+				CString sValue;
+				CComVariantArray vValue;
+				if(!Map.Lookup(sName, vValue))
+					continue;
+				CString sComment;
+				#pragma region Friendly Comment
+				switch(vValue.vt)
+				{
+				#pragma region VT_I4
+				case VT_I4:
+					if(vValue.lVal < -999 || vValue.lVal > 999)
+						sComment = _StringHelper::FormatNumber(vValue.lVal);
+					break;
+				#pragma endregion 
+				#pragma region VT_R8
+				case VT_R8:
+					if(vValue.dblVal > -0.001 || vValue.dblVal < 0.001)
+						sComment = _StringHelper::FormatNumber(vValue.dblVal, 6);
+					else 
+					if(vValue.lVal < -999.0 || vValue.lVal > 999.0)
+						sComment = _StringHelper::FormatNumber(vValue.dblVal, 1);
+					break;
+				#pragma endregion 
+				}
+				#pragma endregion 
+				const HRESULT nChangeTypeResult = vValue.ChangeType(VT_BSTR);
+				_Z45_HRESULT(nChangeTypeResult);
+				if(FAILED(nChangeTypeResult))
+					continue;
+				sText.AppendFormat(_T(" * ") _T("`%s`: `%s`"), sName, CString(vValue.bstrVal));
+				if(!sComment.IsEmpty())
+					sText.AppendFormat(_T(" // %s"), sComment);
+				sText.Append(_T("\r\n"));
+			}
+		}
+		return sText;
+	}
+	VOID UpdateText()
+	{
+		CString sText;
+		_A(GetObjectCount() == 1);
+		const CComQIPtr<IRunPropertyBagAware> pRunPropertyBagAware = GetObject(0);
+		__D(pRunPropertyBagAware, E_NOINTERFACE);
+		CComPtr<IUnknown> pPropertyBagUnknown;
+		__C(pRunPropertyBagAware->get_Value(&pPropertyBagUnknown));
+		const CComQIPtr<IPropertyBag2> pPropertyBag2 = pPropertyBagUnknown;
+		__D(pPropertyBag2, E_NOINTERFACE);
+		sText += GetText(pPropertyBag2);
+		m_TextEdit.SetValue(sText);
+	}
+
+// Window message handlers
+	LRESULT OnInitDialog(HWND, LPARAM)
+	{
+		m_bActivating = TRUE;
+		_ATLTRY
+		{
+			CWaitCursor WaitCursor;
+			m_TextEdit = GetDlgItem(IDC_GENERIC_RUNPROPERTYBAG_TEXT);
+			CLogFont TextFont;
+			CFontHandle(AtlGetDefaultGuiFont()).GetLogFont(TextFont);
+			_tcsncpy_s(TextFont.lfFaceName, _T("Courier New"), _TRUNCATE);
+			TextFont.SetHeight(8);
+			m_TextFont = TextFont.CreateFontIndirect();
+			m_TextEdit.SetFont(m_TextFont);
+			DlgResize_Init(FALSE);
+			_A(GetObjectCount() >= 1);
+			//const CComQIPtr<IRunPropertyBagAware> pRunPropertyBagAware = GetObject(0);
+			//__D(pRunPropertyBagAware, E_NOINTERFACE);
+			UpdateText();
+			UpdateControls();
+			m_ChangeMap.RemoveAll();
+			m_bActivating = FALSE;
+		}
+		_ATLCATCH(Exception)
+		{
+			AtlExceptionMessageBox(m_hWnd, Exception);
+			for(CWindow Window = GetWindow(GW_CHILD); Window.IsWindow(); Window = Window.GetWindow(GW_HWNDNEXT))
+				Window.EnableWindow(FALSE);
+		}
+		return TRUE;
+	}
+	LRESULT OnDestroy()
+	{
+		return 0;
+	}
+	LRESULT OnRefresh(UINT, INT, HWND)
+	{
+		CWaitCursor WaitCursor;
+		UpdateText();
+		UpdateControls();
+		return 0;
+	}
+
+// COlePropertyPageT, IRoPropertyPageT, IPropertyPage2, IPropertyPage
+	STDMETHOD(Apply)()
+	{
+		_Z4(atlTraceCOM, 4, _T("...\n"));
+		_ATLTRY
+		{
+			//if(!m_ChangeMap.IsEmpty())
+			{
+				//CWaitCursor WaitCursor;
+				//m_ChangeMap.RemoveAll();
+				SetDirty(FALSE);
+			}
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return S_OK;
+	}
+};
+
+OBJECT_ENTRY_AUTO(__uuidof(RunPropertyBagPropertyPage), CRunPropertyBagPropertyPage)
+
+////////////////////////////////////////////////////////////
+// CFilterGraphHelper
+
 class ATL_NO_VTABLE CFilterGraphHelper :
 	public CComObjectRootEx<CComMultiThreadModelNoCS>,
 	public CComCoClass<CFilterGraphHelper, &__uuidof(FilterGraphHelper)>,
@@ -1579,6 +1812,30 @@ public:
 							sText += _T("\r\n");
 						}
 						#pragma endregion
+						#pragma region Runtime Property Bag
+						_ATLTRY
+						{
+							const CComQIPtr<IRunPropertyBagAware> pRunPropertyBagAware = Data.m_pBaseFilter;
+							if(pRunPropertyBagAware)
+							{
+								CComPtr<IUnknown> pPropertyBagUnknown;
+								__C(pRunPropertyBagAware->get_Value(&pPropertyBagUnknown));
+								const CComQIPtr<IPropertyBag2> pPropertyBag2 = pPropertyBagUnknown;
+								__D(pPropertyBag2, E_NOINTERFACE);
+								const CString sPropertyBagText = CRunPropertyBagPropertyPage::GetText(pPropertyBag2);
+								if(!sPropertyBagText.IsEmpty())
+								{
+									sText += AtlFormatString(_T("## ") _T("Runtime Properties") _T("\r\n") _T("\r\n"));
+									sText += sPropertyBagText;
+									sText += _T("\r\n");
+								}
+							}
+						}
+						_ATLCATCHALL()
+						{
+							_Z_EXCEPTION();
+						}
+						#pragma endregion 
 						m_TextEdit.SetValue(sText);
 						m_ApplyButton.EnableWindow(FALSE);
 					}
@@ -1864,7 +2121,32 @@ public:
 		CString sText;
 		const CStringW sClassIdentifierString = _FilterGraphHelper::GetFilterClassIdentifierString(pBaseFilter);
 		if(!sClassIdentifierString.IsEmpty())
-			sText += AtlFormatString(_T(" * ") _T("Class: %s %s") _T("\r\n"), I(sClassIdentifierString), I(_FilterGraphHelper::GetFilterClassDescription(pBaseFilter)));
+		{
+			CLSID ClassIdentifier = CLSID_NULL;
+			const BOOL bClassIdentifierAvailable = _PersistHelper::ClassIdentifierFromString(sClassIdentifierString, ClassIdentifier);
+			if(bClassIdentifierAvailable && ClassIdentifier != CLSID_NULL)
+			{
+				sText += AtlFormatString(_T(" * ") _T("Class: %s %s") _T("\r\n"), I(sClassIdentifierString), I(_FilterGraphHelper::GetFilterClassDescription(pBaseFilter)));
+				_ATLTRY
+				{
+					const CString sPath = _RegKeyHelper::QueryStringValue(HKEY_CLASSES_ROOT, AtlFormatString(_T("CLSID\\%ls\\InprocServer32"), sClassIdentifierString));
+					if(!sPath.IsEmpty())
+					{
+						sText += AtlFormatString(_T(" * ") _T("Inproc Server: %s") _T("\r\n"), I(sPath));
+						const ULONGLONG nProductVersion = _VersionInfoHelper::GetProductVersion(sPath);
+						if(nProductVersion && (nProductVersion + 1))
+							sText += AtlFormatString(_T(" * ") _T("Product Version: %s") _T("\r\n"), I(_VersionInfoHelper::GetVersionString(nProductVersion)));
+						const ULONGLONG nFileVersion = _VersionInfoHelper::GetFileVersion(sPath);
+						if(nFileVersion && (nFileVersion + 1))
+							sText += AtlFormatString(_T(" * ") _T("File Version: %s") _T("\r\n"), I(_VersionInfoHelper::GetVersionString(nFileVersion)));
+					}
+				}
+				_ATLCATCHALL()
+				{
+					_Z_EXCEPTION();
+				}
+			}
+		}
 		_FilterGraphHelper::CPinArray InputPinArray;
 		if(_FilterGraphHelper::GetFilterPins(pBaseFilter, PINDIR_INPUT, InputPinArray))
 			sText += AtlFormatString(_T(" * ") _T("Input Pins: %s") _T("\r\n"), FormatPins(InputPinArray));
@@ -2366,6 +2648,37 @@ public:
 				}
 			}
 			sText += _T("\r\n");
+			#pragma endregion 
+			#pragma region Runtime Property Bag
+			BOOL bRunPropertyBagHeaderAdded = FALSE;
+			for(SIZE_T nIndex = 0; nIndex < FilterArray.GetCount(); nIndex++)
+				_ATLTRY
+				{
+					const CComPtr<IBaseFilter>& pBaseFilter = FilterArray[nIndex];
+					const CComQIPtr<IRunPropertyBagAware> pRunPropertyBagAware = pBaseFilter;
+					if(!pRunPropertyBagAware)
+						continue;
+					_Z4(atlTraceGeneral, 4, _T("pBaseFilter 0x%p \"%ls\"\n"), pBaseFilter, _FilterGraphHelper::GetFilterName(pBaseFilter));
+					CComPtr<IUnknown> pPropertyBagUnknown;
+					__C(pRunPropertyBagAware->get_Value(&pPropertyBagUnknown));
+					const CComQIPtr<IPropertyBag2> pPropertyBag2 = pPropertyBagUnknown;
+					__D(pPropertyBag2, E_NOINTERFACE);
+					const CString sPropertyBagText = CRunPropertyBagPropertyPage::GetText(pPropertyBag2);
+					if(sPropertyBagText.IsEmpty())
+						continue;
+					if(!bRunPropertyBagHeaderAdded)
+					{
+						sText += AtlFormatString(_T("## ") _T("Runtime Properties") _T("\r\n") _T("\r\n"));
+						bRunPropertyBagHeaderAdded = TRUE;
+					}
+					sText += AtlFormatString(_T("### ") _T("Filter: %ls") _T("\r\n") _T("\r\n"), _FilterGraphHelper::GetFilterName(pBaseFilter));
+					sText += sPropertyBagText;
+					sText += _T("\r\n");
+				}
+				_ATLCATCHALL()
+				{
+					_Z_EXCEPTION();
+				}
 			#pragma endregion 
 		}
 		#pragma endregion 
