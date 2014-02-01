@@ -6,7 +6,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0555 */
-/* at Sat Jan 18 13:18:17 2014
+/* at Sat Feb 01 17:41:18 2014
  */
 /* Compiler settings for DirectShowSpy.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
@@ -104,6 +104,12 @@ MIDL_DEFINE_GUID(CLSID, CLSID_SystemDeviceEnumeratorSpy,0xAD42E3BD,0x7B9B,0x4783
 
 
 MIDL_DEFINE_GUID(CLSID, CLSID_FilterGraphHelper,0x5A9A684C,0xA891,0x4032,0x8D,0x31,0xFF,0x6E,0xAB,0x5A,0x0C,0x1E);
+
+
+MIDL_DEFINE_GUID(IID, IID_IRunPropertyBagAware,0xE267813C,0x8F29,0x4D69,0xA7,0x76,0xCD,0x46,0x24,0x94,0xFC,0xE4);
+
+
+MIDL_DEFINE_GUID(CLSID, CLSID_RunPropertyBagPropertyPage,0x76127943,0xD22E,0x4C4E,0x9D,0x9B,0x17,0x3C,0x22,0x4D,0x0E,0xE4);
 
 #undef MIDL_DEFINE_GUID
 

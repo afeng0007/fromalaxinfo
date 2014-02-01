@@ -457,6 +457,7 @@
     <None Include="FilterGraphSpy.rgs" />
     <None Include="FilterMapperSpy.rgs" />
     <None Include="GenericClass.rgs" />
+    <None Include="GenericPropertyPage.rgs" />
   </ItemGroup>
   <ItemGroup>
     <Midl Include="DirectShowSpy.idl" />
