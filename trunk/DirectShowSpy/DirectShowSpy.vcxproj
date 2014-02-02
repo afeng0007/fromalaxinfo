@@ -472,6 +472,7 @@
     <ClInclude Include="FilterGraphSpy.h" />
     <ClInclude Include="FilterMapperSpy.h" />
     <ClInclude Include="GraphBuilderCallbackPropertySheet.h" />
+    <ClInclude Include="PropertyBag.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="SystemDeviceEnumeratorSpy.h" />

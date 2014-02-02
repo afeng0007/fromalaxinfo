@@ -112,6 +112,9 @@
     <ClInclude Include="FilterGraphHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="PropertyBag.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Image Include="AddFilter.ico">

@@ -7,6 +7,7 @@
 #include "rodshow.h"
 #include "DirectShowSpy_i.h"
 #include "Common.h"
+#include "PropertyBag.h"
 
 HRESULT FilterGraphHelper_OpenGraphStudioNext(LONG nParentWindowHandle, LPCWSTR pszMonikerDisplayName, VARIANT_BOOL* pbResult);
 HRESULT FilterGraphHelper_OpenGraphEdit(LONG nParentWindowHandle, LPCWSTR pszMonikerDisplayName, VARIANT_BOOL* pbResult);
@@ -703,6 +704,22 @@ public:
 		_ATLTRY
 		{
 			return FilterGraphHelper_OpenGraphEdit(nParentWindowHandle, GetMonikerDisplayName(), pbResult);
+		}
+		_ATLCATCHALL()
+		{
+			_Z_EXCEPTION();
+		}
+		return S_OK;
+	}
+	STDMETHOD(ReadRunPropertyBag)(IUnknown* pBaseFilterUnknown, VARIANT_BOOL bAllowExtension, VARIANT* pvValue)
+	{
+		_Z4(atlTraceCOM, 4, _T("this 0x%p, pBaseFilterUnknown 0x%p, bAllowExtension %d\n"), this, pBaseFilterUnknown, bAllowExtension);
+		_ATLTRY
+		{
+			__D(pBaseFilterUnknown, E_INVALIDARG);
+			__D(pvValue, E_POINTER);
+			VariantInit(pvValue);
+			_V(CPropertyBagHelper::ReadRunPropertyBag(pBaseFilterUnknown, bAllowExtension != ATL_VARIANT_FALSE).Detach(pvValue));
 		}
 		_ATLCATCHALL()
 		{

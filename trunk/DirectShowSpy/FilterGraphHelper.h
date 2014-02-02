@@ -8,6 +8,7 @@
 #include "rodshow.h"
 #include "DirectShowSpy_i.h"
 #include "Common.h"
+#include "PropertyBag.h"
 #include "AboutDialog.h"
 #include "..\..\Repository-Private\Utilities\EmailTools\Message.h"
 #define  BZ_NO_STDIO
@@ -56,22 +57,6 @@ BEGIN_DLGRESIZE_MAP(CRunPropertyBagPropertyPage)
 	DLGRESIZE_CONTROL(IDC_GENERIC_RUNPROPERTYBAG_REFRESH, DLSZ_MOVE_Y)
 END_DLGRESIZE_MAP()
 
-public:
-
-	////////////////////////////////////////////////////////
-	// CSimpleSortTraitsT
-
-	class CNameSortTraits :
-		public CSimpleSortTraitsT<CString>
-	{
-	public:
-	// CNameSortTraits
-		static INT_PTR CompareElements(const CString& sElementA, const CString& sElementB, PARAMETERARGUMENT Parameter)
-		{
-			return _tcsicmp(sElementA, sElementB);
-		}
-	};
-
 private:
 	BOOL m_bActivating;
 	CRoEdit m_TextEdit;
@@ -100,91 +85,11 @@ public:
 	VOID UpdateControls()
 	{
 	}
-	static CString GetText(IPropertyBag2* pPropertyBag2)
-	{
-		_A(pPropertyBag2);
-		CString sText;
-		ULONG nPropertyCount = 0;
-		__C(pPropertyBag2->CountProperties(&nPropertyCount));
-		_Z4(atlTraceGeneral, 4, _T("nPropertyCount %d\n"), nPropertyCount);
-		if(nPropertyCount)
-		{
-			CTempBufferT<PROPBAG2> pPropBags(nPropertyCount);
-			ZeroMemory((PROPBAG2*) pPropBags, nPropertyCount * sizeof *pPropBags);
-			ULONG nPropBagCount = 0;
-			__C(pPropertyBag2->GetPropertyInfo(0, nPropertyCount, pPropBags, &nPropBagCount));
-			_Z4(atlTraceGeneral, 4, _T("nPropBagCount %d\n"), nPropBagCount);
-			CRoListT<CComHeapPtr<OLECHAR>> NameList;
-			for(ULONG nIndex = 0; nIndex < nPropBagCount; nIndex++)
-				NameList.GetAt(NameList.AddTail()).Attach(pPropBags[nIndex].pstrName);
-			CRoArrayT<CComVariantArray> ValueArray;
-			__D(ValueArray.SetCount(nPropBagCount), E_OUTOFMEMORY);
-			CTempBufferT<HRESULT> pnResults(nPropBagCount);
-			__C(pPropertyBag2->Read(nPropBagCount, pPropBags, NULL, ValueArray.GetData(), pnResults));
-			CRoMapT<CString, CComVariantArray> Map;
-			CRoArrayT<CString> NameArray;
-			for(ULONG nIndex = 0; nIndex < nPropBagCount; nIndex++)
-				if(SUCCEEDED(pnResults[nIndex]))
-				{
-					CString sName(pPropBags[nIndex].pstrName);
-					_Z4(atlTraceGeneral, 4, _T("sName \"%s\"\n"), sName);
-					NameArray.Add(sName);
-					_W(Map.SetAt(sName, ValueArray[nIndex]));
-				}
-			_SortHelper::QuickSort<CNameSortTraits>(NameArray);
-			for(SIZE_T nIndex = 0; nIndex < NameArray.GetCount(); nIndex++)
-			{
-				const CString& sName = NameArray[nIndex];
-				_Z4(atlTraceGeneral, 4, _T("sName \"%s\"\n"), sName);
-				CString sValue;
-				CComVariantArray vValue;
-				if(!Map.Lookup(sName, vValue))
-					continue;
-				CString sComment;
-				#pragma region Friendly Comment
-				switch(vValue.vt)
-				{
-				#pragma region VT_I4
-				case VT_I4:
-					if(vValue.lVal < -999 || vValue.lVal > 999)
-						sComment = _StringHelper::FormatNumber(vValue.lVal);
-					break;
-				#pragma endregion 
-				#pragma region VT_R8
-				case VT_R8:
-					if(vValue.dblVal > -0.001 || vValue.dblVal < 0.001)
-						sComment = _StringHelper::FormatNumber(vValue.dblVal, 6);
-					else 
-					if(vValue.lVal < -999.0 || vValue.lVal > 999.0)
-						sComment = _StringHelper::FormatNumber(vValue.dblVal, 1);
-					break;
-				#pragma endregion 
-				}
-				#pragma endregion 
-				const HRESULT nChangeTypeResult = vValue.ChangeType(VT_BSTR);
-				_Z45_HRESULT(nChangeTypeResult);
-				if(FAILED(nChangeTypeResult))
-					continue;
-				sText.AppendFormat(_T(" * ") _T("`%s`: `%s`"), sName, CString(vValue.bstrVal));
-				if(!sComment.IsEmpty())
-					sText.AppendFormat(_T(" // %s"), sComment);
-				sText.Append(_T("\r\n"));
-			}
-		}
-		return sText;
-	}
 	VOID UpdateText()
 	{
 		CString sText;
 		_A(GetObjectCount() == 1);
-		const CComQIPtr<IRunPropertyBagAware> pRunPropertyBagAware = GetObject(0);
-		__D(pRunPropertyBagAware, E_NOINTERFACE);
-		CComPtr<IUnknown> pPropertyBagUnknown;
-		__C(pRunPropertyBagAware->get_Value(&pPropertyBagUnknown));
-		const CComQIPtr<IPropertyBag2> pPropertyBag2 = pPropertyBagUnknown;
-		__D(pPropertyBag2, E_NOINTERFACE);
-		sText += GetText(pPropertyBag2);
-		m_TextEdit.SetValue(sText);
+		m_TextEdit.SetValue(CPropertyBagHelper::GetPropertyBagText(GetObject(0)));
 	}
 
 // Window message handlers
@@ -1815,20 +1720,12 @@ public:
 						#pragma region Runtime Property Bag
 						_ATLTRY
 						{
-							const CComQIPtr<IRunPropertyBagAware> pRunPropertyBagAware = Data.m_pBaseFilter;
-							if(pRunPropertyBagAware)
+							const CString sPropertyBagText = CPropertyBagHelper::GetPropertyBagText(Data.m_pBaseFilter, CComQIPtr<ISpy>(m_Owner.m_pFilterGraph));
+							if(!sPropertyBagText.IsEmpty())
 							{
-								CComPtr<IUnknown> pPropertyBagUnknown;
-								__C(pRunPropertyBagAware->get_Value(&pPropertyBagUnknown));
-								const CComQIPtr<IPropertyBag2> pPropertyBag2 = pPropertyBagUnknown;
-								__D(pPropertyBag2, E_NOINTERFACE);
-								const CString sPropertyBagText = CRunPropertyBagPropertyPage::GetText(pPropertyBag2);
-								if(!sPropertyBagText.IsEmpty())
-								{
-									sText += AtlFormatString(_T("## ") _T("Runtime Properties") _T("\r\n") _T("\r\n"));
-									sText += sPropertyBagText;
-									sText += _T("\r\n");
-								}
+								sText += AtlFormatString(_T("## ") _T("Runtime Properties") _T("\r\n") _T("\r\n"));
+								sText += sPropertyBagText;
+								sText += _T("\r\n");
 							}
 						}
 						_ATLCATCHALL()
@@ -2655,15 +2552,8 @@ public:
 				_ATLTRY
 				{
 					const CComPtr<IBaseFilter>& pBaseFilter = FilterArray[nIndex];
-					const CComQIPtr<IRunPropertyBagAware> pRunPropertyBagAware = pBaseFilter;
-					if(!pRunPropertyBagAware)
-						continue;
-					_Z4(atlTraceGeneral, 4, _T("pBaseFilter 0x%p \"%ls\"\n"), pBaseFilter, _FilterGraphHelper::GetFilterName(pBaseFilter));
-					CComPtr<IUnknown> pPropertyBagUnknown;
-					__C(pRunPropertyBagAware->get_Value(&pPropertyBagUnknown));
-					const CComQIPtr<IPropertyBag2> pPropertyBag2 = pPropertyBagUnknown;
-					__D(pPropertyBag2, E_NOINTERFACE);
-					const CString sPropertyBagText = CRunPropertyBagPropertyPage::GetText(pPropertyBag2);
+					//_Z4(atlTraceGeneral, 4, _T("pBaseFilter 0x%p \"%ls\"\n"), pBaseFilter, _FilterGraphHelper::GetFilterName(pBaseFilter));
+					const CString sPropertyBagText = CPropertyBagHelper::GetPropertyBagText(pBaseFilter, CComQIPtr<ISpy>(pFilterGraph));
 					if(sPropertyBagText.IsEmpty())
 						continue;
 					if(!bRunPropertyBagHeaderAdded)
