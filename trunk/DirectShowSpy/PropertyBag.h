@@ -280,9 +280,9 @@ public:
 	static CString GetPropertyBagText(IUnknown* pBaseFilterUnknown, ISpy* pSpy = NULL)
 	{
 		const CComQIPtr<IRunPropertyBagAware> pRunPropertyBagAware = pBaseFilterUnknown;
-		CComPtr<ISpy> pEffectiveSpy = pSpy;
+		CComQIPtr<ISpy> pEffectiveSpy = pSpy;
 		if(!pEffectiveSpy && pRunPropertyBagAware)
-			_V(pRunPropertyBagAware->get_Spy(&pEffectiveSpy));
+			pEffectiveSpy = _FilterGraphHelper::GetFilterGraph(CComQIPtr<IBaseFilter>(pBaseFilterUnknown));
 		if(pEffectiveSpy)
 		{
 			CComVariantArray vValue;
