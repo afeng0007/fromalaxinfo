@@ -4,10 +4,10 @@
 
 
  /* File created by MIDL compiler version 7.00.0555 */
-/* at Sun Feb 02 11:37:18 2014
+/* at Sun Feb 02 11:47:19 2014
  */
 /* Compiler settings for DirectShowSpy.idl:
-    Oicf, W1, Zp8, env=Win64 (32b run), target_arch=AMD64 7.00.0555 
+    Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
     protocol : dce , ms_ext, c_ext, robust
     error checks: allocation ref bounds_check enum stub_data 
     VC __declspec() decoration level: 
@@ -1251,9 +1251,6 @@ EXTERN_C const IID IID_IRunPropertyBagAware;
         virtual /* [id][propget] */ HRESULT STDMETHODCALLTYPE get_Value( 
             /* [retval][out] */ IUnknown **ppPropertyBagUnknown) = 0;
         
-        virtual /* [id][propget] */ HRESULT STDMETHODCALLTYPE get_Spy( 
-            /* [retval][out] */ ISpy **ppSpy) = 0;
-        
     };
     
 #else 	/* C style interface */
@@ -1307,10 +1304,6 @@ EXTERN_C const IID IID_IRunPropertyBagAware;
             IRunPropertyBagAware * This,
             /* [retval][out] */ IUnknown **ppPropertyBagUnknown);
         
-        /* [id][propget] */ HRESULT ( STDMETHODCALLTYPE *get_Spy )( 
-            IRunPropertyBagAware * This,
-            /* [retval][out] */ ISpy **ppSpy);
-        
         END_INTERFACE
     } IRunPropertyBagAwareVtbl;
 
@@ -1349,9 +1342,6 @@ EXTERN_C const IID IID_IRunPropertyBagAware;
 
 #define IRunPropertyBagAware_get_Value(This,ppPropertyBagUnknown)	\
     ( (This)->lpVtbl -> get_Value(This,ppPropertyBagUnknown) ) 
-
-#define IRunPropertyBagAware_get_Spy(This,ppSpy)	\
-    ( (This)->lpVtbl -> get_Spy(This,ppSpy) ) 
 
 #endif /* COBJMACROS */
 

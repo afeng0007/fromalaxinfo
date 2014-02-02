@@ -178,7 +178,6 @@ library AlaxInfoDirectShowSpy
 	interface IRunPropertyBagAware : IDispatch
 	{
 		[propget, id(DISPID_VALUE)] HRESULT Value([out, retval] IUnknown** ppPropertyBagUnknown);
-		[propget, id(1)] HRESULT Spy([out, retval] ISpy** ppSpy);
 	};
 	[
 		uuid(76127943-D22E-4C4E-9D9B-173C224D0EE4),
