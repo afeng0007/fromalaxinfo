@@ -24,6 +24,7 @@ interface ISpy : IDispatch
 	[id(5)] HRESULT DoFilterGraphListModal([in] LONG nParentWindowHandle);
 	[id(6)] HRESULT OpenGraphStudioNext([in] LONG nParentWindowHandle, [out, retval] VARIANT_BOOL* pbResult);
 	[id(7)] HRESULT OpenGraphEdit([in] LONG nParentWindowHandle, [out, retval] VARIANT_BOOL* pbResult);
+	[id(8)] HRESULT ReadRunPropertyBag([in] IUnknown* pBaseFilterUnknown, [in] VARIANT_BOOL bAllowExtension, [out, retval] VARIANT* pvValue);
 };
 [
 	object,
@@ -168,6 +169,7 @@ library AlaxInfoDirectShowSpy
 	interface IRunPropertyBagAware : IDispatch
 	{
 		[propget, id(DISPID_VALUE)] HRESULT Value([out, retval] IUnknown** ppPropertyBagUnknown);
+		[propget, id(1)] HRESULT Spy([out, retval] ISpy** ppSpy);
 	};
 	[
 		uuid(76127943-D22E-4C4E-9D9B-173C224D0EE4),

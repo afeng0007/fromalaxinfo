@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0555 */
-/* at Sat Feb 01 17:41:18 2014
+/* at Sun Feb 02 11:24:37 2014
  */
 /* Compiler settings for DirectShowSpy.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
@@ -215,6 +215,11 @@ EXTERN_C const IID IID_ISpy;
             /* [in] */ LONG nParentWindowHandle,
             /* [retval][out] */ VARIANT_BOOL *pbResult) = 0;
         
+        virtual /* [id] */ HRESULT STDMETHODCALLTYPE ReadRunPropertyBag( 
+            /* [in] */ IUnknown *pBaseFilterUnknown,
+            /* [in] */ VARIANT_BOOL bAllowExtension,
+            /* [retval][out] */ VARIANT *pvValue) = 0;
+        
     };
     
 #else 	/* C style interface */
@@ -298,6 +303,12 @@ EXTERN_C const IID IID_ISpy;
             /* [in] */ LONG nParentWindowHandle,
             /* [retval][out] */ VARIANT_BOOL *pbResult);
         
+        /* [id] */ HRESULT ( STDMETHODCALLTYPE *ReadRunPropertyBag )( 
+            ISpy * This,
+            /* [in] */ IUnknown *pBaseFilterUnknown,
+            /* [in] */ VARIANT_BOOL bAllowExtension,
+            /* [retval][out] */ VARIANT *pvValue);
+        
         END_INTERFACE
     } ISpyVtbl;
 
@@ -357,6 +368,9 @@ EXTERN_C const IID IID_ISpy;
 
 #define ISpy_OpenGraphEdit(This,nParentWindowHandle,pbResult)	\
     ( (This)->lpVtbl -> OpenGraphEdit(This,nParentWindowHandle,pbResult) ) 
+
+#define ISpy_ReadRunPropertyBag(This,pBaseFilterUnknown,bAllowExtension,pvValue)	\
+    ( (This)->lpVtbl -> ReadRunPropertyBag(This,pBaseFilterUnknown,bAllowExtension,pvValue) ) 
 
 #endif /* COBJMACROS */
 
@@ -1237,6 +1251,9 @@ EXTERN_C const IID IID_IRunPropertyBagAware;
         virtual /* [id][propget] */ HRESULT STDMETHODCALLTYPE get_Value( 
             /* [retval][out] */ IUnknown **ppPropertyBagUnknown) = 0;
         
+        virtual /* [id][propget] */ HRESULT STDMETHODCALLTYPE get_Spy( 
+            /* [retval][out] */ ISpy **ppSpy) = 0;
+        
     };
     
 #else 	/* C style interface */
@@ -1290,6 +1307,10 @@ EXTERN_C const IID IID_IRunPropertyBagAware;
             IRunPropertyBagAware * This,
             /* [retval][out] */ IUnknown **ppPropertyBagUnknown);
         
+        /* [id][propget] */ HRESULT ( STDMETHODCALLTYPE *get_Spy )( 
+            IRunPropertyBagAware * This,
+            /* [retval][out] */ ISpy **ppSpy);
+        
         END_INTERFACE
     } IRunPropertyBagAwareVtbl;
 
@@ -1329,6 +1350,9 @@ EXTERN_C const IID IID_IRunPropertyBagAware;
 #define IRunPropertyBagAware_get_Value(This,ppPropertyBagUnknown)	\
     ( (This)->lpVtbl -> get_Value(This,ppPropertyBagUnknown) ) 
 
+#define IRunPropertyBagAware_get_Spy(This,ppSpy)	\
+    ( (This)->lpVtbl -> get_Spy(This,ppSpy) ) 
+
 #endif /* COBJMACROS */
 
 
@@ -1355,6 +1379,11 @@ unsigned long             __RPC_USER  BSTR_UserSize(     unsigned long *, unsign
 unsigned char * __RPC_USER  BSTR_UserMarshal(  unsigned long *, unsigned char *, BSTR * ); 
 unsigned char * __RPC_USER  BSTR_UserUnmarshal(unsigned long *, unsigned char *, BSTR * ); 
 void                      __RPC_USER  BSTR_UserFree(     unsigned long *, BSTR * ); 
+
+unsigned long             __RPC_USER  VARIANT_UserSize(     unsigned long *, unsigned long            , VARIANT * ); 
+unsigned char * __RPC_USER  VARIANT_UserMarshal(  unsigned long *, unsigned char *, VARIANT * ); 
+unsigned char * __RPC_USER  VARIANT_UserUnmarshal(unsigned long *, unsigned char *, VARIANT * ); 
+void                      __RPC_USER  VARIANT_UserFree(     unsigned long *, VARIANT * ); 
 
 /* end of Additional Prototypes */
 
