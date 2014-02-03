@@ -614,7 +614,7 @@ public:
 			{
 				CWindowRedraw FileListViewRedraw(m_FileListView);
 				m_FileListView.DeleteAllItems();
-				m_FileListView.DeleteAllGroups();
+				m_FileListView.RemoveAllGroups();
 				#pragma region File
 				CFileDataArray FileDataArray;
 				static DWORD g_pnLocations[] = 
