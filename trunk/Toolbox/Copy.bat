@@ -10,6 +10,11 @@ copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.%C%" .
 copy /b /y "%A%\Utilities\%B%\_Bin\%B%-Win32.%C%" .
 copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.%C%" .
 
+@set B=SupportTools
+@set C=dll
+copy /b /y "%A%\Utilities\%B%\_Bin\%B%-Win32.%C%" .
+copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.%C%" .
+
 @set B=DeckLinkCapabilities
 @set C=exe
 copy /b /y "%A%\Utilities\%B%\_Bin\%B%-Win32.%C%" ".\Hardware Specific"
