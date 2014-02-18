@@ -1,0 +1,26 @@
+HKCR
+{
+	PlayService.Play.1 = s 'Play Class'
+	{
+		CLSID = s '{1202D1E3-FD39-45EA-A40B-DCF5019750AA}'
+	}
+	PlayService.Play = s 'Play Class'
+	{		
+		CurVer = s 'PlayService.Play.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {1202D1E3-FD39-45EA-A40B-DCF5019750AA} = s 'Play Class'
+		{
+			ProgID = s 'PlayService.Play.1'
+			VersionIndependentProgID = s 'PlayService.Play'
+			ForceRemove Programmable
+			LocalServer32 = s '%MODULE%'
+			{
+				val ServerExecutable = s '%MODULE_RAW%'
+			}
+			TypeLib = s '{E4DD5624-F04A-4FA1-8B50-F4796E415604}'
+			Version = s '1.0'
+		}
+	}
+}
