@@ -1,0 +1,32 @@
+////////////////////////////////////////////////////////////
+// Copyright (C) Roman Ryltsov, 2014
+// Created by Roman Ryltsov roman@alax.info, http://alax.info
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	object,
+	uuid(0EA86FB0-C0D6-46A2-9EF4-EFA6F3BC10CC),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IPlay : IDispatch{
+};
+[
+	uuid(E4DD5624-F04A-4FA1-8B50-F4796E415604),
+	version(1.0),
+]
+library PlayServiceLib
+{
+	importlib("stdole2.tlb");
+	[
+		uuid(1202D1E3-FD39-45EA-A40B-DCF5019750AA)		
+	]
+	coclass Play
+	{
+		[default] interface IPlay;
+	};
+};
+

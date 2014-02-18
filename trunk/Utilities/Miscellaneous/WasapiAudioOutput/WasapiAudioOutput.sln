@@ -1,0 +1,33 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2012
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Play", "Play\Play.vcxproj", "{570D113F-EA9D-4668-9685-28D438647D14}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PlayService", "PlayService\PlayService.vcxproj", "{2072ADC9-8DE2-4FF7-A469-13861143AE7A}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PlayServicePS", "PlayService\PlayServicePS.vcxproj", "{39E48B6D-E13C-475A-8D06-FA9B959F5FDD}"
+	ProjectSection(ProjectDependencies) = postProject
+		{2072ADC9-8DE2-4FF7-A469-13861143AE7A} = {2072ADC9-8DE2-4FF7-A469-13861143AE7A}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{570D113F-EA9D-4668-9685-28D438647D14}.Debug|Win32.ActiveCfg = Debug|Win32
+		{570D113F-EA9D-4668-9685-28D438647D14}.Debug|Win32.Build.0 = Debug|Win32
+		{570D113F-EA9D-4668-9685-28D438647D14}.Release|Win32.ActiveCfg = Release|Win32
+		{570D113F-EA9D-4668-9685-28D438647D14}.Release|Win32.Build.0 = Release|Win32
+		{2072ADC9-8DE2-4FF7-A469-13861143AE7A}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2072ADC9-8DE2-4FF7-A469-13861143AE7A}.Debug|Win32.Build.0 = Debug|Win32
+		{2072ADC9-8DE2-4FF7-A469-13861143AE7A}.Release|Win32.ActiveCfg = Release|Win32
+		{2072ADC9-8DE2-4FF7-A469-13861143AE7A}.Release|Win32.Build.0 = Release|Win32
+		{39E48B6D-E13C-475A-8D06-FA9B959F5FDD}.Debug|Win32.ActiveCfg = Debug|Win32
+		{39E48B6D-E13C-475A-8D06-FA9B959F5FDD}.Release|Win32.ActiveCfg = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
