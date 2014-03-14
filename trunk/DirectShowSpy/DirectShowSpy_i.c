@@ -6,7 +6,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0555 */
-/* at Sun Feb 09 17:26:17 2014
+/* at Thu Mar 13 20:08:29 2014
  */
 /* Compiler settings for DirectShowSpy.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
@@ -66,6 +66,9 @@ typedef IID CLSID;
         const type name = {l,w1,w2,{b1,b2,b3,b4,b5,b6,b7,b8}}
 
 #endif !_MIDL_USE_GUIDDEF_
+
+MIDL_DEFINE_GUID(IID, IID_IModuleVersionInformation,0x968E0597,0xE713,0x4EF5,0xA6,0xF3,0x78,0x0B,0x81,0x62,0x04,0xC2);
+
 
 MIDL_DEFINE_GUID(IID, IID_ISpy,0x6945711B,0xFE0F,0x4C54,0x96,0x5F,0x5B,0x67,0x96,0x9C,0x28,0xB7);
 
