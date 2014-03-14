@@ -24,6 +24,61 @@ HRESULT FilterGraphHelper_OpenGraphStudioNext(LONG nParentWindowHandle, LPCWSTR 
 HRESULT FilterGraphHelper_OpenGraphEdit(LONG nParentWindowHandle, LPCWSTR pszMonikerDisplayName, VARIANT_BOOL* pbResult);
 
 ////////////////////////////////////////////////////////////
+// CModuleVersionInformationT
+
+template <typename T>
+class ATL_NO_VTABLE CModuleVersionInformationT :
+	public IDispatchImpl<IModuleVersionInformation>
+{
+public:
+// CModuleVersionInformationT
+
+// IModuleVersionInformation
+	STDMETHOD(get_Path)(BSTR* psPath)
+	{
+		_Z4(atlTraceCOM, 4, _T("...\n"));
+		_ATLTRY
+		{
+			__D(psPath, E_POINTER);
+			*psPath = CComBSTR(_VersionInfoHelper::GetModulePath()).Detach();
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return S_OK;
+	}
+	STDMETHOD(get_FileVersion)(LONGLONG* pnFileVersion)
+	{
+		_Z4(atlTraceCOM, 4, _T("...\n"));
+		_ATLTRY
+		{
+			__D(pnFileVersion, E_POINTER);
+			*pnFileVersion = (LONGLONG) _VersionInfoHelper::GetFileVersion(_VersionInfoHelper::GetModulePath());
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return S_OK;
+	}
+	STDMETHOD(get_FileVersionString)(BSTR* psFileVersionString)
+	{
+		_Z4(atlTraceCOM, 4, _T("...\n"));
+		_ATLTRY
+		{
+			__D(psFileVersionString, E_POINTER);
+			*psFileVersionString = CComBSTR(_VersionInfoHelper::GetVersionString(_VersionInfoHelper::GetFileVersion(_VersionInfoHelper::GetModulePath()))).Detach();
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return S_OK;
+	}
+};
+
+////////////////////////////////////////////////////////////
 // CSpyT
 
 LPCTSTR g_pszAddRemoveHookName = _T("Add/Remove Hooks");
@@ -41,6 +96,7 @@ class ATL_NO_VTABLE CSpyT :
 	public IMediaEventSink,
 	public IDispatchImpl<IMediaEventEx, &__uuidof(IMediaEventEx), &__uuidof(Quartz::__QuartzTypeLib)>,
 	public IObjectWithSite,
+	public CModuleVersionInformationT<T>,
 	public CHookHostT<T, IFilterGraphAddRemoveHook, &g_pszAddRemoveHookName>,
 	public CHookHostT<T, IFilterGraphConnectHook, &g_pszConnectHookName>,
 	public CHookHostT<T, IFilterGraphStateControlHook, &g_pszStateControlHookName>
@@ -76,6 +132,7 @@ BEGIN_COM_MAP(CSpy)
 	COM_INTERFACE_ENTRY(IMediaEventEx)
 	COM_INTERFACE_ENTRY(IMediaEvent)
 	COM_INTERFACE_ENTRY_FUNC(__uuidof(IObjectWithSite), 0, QueryObjectWithSiteInterface)
+	COM_INTERFACE_ENTRY(IModuleVersionInformation)
 	COM_INTERFACE_ENTRY_AGGREGATE_BLIND(m_pInnerUnknown)
 	//COM_INTERFACE_ENTRY(IDispatch)
 END_COM_MAP()

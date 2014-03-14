@@ -2027,6 +2027,7 @@ public:
 	static CString GetFilterText(IBaseFilter* pBaseFilter, IReferenceClock* pFilterGraphReferenceClock = NULL)
 	{
 		CString sText;
+		#pragma region COM
 		const CStringW sClassIdentifierString = _FilterGraphHelper::GetFilterClassIdentifierString(pBaseFilter);
 		if(!sClassIdentifierString.IsEmpty())
 		{
@@ -2055,6 +2056,7 @@ public:
 				}
 			}
 		}
+		#pragma endregion 
 		_FilterGraphHelper::CPinArray InputPinArray;
 		if(_FilterGraphHelper::GetFilterPins(pBaseFilter, PINDIR_INPUT, InputPinArray))
 			sText += AtlFormatString(_T(" * ") _T("Input Pins: %s") _T("\r\n"), FormatPins(InputPinArray));
@@ -2102,6 +2104,34 @@ public:
 				_Z45_DSHRESULT(nGetCurFileResult);
 				if(SUCCEEDED(nGetCurFileResult))
 					sText += AtlFormatString(_T(" * ") _T("File Sink: %s") _T("\r\n"), I(pszFileName));
+			}
+			_ATLCATCHALL()
+			{
+				_Z_EXCEPTION();
+			}
+		#pragma endregion 
+		#pragma region IMediaSeeking
+		const CComQIPtr<IMediaSeeking> pMediaSeeking = pBaseFilter;
+		if(pMediaSeeking)
+			_ATLTRY
+			{
+				sText += AtlFormatString(_T(" * ") _T("Media Seeking/Position") _T("\r\n"));
+				DWORD nCapabilities = 0;
+				if(SUCCEEDED(pMediaSeeking->GetCapabilities(&nCapabilities)))
+					sText += AtlFormatString(_T("  * ") _T("Capabilities: %s") _T("\r\n"), I(AtlFormatString(_T("0x%X"), nCapabilities)));
+				LONGLONG nDuration = 0, nPosition = 0, nStopPosition = 0;
+				if(SUCCEEDED(pMediaSeeking->GetDuration(&nDuration)))
+					sText += AtlFormatString(_T("  * ") _T("Duration: %s (%s seconds)") _T("\r\n"), I(_FilterGraphHelper::FormatSecondTime((DOUBLE) nDuration / 1E7)), I(_StringHelper::FormatNumber((DOUBLE) nDuration / 1E7, 3)));
+				if(SUCCEEDED(pMediaSeeking->GetCurrentPosition(&nPosition)))
+					sText += AtlFormatString(_T("  * ") _T("Position: %s (%s seconds)") _T("\r\n"), I(_FilterGraphHelper::FormatSecondTime((DOUBLE) nPosition / 1E7)), I(_StringHelper::FormatNumber((DOUBLE) nPosition / 1E7, 3)));
+				if(SUCCEEDED(pMediaSeeking->GetStopPosition(&nStopPosition)))
+					sText += AtlFormatString(_T("  * ") _T("Stop Position: %s (%s seconds)") _T("\r\n"), I(_FilterGraphHelper::FormatSecondTime((DOUBLE) nStopPosition / 1E7)), I(_StringHelper::FormatNumber((DOUBLE) nStopPosition / 1E7, 3)));
+				DOUBLE fRate = 1.0;
+				if(SUCCEEDED(pMediaSeeking->GetRate(&fRate)))
+					sText += AtlFormatString(_T("  * ") _T("Rate: %s") _T("\r\n"), I(_StringHelper::FormatNumber(fRate, 3)));
+				LONGLONG nPreroll = 0;
+				if(SUCCEEDED(pMediaSeeking->GetPreroll(&nPreroll)) && nPreroll)
+					sText += AtlFormatString(_T("  * ") _T("Preroll: %s seconds") _T("\r\n"), I(_StringHelper::FormatNumber((DOUBLE) nPreroll / 1E7, 3)));
 			}
 			_ATLCATCHALL()
 			{
@@ -2559,6 +2589,53 @@ public:
 				}
 			}
 			sText += _T("\r\n");
+			#pragma endregion 
+			#pragma region IMediaSeeking
+			BOOL bMediaSeekingHeaderAdded = FALSE;
+			for(SIZE_T nFilterIndex = 0; nFilterIndex < FilterArray.GetCount(); nFilterIndex++)
+			{
+				const CComPtr<IBaseFilter>& pBaseFilter = FilterArray[nFilterIndex];
+				_FilterGraphHelper::CPinArray PinArray;
+				_FilterGraphHelper::GetFilterPins(pBaseFilter, PINDIR_OUTPUT, PinArray);
+				for(SIZE_T nPinIndex = 0; nPinIndex < PinArray.GetCount(); nPinIndex++)
+				{
+					const CComPtr<IPin>& pOutputPin = PinArray[nPinIndex];
+					const CComQIPtr<IMediaSeeking> pMediaSeeking = pOutputPin;
+					if(!pMediaSeeking)
+						continue;
+					if(!bMediaSeekingHeaderAdded)
+					{
+						sText += AtlFormatString(_T(" ## ") _T("Media Seeking/Position") _T("\r\n") _T("\r\n"));
+						bMediaSeekingHeaderAdded = TRUE;
+					}
+					sText += AtlFormatString(_T(" * ") _T("Pin: %s") _T("\r\n"), I(_FilterGraphHelper::GetPinFullName(pOutputPin)));
+					_ATLTRY
+					{
+						DWORD nCapabilities = 0;
+						if(SUCCEEDED(pMediaSeeking->GetCapabilities(&nCapabilities)))
+							sText += AtlFormatString(_T("  * ") _T("Capabilities: %s") _T("\r\n"), I(AtlFormatString(_T("0x%X"), nCapabilities)));
+						LONGLONG nDuration = 0, nPosition = 0, nStopPosition = 0;
+						if(SUCCEEDED(pMediaSeeking->GetDuration(&nDuration)))
+							sText += AtlFormatString(_T("  * ") _T("Duration: %s (%s seconds)") _T("\r\n"), I(_FilterGraphHelper::FormatSecondTime((DOUBLE) nDuration / 1E7)), I(_StringHelper::FormatNumber((DOUBLE) nDuration / 1E7, 3)));
+						if(SUCCEEDED(pMediaSeeking->GetCurrentPosition(&nPosition)))
+							sText += AtlFormatString(_T("  * ") _T("Position: %s (%s seconds)") _T("\r\n"), I(_FilterGraphHelper::FormatSecondTime((DOUBLE) nPosition / 1E7)), I(_StringHelper::FormatNumber((DOUBLE) nPosition / 1E7, 3)));
+						if(SUCCEEDED(pMediaSeeking->GetStopPosition(&nStopPosition)))
+							sText += AtlFormatString(_T("  * ") _T("Stop Position: %s (%s seconds)") _T("\r\n"), I(_FilterGraphHelper::FormatSecondTime((DOUBLE) nStopPosition / 1E7)), I(_StringHelper::FormatNumber((DOUBLE) nStopPosition / 1E7, 3)));
+						DOUBLE fRate = 1.0;
+						if(SUCCEEDED(pMediaSeeking->GetRate(&fRate)))
+							sText += AtlFormatString(_T("  * ") _T("Rate: %s") _T("\r\n"), I(_StringHelper::FormatNumber(fRate, 3)));
+						LONGLONG nPreroll = 0;
+						if(SUCCEEDED(pMediaSeeking->GetPreroll(&nPreroll)) && nPreroll)
+							sText += AtlFormatString(_T("  * ") _T("Preroll: %s seconds") _T("\r\n"), I(_StringHelper::FormatNumber((DOUBLE) nPreroll / 1E7, 3)));
+					}
+					_ATLCATCHALL()
+					{
+						_Z_EXCEPTION();
+					}
+				}
+			}
+			if(bMediaSeekingHeaderAdded)
+				sText += _T("\r\n");
 			#pragma endregion 
 			#pragma region Runtime Property Bag
 			BOOL bRunPropertyBagHeaderAdded = FALSE;

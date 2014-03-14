@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0555 */
-/* at Sun Feb 09 17:26:17 2014
+/* at Thu Mar 13 20:08:29 2014
  */
 /* Compiler settings for DirectShowSpy.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
@@ -44,6 +44,12 @@
 #endif
 
 /* Forward Declarations */ 
+
+#ifndef __IModuleVersionInformation_FWD_DEFINED__
+#define __IModuleVersionInformation_FWD_DEFINED__
+typedef interface IModuleVersionInformation IModuleVersionInformation;
+#endif 	/* __IModuleVersionInformation_FWD_DEFINED__ */
+
 
 #ifndef __ISpy_FWD_DEFINED__
 #define __ISpy_FWD_DEFINED__
@@ -172,6 +178,147 @@ typedef struct RunPropertyBagPropertyPage RunPropertyBagPropertyPage;
 #ifdef __cplusplus
 extern "C"{
 #endif 
+
+
+#ifndef __IModuleVersionInformation_INTERFACE_DEFINED__
+#define __IModuleVersionInformation_INTERFACE_DEFINED__
+
+/* interface IModuleVersionInformation */
+/* [unique][helpstring][nonextensible][oleautomation][dual][uuid][object] */ 
+
+
+EXTERN_C const IID IID_IModuleVersionInformation;
+
+#if defined(__cplusplus) && !defined(CINTERFACE)
+    
+    MIDL_INTERFACE("968E0597-E713-4EF5-A6F3-780B816204C2")
+    IModuleVersionInformation : public IDispatch
+    {
+    public:
+        virtual /* [propget][id] */ HRESULT STDMETHODCALLTYPE get_Path( 
+            /* [retval][out] */ BSTR *psPath) = 0;
+        
+        virtual /* [propget][id] */ HRESULT STDMETHODCALLTYPE get_FileVersion( 
+            /* [retval][out] */ LONGLONG *pnFileVersion) = 0;
+        
+        virtual /* [propget][id] */ HRESULT STDMETHODCALLTYPE get_FileVersionString( 
+            /* [retval][out] */ BSTR *psFileVersionString) = 0;
+        
+    };
+    
+#else 	/* C style interface */
+
+    typedef struct IModuleVersionInformationVtbl
+    {
+        BEGIN_INTERFACE
+        
+        HRESULT ( STDMETHODCALLTYPE *QueryInterface )( 
+            IModuleVersionInformation * This,
+            /* [in] */ REFIID riid,
+            /* [annotation][iid_is][out] */ 
+            __RPC__deref_out  void **ppvObject);
+        
+        ULONG ( STDMETHODCALLTYPE *AddRef )( 
+            IModuleVersionInformation * This);
+        
+        ULONG ( STDMETHODCALLTYPE *Release )( 
+            IModuleVersionInformation * This);
+        
+        HRESULT ( STDMETHODCALLTYPE *GetTypeInfoCount )( 
+            IModuleVersionInformation * This,
+            /* [out] */ UINT *pctinfo);
+        
+        HRESULT ( STDMETHODCALLTYPE *GetTypeInfo )( 
+            IModuleVersionInformation * This,
+            /* [in] */ UINT iTInfo,
+            /* [in] */ LCID lcid,
+            /* [out] */ ITypeInfo **ppTInfo);
+        
+        HRESULT ( STDMETHODCALLTYPE *GetIDsOfNames )( 
+            IModuleVersionInformation * This,
+            /* [in] */ REFIID riid,
+            /* [size_is][in] */ LPOLESTR *rgszNames,
+            /* [range][in] */ UINT cNames,
+            /* [in] */ LCID lcid,
+            /* [size_is][out] */ DISPID *rgDispId);
+        
+        /* [local] */ HRESULT ( STDMETHODCALLTYPE *Invoke )( 
+            IModuleVersionInformation * This,
+            /* [in] */ DISPID dispIdMember,
+            /* [in] */ REFIID riid,
+            /* [in] */ LCID lcid,
+            /* [in] */ WORD wFlags,
+            /* [out][in] */ DISPPARAMS *pDispParams,
+            /* [out] */ VARIANT *pVarResult,
+            /* [out] */ EXCEPINFO *pExcepInfo,
+            /* [out] */ UINT *puArgErr);
+        
+        /* [propget][id] */ HRESULT ( STDMETHODCALLTYPE *get_Path )( 
+            IModuleVersionInformation * This,
+            /* [retval][out] */ BSTR *psPath);
+        
+        /* [propget][id] */ HRESULT ( STDMETHODCALLTYPE *get_FileVersion )( 
+            IModuleVersionInformation * This,
+            /* [retval][out] */ LONGLONG *pnFileVersion);
+        
+        /* [propget][id] */ HRESULT ( STDMETHODCALLTYPE *get_FileVersionString )( 
+            IModuleVersionInformation * This,
+            /* [retval][out] */ BSTR *psFileVersionString);
+        
+        END_INTERFACE
+    } IModuleVersionInformationVtbl;
+
+    interface IModuleVersionInformation
+    {
+        CONST_VTBL struct IModuleVersionInformationVtbl *lpVtbl;
+    };
+
+    
+
+#ifdef COBJMACROS
+
+
+#define IModuleVersionInformation_QueryInterface(This,riid,ppvObject)	\
+    ( (This)->lpVtbl -> QueryInterface(This,riid,ppvObject) ) 
+
+#define IModuleVersionInformation_AddRef(This)	\
+    ( (This)->lpVtbl -> AddRef(This) ) 
+
+#define IModuleVersionInformation_Release(This)	\
+    ( (This)->lpVtbl -> Release(This) ) 
+
+
+#define IModuleVersionInformation_GetTypeInfoCount(This,pctinfo)	\
+    ( (This)->lpVtbl -> GetTypeInfoCount(This,pctinfo) ) 
+
+#define IModuleVersionInformation_GetTypeInfo(This,iTInfo,lcid,ppTInfo)	\
+    ( (This)->lpVtbl -> GetTypeInfo(This,iTInfo,lcid,ppTInfo) ) 
+
+#define IModuleVersionInformation_GetIDsOfNames(This,riid,rgszNames,cNames,lcid,rgDispId)	\
+    ( (This)->lpVtbl -> GetIDsOfNames(This,riid,rgszNames,cNames,lcid,rgDispId) ) 
+
+#define IModuleVersionInformation_Invoke(This,dispIdMember,riid,lcid,wFlags,pDispParams,pVarResult,pExcepInfo,puArgErr)	\
+    ( (This)->lpVtbl -> Invoke(This,dispIdMember,riid,lcid,wFlags,pDispParams,pVarResult,pExcepInfo,puArgErr) ) 
+
+
+#define IModuleVersionInformation_get_Path(This,psPath)	\
+    ( (This)->lpVtbl -> get_Path(This,psPath) ) 
+
+#define IModuleVersionInformation_get_FileVersion(This,pnFileVersion)	\
+    ( (This)->lpVtbl -> get_FileVersion(This,pnFileVersion) ) 
+
+#define IModuleVersionInformation_get_FileVersionString(This,psFileVersionString)	\
+    ( (This)->lpVtbl -> get_FileVersionString(This,psFileVersionString) ) 
+
+#endif /* COBJMACROS */
+
+
+#endif 	/* C style interface */
+
+
+
+
+#endif 	/* __IModuleVersionInformation_INTERFACE_DEFINED__ */
 
 
 #ifndef __ISpy_INTERFACE_DEFINED__

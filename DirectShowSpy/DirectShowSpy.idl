@@ -18,6 +18,21 @@ import "ocidl.idl";
 
 [
 	object,
+	uuid(968E0597-E713-4EF5-A6F3-780B816204C2),
+	dual,
+	oleautomation,
+	nonextensible,
+	helpstring("IModuleVersionInformation Interface"),
+	pointer_default(unique)
+]
+interface IModuleVersionInformation : IDispatch
+{
+	[id(1), propget] HRESULT Path([out, retval] BSTR* psPath);
+	[id(2), propget] HRESULT FileVersion([out, retval] LONGLONG* pnFileVersion);
+	[id(3), propget] HRESULT FileVersionString([out, retval] BSTR* psFileVersionString);
+};
+[
+	object,
 	uuid(6945711B-FE0F-4C54-965F-5B67969C28B7),
 	dual,
 	oleautomation,
@@ -137,6 +152,7 @@ library AlaxInfoDirectShowSpy
 	coclass Spy
 	{
 		[default] interface ISpy;
+		interface IModuleVersionInformation;
 	};
 	[
 		uuid(2C281C40-8853-4a30-99D3-9DCFF2C015C9),
@@ -145,6 +161,7 @@ library AlaxInfoDirectShowSpy
 	coclass NoThreadSpy
 	{
 		[default] interface ISpy;
+		interface IModuleVersionInformation;
 	};
 	[
 		uuid(B6274D9B-1AD3-4c32-83C5-35DC33CAFF47),
