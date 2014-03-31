@@ -1,0 +1,18 @@
+// MfcWindowlessVideoRenderer01.idl : IDL source for MfcWindowlessVideoRenderer01
+//
+
+// This file will be processed by the MIDL tool to
+// produce the type library (MfcWindowlessVideoRenderer01.tlb) and marshalling code.
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	uuid(E8BAF8C2-30BB-46F2-BDB8-18DB39F99B83),
+	version(1.0),
+	helpstring("MfcWindowlessVideoRenderer01 1.0 Type Library")
+]
+library MfcWindowlessVideoRenderer01Lib
+{
+	importlib("stdole2.tlb");
+};
