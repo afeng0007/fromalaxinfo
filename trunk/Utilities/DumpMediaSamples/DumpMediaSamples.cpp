@@ -309,19 +309,23 @@ public:
 					SIZE_T nIndex;
 					for(nIndex = 0; nIndex < (SIZE_T) Properties.lActual && nIndex < g_nMaximalPrintSize; nIndex++)
 						sBuffer.AppendFormat(_T("%02X "), Properties.pbBuffer[nIndex]);
+					UINT32 nBufferCheck = 0;
+					for(nIndex = 0; nIndex < (SIZE_T) Properties.lActual; nIndex++)
+						nBufferCheck += (UINT8) Properties.pbBuffer[nIndex];
 					if(nIndex > g_nMaximalPrintSize)
 						sBuffer.Append(_T("..."));
-					_tprintf(_T("%s") _T(".cbBuffer %d, .lActual %d, pbBuffer %s\n"), 
+					_tprintf(_T("%s") _T(".cbBuffer %d, .lActual %d, pbBuffer %s [0x%08X]\n"), 
 						m_sNamePrefix,
 						Properties.cbBuffer,
 						Properties.lActual,
 						sBuffer,
+						nBufferCheck,
 						0);
 				}
-				//_tprintf(_T("%s") _T("Time, %s") _T("\n"),
-				//	m_sNamePrefix,
-				//	_StringHelper::Join(TimeArray, _T(", ")), 
-				//	0);
+				_tprintf(_T("%s") _T("Time, %s") _T("\n"),
+					m_sNamePrefix,
+					_StringHelper::Join(TimeArray, _T(", ")), 
+					0);
 				if(m_pHandler)
 					m_pHandler->HandleSample(Properties);
 				_tprintf(_T("\n"));
