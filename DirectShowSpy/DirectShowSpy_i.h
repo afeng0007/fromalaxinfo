@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0555 */
-/* at Thu Mar 13 20:08:29 2014
+/* at Wed May 07 14:27:04 2014
  */
 /* Compiler settings for DirectShowSpy.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
@@ -55,6 +55,12 @@ typedef interface IModuleVersionInformation IModuleVersionInformation;
 #define __ISpy_FWD_DEFINED__
 typedef interface ISpy ISpy;
 #endif 	/* __ISpy_FWD_DEFINED__ */
+
+
+#ifndef __ISpyEx_FWD_DEFINED__
+#define __ISpyEx_FWD_DEFINED__
+typedef interface ISpyEx ISpyEx;
+#endif 	/* __ISpyEx_FWD_DEFINED__ */
 
 
 #ifndef __IFilterMapperSpy_FWD_DEFINED__
@@ -528,6 +534,75 @@ EXTERN_C const IID IID_ISpy;
 
 
 #endif 	/* __ISpy_INTERFACE_DEFINED__ */
+
+
+#ifndef __ISpyEx_INTERFACE_DEFINED__
+#define __ISpyEx_INTERFACE_DEFINED__
+
+/* interface ISpyEx */
+/* [unique][helpstring][nonextensible][uuid][object] */ 
+
+
+EXTERN_C const IID IID_ISpyEx;
+
+#if defined(__cplusplus) && !defined(CINTERFACE)
+    
+    MIDL_INTERFACE("A7490000-3A5D-455D-9B81-2025B74CD4CD")
+    ISpyEx : public IUnknown
+    {
+    public:
+    };
+    
+#else 	/* C style interface */
+
+    typedef struct ISpyExVtbl
+    {
+        BEGIN_INTERFACE
+        
+        HRESULT ( STDMETHODCALLTYPE *QueryInterface )( 
+            ISpyEx * This,
+            /* [in] */ REFIID riid,
+            /* [annotation][iid_is][out] */ 
+            __RPC__deref_out  void **ppvObject);
+        
+        ULONG ( STDMETHODCALLTYPE *AddRef )( 
+            ISpyEx * This);
+        
+        ULONG ( STDMETHODCALLTYPE *Release )( 
+            ISpyEx * This);
+        
+        END_INTERFACE
+    } ISpyExVtbl;
+
+    interface ISpyEx
+    {
+        CONST_VTBL struct ISpyExVtbl *lpVtbl;
+    };
+
+    
+
+#ifdef COBJMACROS
+
+
+#define ISpyEx_QueryInterface(This,riid,ppvObject)	\
+    ( (This)->lpVtbl -> QueryInterface(This,riid,ppvObject) ) 
+
+#define ISpyEx_AddRef(This)	\
+    ( (This)->lpVtbl -> AddRef(This) ) 
+
+#define ISpyEx_Release(This)	\
+    ( (This)->lpVtbl -> Release(This) ) 
+
+
+#endif /* COBJMACROS */
+
+
+#endif 	/* C style interface */
+
+
+
+
+#endif 	/* __ISpyEx_INTERFACE_DEFINED__ */
 
 
 #ifndef __IFilterMapperSpy_INTERFACE_DEFINED__

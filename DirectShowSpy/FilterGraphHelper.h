@@ -201,6 +201,13 @@ public:
 		CStringW m_sDisplayName;
 		DWORD m_nIdentifier;
 		CPath m_sImagePath;
+
+	public:
+	// CProcessData
+		CProcessData() :
+			m_nIdentifier(0)
+		{
+		}
 	};
 
 	////////////////////////////////////////////////////////
@@ -1887,6 +1894,7 @@ public:
 
 private:
 	mutable CRoCriticalSection m_DataCriticalSection;
+	CProcessData m_ProcessData;
 	CComPtr<IFilterGraph> m_pFilterGraph;
 
 public:
@@ -2024,10 +2032,11 @@ public:
 		}
 		return _StringHelper::Join(Array, _T(", "));
 	}
-	static CString GetFilterText(IBaseFilter* pBaseFilter, IReferenceClock* pFilterGraphReferenceClock = NULL)
+	static CString GetFilterText(IBaseFilter* pBaseFilter, const CProcessData* pProcessData, IReferenceClock* pFilterGraphReferenceClock = NULL)
 	{
 		CString sText;
 		#pragma region COM
+		CString sPath;
 		const CStringW sClassIdentifierString = _FilterGraphHelper::GetFilterClassIdentifierString(pBaseFilter);
 		if(!sClassIdentifierString.IsEmpty())
 		{
@@ -2038,7 +2047,7 @@ public:
 				sText += AtlFormatString(_T(" * ") _T("Class: %s %s") _T("\r\n"), I(sClassIdentifierString), I(_FilterGraphHelper::GetFilterClassDescription(pBaseFilter)));
 				_ATLTRY
 				{
-					const CString sPath = _RegKeyHelper::QueryStringValue(HKEY_CLASSES_ROOT, AtlFormatString(_T("CLSID\\%ls\\InprocServer32"), sClassIdentifierString));
+					sPath = _RegKeyHelper::QueryStringValue(HKEY_CLASSES_ROOT, AtlFormatString(_T("CLSID\\%ls\\InprocServer32"), sClassIdentifierString));
 					if(!sPath.IsEmpty())
 					{
 						sText += AtlFormatString(_T(" * ") _T("Inproc Server: %s") _T("\r\n"), I(sPath));
@@ -2056,13 +2065,40 @@ public:
 				}
 			}
 		}
+		if(_tcslen(sPath) == 0 && pProcessData && pProcessData->m_nIdentifier == GetCurrentProcessId())
+			_ATLTRY
+			{
+				const VOID* pvVirtualTable = *((const VOID**) pBaseFilter);
+				MEMORY_BASIC_INFORMATION Information;
+				if(VirtualQueryEx(GetCurrentProcess(), pvVirtualTable, &Information, sizeof Information))
+				{
+					TCHAR pszPath[MAX_PATH] = { 0 };
+					if(GetModuleFileName((HMODULE) Information.AllocationBase, pszPath, DIM(pszPath)))
+					{
+						sPath = pszPath;
+						sText += AtlFormatString(_T(" * ") _T("Virtual Table Location: %s") _T("\r\n"), I(sPath));
+						const ULONGLONG nProductVersion = _VersionInfoHelper::GetProductVersion(sPath);
+						if(nProductVersion && (nProductVersion + 1))
+							sText += AtlFormatString(_T(" * ") _T("Product Version: %s") _T("\r\n"), I(_VersionInfoHelper::GetVersionString(nProductVersion)));
+						const ULONGLONG nFileVersion = _VersionInfoHelper::GetFileVersion(sPath);
+						if(nFileVersion && (nFileVersion + 1))
+							sText += AtlFormatString(_T(" * ") _T("File Version: %s") _T("\r\n"), I(_VersionInfoHelper::GetVersionString(nFileVersion)));
+					}
+				}
+			}
+			_ATLCATCHALL()
+			{
+				_Z_EXCEPTION();
+			}
 		#pragma endregion 
+		#pragma region Pin
 		_FilterGraphHelper::CPinArray InputPinArray;
 		if(_FilterGraphHelper::GetFilterPins(pBaseFilter, PINDIR_INPUT, InputPinArray))
 			sText += AtlFormatString(_T(" * ") _T("Input Pins: %s") _T("\r\n"), FormatPins(InputPinArray));
 		_FilterGraphHelper::CPinArray OutputPinArray;
 		if(_FilterGraphHelper::GetFilterPins(pBaseFilter, PINDIR_OUTPUT, OutputPinArray))
 			sText += AtlFormatString(_T(" * ") _T("Output Pins: %s") _T("\r\n"), FormatPins(OutputPinArray));
+		#pragma endregion 
 		#pragma region IReferenceClock
 		const CComQIPtr<IReferenceClock> pReferenceClock = pBaseFilter;
 		if(pReferenceClock)
@@ -2453,6 +2489,7 @@ public:
 	{
 		if(!pFilterGraph)
 			return (LPCTSTR) NULL;
+		const CComQIPtr<ISpy> pSpy = pFilterGraph;
 		CString sText;
 		sText += AtlFormatString(_T("# ") _T("Filter Graph") _T("\r\n") _T("\r\n"));
 		#pragma region Graph Parameters
@@ -2501,9 +2538,12 @@ public:
 		{
 			if(!pProcessData->m_sDisplayName.IsEmpty())
 				sText += AtlFormatString(_T("* ") _T("Display Name: %s") _T("\r\n"), I(pProcessData->m_sDisplayName));
-			const CString sDirectory = (LPCTSTR) GetPathDirectory(pProcessData->m_sImagePath);
-			if(!sDirectory.IsEmpty())
-				sText += AtlFormatString(_T("* ") _T("Process Directory: %s") _T("\r\n"), I(sDirectory));
+			if(_tcslen(pProcessData->m_sImagePath))
+			{
+				const CString sDirectory = (LPCTSTR) GetPathDirectory(pProcessData->m_sImagePath);
+				if(!sDirectory.IsEmpty())
+					sText += AtlFormatString(_T("* ") _T("Process Directory: %s") _T("\r\n"), I(sDirectory));
+			}
 		}
 		const CComQIPtr<IMediaFilter> pMediaFilter = pFilterGraph;
 		CComPtr<IReferenceClock> pFilterGraphReferenceClock;
@@ -2522,7 +2562,7 @@ public:
 				{
 					const CComPtr<IBaseFilter>& pBaseFilter = FilterArray[nIndex];
 					sText += AtlFormatString(_T("%d. ") _T("%ls") _T("\r\n"), nIndex + 1, _FilterGraphHelper::GetFilterName(pBaseFilter));
-					sText += GetFilterText(pBaseFilter, pFilterGraphReferenceClock);
+					sText += GetFilterText(pBaseFilter, pProcessData, pFilterGraphReferenceClock);
 				}
 				_ATLCATCHALL()
 				{
@@ -2644,7 +2684,7 @@ public:
 				{
 					const CComPtr<IBaseFilter>& pBaseFilter = FilterArray[nIndex];
 					//_Z4(atlTraceGeneral, 4, _T("pBaseFilter 0x%p \"%ls\"\n"), pBaseFilter, _FilterGraphHelper::GetFilterName(pBaseFilter));
-					const CString sPropertyBagText = CPropertyBagHelper::GetPropertyBagText(pBaseFilter, CComQIPtr<ISpy>(pFilterGraph));
+					const CString sPropertyBagText = CPropertyBagHelper::GetPropertyBagText(pBaseFilter, pSpy);
 					if(sPropertyBagText.IsEmpty())
 						continue;
 					if(!bRunPropertyBagHeaderAdded)
@@ -2671,12 +2711,20 @@ public:
 		CRoCriticalSectionLock DataLock(m_DataCriticalSection);
 		return m_pFilterGraph;
 	}
-	VOID SetFilterGraph(IFilterGraph* pFilterGraph) 
+	VOID SetFilterGraph(IFilterGraph* pFilterGraph, CProcessData* pProcessData = NULL) 
 	{
 		CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+		if(!pProcessData)
+		{
+			m_ProcessData = CProcessData();
+			const CComQIPtr<ISpyEx> pSpyEx = pFilterGraph;
+			if(pSpyEx)
+				m_ProcessData.m_nIdentifier = GetCurrentProcessId();
+		} else
+			m_ProcessData = *pProcessData;
 		m_pFilterGraph = pFilterGraph;
 	}
-	BOOL SetFilterGraph(IUnknown* pFilterGraphUnknown) 
+	BOOL SetFilterGraph(IUnknown* pFilterGraphUnknown, CProcessData* pProcessData = NULL) 
 	{
 		CComQIPtr<IFilterGraph> pFilterGraph;
 		if(pFilterGraphUnknown)
@@ -2694,14 +2742,17 @@ public:
 					pFilterGraph = _FilterGraphHelper::GetFilterGraph(pBaseFilter);
 			}
 		}
-		CRoCriticalSectionLock DataLock(m_DataCriticalSection);
-		m_pFilterGraph = pFilterGraph;
-		return m_pFilterGraph != NULL;
+		SetFilterGraph(pFilterGraph, pProcessData);
+		return pFilterGraph != NULL;
+	}
+	CString GetFilterText(IBaseFilter* pBaseFilter) const
+	{
+		return GetFilterText(pBaseFilter, m_ProcessData.m_nIdentifier ? &m_ProcessData : NULL);
 	}
 	CString GetText() const
 	{
 		CRoCriticalSectionLock DataLock(m_DataCriticalSection);
-		return GetText(m_pFilterGraph);
+		return GetText(m_pFilterGraph, m_ProcessData.m_nIdentifier ? &m_ProcessData : NULL);
 	}
 	static LPCTSTR GetPlatformName()
 	{

@@ -91,6 +91,7 @@ class ATL_NO_VTABLE CSpyT :
 	//public CComCoClass<CSpyT, &CLSID_Spy>,
 	public CTransparentCoClassT<T, t_pFilterGraphClassIdentifier>,
 	public IDispatchImpl<ISpy>,
+	public ISpyEx,
 	public IFilterGraph2,
 	public IDispatchImpl<IMediaControl, &__uuidof(IMediaControl), &__uuidof(Quartz::__QuartzTypeLib)>,
 	public IMediaEventSink,
@@ -124,6 +125,7 @@ DECLARE_QI_TRACE(CSpy)
 BEGIN_COM_MAP(CSpy)
 	COM_INTERFACE_ENTRY(ISpy)
 	COM_INTERFACE_ENTRY_FUNC(__uuidof(IFilterGraph3), 0, QueryFilterGraph3Interface)
+	COM_INTERFACE_ENTRY(ISpyEx)
 	COM_INTERFACE_ENTRY(IFilterGraph2)
 	COM_INTERFACE_ENTRY(IGraphBuilder)
 	COM_INTERFACE_ENTRY(IFilterGraph)
@@ -795,6 +797,8 @@ public:
 		}
 		return S_OK;
 	}
+
+// ISpyEx
 
 // IFilterGraph
 	STDMETHOD(AddFilter)(IBaseFilter* pBaseFilter, LPCWSTR pszName)

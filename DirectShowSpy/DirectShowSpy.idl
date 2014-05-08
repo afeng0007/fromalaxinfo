@@ -54,6 +54,16 @@ interface ISpy : IDispatch
 };
 [
 	object,
+	uuid(A7490000-3A5D-455D-9B81-2025B74CD4CD),
+	nonextensible,
+	helpstring("ISpyEx Interface"),
+	pointer_default(unique)
+]
+interface ISpyEx : IUnknown
+{
+};
+[
+	object,
 	uuid(34B280D7-A144-4a64-BCB9-3616896F6877),
 	dual,
 	oleautomation,
@@ -152,6 +162,7 @@ library AlaxInfoDirectShowSpy
 	coclass Spy
 	{
 		[default] interface ISpy;
+		//interface ISpyEx;
 		interface IModuleVersionInformation;
 	};
 	[
@@ -161,6 +172,7 @@ library AlaxInfoDirectShowSpy
 	coclass NoThreadSpy
 	{
 		[default] interface ISpy;
+		//interface ISpyEx;
 		interface IModuleVersionInformation;
 	};
 	[
