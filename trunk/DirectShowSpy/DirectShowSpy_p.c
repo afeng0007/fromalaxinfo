@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0555 */
-/* at Thu Mar 13 20:08:29 2014
+/* at Wed May 07 14:27:04 2014
  */
 /* Compiler settings for DirectShowSpy.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
@@ -95,6 +95,13 @@ extern const MIDL_STUB_DESC Object_StubDesc;
 
 extern const MIDL_SERVER_INFO ISpy_ServerInfo;
 extern const MIDL_STUBLESS_PROXY_INFO ISpy_ProxyInfo;
+
+
+extern const MIDL_STUB_DESC Object_StubDesc;
+
+
+extern const MIDL_SERVER_INFO ISpyEx_ServerInfo;
+extern const MIDL_STUBLESS_PROXY_INFO ISpyEx_ProxyInfo;
 
 
 extern const MIDL_STUB_DESC Object_StubDesc;
@@ -1625,6 +1632,55 @@ CInterfaceStubVtbl _ISpyStubVtbl =
 };
 
 
+/* Object interface: ISpyEx, ver. 0.0,
+   GUID={0xA7490000,0x3A5D,0x455D,{0x9B,0x81,0x20,0x25,0xB7,0x4C,0xD4,0xCD}} */
+
+#pragma code_seg(".orpc")
+static const unsigned short ISpyEx_FormatStringOffsetTable[] =
+    {
+    0
+    };
+
+static const MIDL_STUBLESS_PROXY_INFO ISpyEx_ProxyInfo =
+    {
+    &Object_StubDesc,
+    DirectShowSpy__MIDL_ProcFormatString.Format,
+    &ISpyEx_FormatStringOffsetTable[-3],
+    0,
+    0,
+    0
+    };
+
+
+static const MIDL_SERVER_INFO ISpyEx_ServerInfo = 
+    {
+    &Object_StubDesc,
+    0,
+    DirectShowSpy__MIDL_ProcFormatString.Format,
+    &ISpyEx_FormatStringOffsetTable[-3],
+    0,
+    0,
+    0,
+    0};
+CINTERFACE_PROXY_VTABLE(3) _ISpyExProxyVtbl = 
+{
+    0,
+    &IID_ISpyEx,
+    IUnknown_QueryInterface_Proxy,
+    IUnknown_AddRef_Proxy,
+    IUnknown_Release_Proxy
+};
+
+const CInterfaceStubVtbl _ISpyExStubVtbl =
+{
+    &IID_ISpyEx,
+    &ISpyEx_ServerInfo,
+    3,
+    0, /* pure interpreted */
+    CStdStubBuffer_METHODS
+};
+
+
 /* Object interface: IFilterMapperSpy, ver. 0.0,
    GUID={0x34B280D7,0xA144,0x4a64,{0xBC,0xB9,0x36,0x16,0x89,0x6F,0x68,0x77}} */
 
@@ -1868,6 +1924,7 @@ static const MIDL_STUB_DESC Object_StubDesc =
 
 const CInterfaceProxyVtbl * const _DirectShowSpy_ProxyVtblList[] = 
 {
+    ( CInterfaceProxyVtbl *) &_ISpyExProxyVtbl,
     ( CInterfaceProxyVtbl *) &_ISpyProxyVtbl,
     ( CInterfaceProxyVtbl *) &_IFilterGraphHelperProxyVtbl,
     ( CInterfaceProxyVtbl *) &_IModuleVersionInformationProxyVtbl,
@@ -1878,6 +1935,7 @@ const CInterfaceProxyVtbl * const _DirectShowSpy_ProxyVtblList[] =
 
 const CInterfaceStubVtbl * const _DirectShowSpy_StubVtblList[] = 
 {
+    ( CInterfaceStubVtbl *) &_ISpyExStubVtbl,
     ( CInterfaceStubVtbl *) &_ISpyStubVtbl,
     ( CInterfaceStubVtbl *) &_IFilterGraphHelperStubVtbl,
     ( CInterfaceStubVtbl *) &_IModuleVersionInformationStubVtbl,
@@ -1888,6 +1946,7 @@ const CInterfaceStubVtbl * const _DirectShowSpy_StubVtblList[] =
 
 PCInterfaceName const _DirectShowSpy_InterfaceNamesList[] = 
 {
+    "ISpyEx",
     "ISpy",
     "IFilterGraphHelper",
     "IModuleVersionInformation",
@@ -1898,6 +1957,7 @@ PCInterfaceName const _DirectShowSpy_InterfaceNamesList[] =
 
 const IID *  const _DirectShowSpy_BaseIIDList[] = 
 {
+    0,
     &IID_IDispatch,
     &IID_IDispatch,
     &IID_IDispatch,
@@ -1913,10 +1973,10 @@ int __stdcall _DirectShowSpy_IID_Lookup( const IID * pIID, int * pIndex )
 {
     IID_BS_LOOKUP_SETUP
 
-    IID_BS_LOOKUP_INITIAL_TEST( _DirectShowSpy, 5, 4 )
+    IID_BS_LOOKUP_INITIAL_TEST( _DirectShowSpy, 6, 4 )
     IID_BS_LOOKUP_NEXT_TEST( _DirectShowSpy, 2 )
     IID_BS_LOOKUP_NEXT_TEST( _DirectShowSpy, 1 )
-    IID_BS_LOOKUP_RETURN_RESULT( _DirectShowSpy, 5, *pIndex )
+    IID_BS_LOOKUP_RETURN_RESULT( _DirectShowSpy, 6, *pIndex )
     
 }
 
@@ -1927,7 +1987,7 @@ const ExtendedProxyFileInfo DirectShowSpy_ProxyFileInfo =
     (const PCInterfaceName * ) & _DirectShowSpy_InterfaceNamesList,
     (const IID ** ) & _DirectShowSpy_BaseIIDList,
     & _DirectShowSpy_IID_Lookup, 
-    5,
+    6,
     2,
     0, /* table of [async_uuid] interfaces */
     0, /* Filler1 */

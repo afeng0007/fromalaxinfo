@@ -147,6 +147,14 @@ public:
 				}
 				return m_pFilterGraph;
 			}
+			CFilterGraphHelper::CProcessData GetProcessData() const
+			{
+				CFilterGraphHelper::CProcessData ProcessData;
+				ProcessData.m_sDisplayName = m_sDisplayName;
+				ProcessData.m_nIdentifier = m_nProcessIdentifier;
+				ProcessData.m_sImagePath = m_sProcessImagePath;
+				return ProcessData;
+			}
 			BOOL Check()
 			{
 				_ATLTRY
@@ -341,11 +349,7 @@ public:
 					{
 						Item.Check();
 						m_GraphListView.RedrawItems(nItem, nItem);
-						CFilterGraphHelper::CProcessData ProcessData;
-						ProcessData.m_sDisplayName = Item.m_sDisplayName;
-						ProcessData.m_nIdentifier = Item.m_nProcessIdentifier;
-						ProcessData.m_sImagePath = Item.m_sProcessImagePath;
-						GraphArray.Add(CFilterGraphHelper::GetText(Item.m_pFilterGraph, &ProcessData));
+						GraphArray.Add(CFilterGraphHelper::GetText(Item.m_pFilterGraph, &Item.GetProcessData()));
 					}
 				}
 				_ATLCATCHALL()
@@ -567,7 +571,7 @@ public:
 				return 0;
 			Item.Check();
 			CLocalObjectPtr<CFilterGraphHelper> pFilterGraphHelper;
-			pFilterGraphHelper->SetFilterGraph(Item.m_pFilterGraph);
+			pFilterGraphHelper->SetFilterGraph(Item.m_pFilterGraph, &Item.GetProcessData());
 			_V(pFilterGraphHelper->DoPropertyFrameModal((LONG) (LONG_PTR) m_hWnd));
 			return 0;
 		}
