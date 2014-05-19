@@ -54,8 +54,14 @@ copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.%C%" .
 @set A=..\..\Repository-Public
 
 @set B=LogProcessExceptions
-copy /b /y "%A%\Utilities\%B%\_Bin\%B%-Win32.exe" .
-copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.exe" .
+@set C=exe
+copy /b /y "%A%\Utilities\%B%\_Bin\%B%-Win32.%C%" .
+copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.%C%" .
+
+@set B=RotView
+@set C=exe
+copy /b /y "%A%\Utilities\%B%\_Bin\%B%-Win32.%C%" .
+copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.%C%" .
 
 @set B=DirectShowSpy
 @set C=dll
