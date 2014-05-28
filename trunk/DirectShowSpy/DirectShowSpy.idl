@@ -218,4 +218,25 @@ library AlaxInfoDirectShowSpy
 	{
 		[default] interface IUnknown; //IPropertyPage;
 	};
+	[
+		object,
+		uuid(DA0D924F-1AC0-496D-AE44-CC2BD8CE7CFA),
+		nonextensible,
+		helpstring("IRunEventAware Interface"),
+		pointer_default(unique)
+	]
+	interface IRunEventAware : IDispatch
+	{
+		[propget, id(DISPID_VALUE)] HRESULT Value([out, retval] VARIANT* pvValue);
+		[propget, id(1)] HRESULT Capture([out, retval] VARIANT_BOOL* pbCapture);
+		[propput, id(1)] HRESULT Capture([in] VARIANT_BOOL bCapture);
+	};
+	[
+		uuid(AD0E84E9-DE25-4C1A-85A5-47406604E144),
+		helpstring("RunEventPropertyPage Class")
+	]
+	coclass RunEventPropertyPage
+	{
+		[default] interface IUnknown; //IPropertyPage;
+	};
 };

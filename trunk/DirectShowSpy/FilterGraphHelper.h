@@ -19,7 +19,8 @@
 #include "rodshow.h"
 #include "DirectShowSpy_i.h"
 #include "Common.h"
-#include "PropertyBag.h"
+#include "RunPropertyBag.h"
+#include "RunEvent.h"
 #include "AboutDialog.h"
 #include "..\..\Repository-Private\Utilities\EmailTools\Message.h"
 #define  BZ_NO_STDIO
@@ -33,9 +34,6 @@ HRESULT FilterGraphHelper_OpenGraphStudioNext(LONG nParentWindowHandle, LPCWSTR 
 HRESULT FilterGraphHelper_OpenGraphEdit(LONG nParentWindowHandle, LPCWSTR pszMonikerDisplayName, VARIANT_BOOL* pbResult);
 
 ////////////////////////////////////////////////////////////
-// CFilterGraphHelper
-
-////////////////////////////////////////////////////////////
 // CRunPropertyBagPropertyPage
 
 class ATL_NO_VTABLE CRunPropertyBagPropertyPage :
@@ -45,7 +43,7 @@ class ATL_NO_VTABLE CRunPropertyBagPropertyPage :
 	public CDialogResize<CRunPropertyBagPropertyPage>
 {
 public:
-	enum { IDR = IDR_GENERIC_RUNPROPERTYBAGPROPERTYPAGE };
+	enum { IDR = IDR_GENERIC_RUNPROPERTYBAG_PROPERTYPAGE };
 	enum { IDD = IDD_GENERIC_RUNPROPERTYBAG };
 
 BEGIN_COM_MAP(CRunPropertyBagPropertyPage)
@@ -87,11 +85,11 @@ public:
 	}
 	CRunPropertyBagPropertyPage()
 	{
-		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		_Z4_THIS();
 	}
 	~CRunPropertyBagPropertyPage()
 	{
-		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		_Z4_THIS();
 	}
 	VOID UpdateControls()
 	{
@@ -100,7 +98,7 @@ public:
 	{
 		CString sText;
 		_A(GetObjectCount() == 1);
-		m_TextEdit.SetValue(CPropertyBagHelper::GetPropertyBagText(GetObject(0)));
+		m_TextEdit.SetValue(CRunPropertyBagHelper::GetPropertyBagText(GetObject(0)));
 	}
 
 // Window message handlers
@@ -168,6 +166,188 @@ public:
 };
 
 OBJECT_ENTRY_AUTO(__uuidof(RunPropertyBagPropertyPage), CRunPropertyBagPropertyPage)
+
+////////////////////////////////////////////////////////////
+// CRunEventPropertyPage
+
+class ATL_NO_VTABLE CRunEventPropertyPage :
+	public CComObjectRootEx<CComSingleThreadModel>,
+	public CComCoClass<CRunEventPropertyPage, &__uuidof(RunEventPropertyPage)>,
+	public COlePropertyPageT<CRunEventPropertyPage>,
+	public CDialogResize<CRunEventPropertyPage>
+{
+public:
+	enum { IDR = IDR_GENERIC_RUNEVENT_PROPERTYPAGE };
+	enum { IDD = IDD_GENERIC_RUNEVENT };
+
+BEGIN_COM_MAP(CRunEventPropertyPage)
+	COM_INTERFACE_ENTRY(IPropertyPage2)
+	COM_INTERFACE_ENTRY(IPropertyPage)
+END_COM_MAP()
+
+BEGIN_MSG_MAP_EX(CRunEventPropertyPage)
+	CHAIN_MSG_MAP(COlePropertyPage)
+	CHAIN_MSG_MAP(CDialogResize<CRunEventPropertyPage>)
+	MSG_WM_INITDIALOG(OnInitDialog)
+	MSG_WM_DESTROY(OnDestroy)
+	COMMAND_HANDLER_EX(IDC_GENERIC_RUNEVENT_CAPTURE, BN_CLICKED, OnCaptureButtonClicked)
+	COMMAND_ID_HANDLER_EX(IDC_GENERIC_RUNEVENT_REFRESH, OnRefresh)
+	REFLECT_NOTIFICATIONS()
+END_MSG_MAP()
+
+BEGIN_DLGRESIZE_MAP(CRunEventPropertyPage)
+	DLGRESIZE_CONTROL(IDC_GENERIC_RUNEVENT_CAPTURE, DLSZ_SIZE_X)
+	DLGRESIZE_CONTROL(IDC_GENERIC_RUNEVENT_TEXT, DLSZ_SIZE_X | DLSZ_SIZE_Y)
+	DLGRESIZE_CONTROL(IDC_GENERIC_RUNEVENT_REFRESH, DLSZ_MOVE_Y)
+END_DLGRESIZE_MAP()
+
+public:
+
+private:
+	BOOL m_bActivating;
+	CButton m_CaptureButton;
+	CRoEdit m_TextEdit;
+	CButton m_RefreshButton;
+	CRoMapT<INT_PTR, BOOL> m_ChangeMap;
+
+public:
+// CRunEventPropertyPage
+	static CString GetObjectFriendlyName()
+	{
+		return _StringHelper::GetLine(IDR, 2);
+	}
+	static HRESULT WINAPI UpdateRegistry(BOOL bRegister)
+	{
+		_Z2(atlTraceRegistrar, 2, _T("bRegister %d\n"), bRegister);
+		return DefaultUpdateRegistry(bRegister);
+	}
+	CRunEventPropertyPage()
+	{
+		_Z4_THIS();
+	}
+	~CRunEventPropertyPage()
+	{
+		_Z4_THIS();
+	}
+	VOID UpdateControls()
+	{
+		const BOOL bCapture = m_CaptureButton.GetCheck();
+		//m_TextEdit.EnableWindow(bCapture);
+		m_RefreshButton.EnableWindow(bCapture);
+	}
+	VOID Refresh()
+	{
+		const CComQIPtr<IRunEventAware> pRunEventAware = GetObject(0);
+		if(!pRunEventAware)
+			return;
+		CComVariantArray vValue;
+		__C(pRunEventAware->get_Value(&vValue));
+		CString sText;
+		_ATLTRY
+		{
+			if(vValue.vt > VT_NULL)
+			{
+				CRoArrayT<CComVariantArray> Array;
+				vValue.ToElementArray(Array);
+				for(SIZE_T nIndex = 0; nIndex < Array.GetCount(); nIndex++)
+				{
+					CRunEventHelper::CEvents::CItem Item;
+					if(!Item.SetAsVariant(Array[nIndex]))
+						continue;
+					sText.AppendFormat(_T("%d") _T("\t") _T("%hs"), (LONG) (Item.m_nTime / 10000i64), Item.m_pszText);
+					sText.Append(_T("\r\n"));
+				}
+			}
+		}
+		_ATLCATCHALL()
+		{
+			_Z_EXCEPTION();
+		}
+		m_TextEdit.SetValue(sText);
+	}
+
+// Window message handlers
+	LRESULT OnInitDialog(HWND, LPARAM)
+	{
+		m_bActivating = TRUE;
+		_ATLTRY
+		{
+			m_CaptureButton = GetDlgItem(IDC_GENERIC_RUNEVENT_CAPTURE);
+			m_TextEdit = GetDlgItem(IDC_GENERIC_RUNEVENT_TEXT);
+			m_RefreshButton = GetDlgItem(IDC_GENERIC_RUNEVENT_REFRESH);
+			DlgResize_Init(FALSE);
+			//m_OutputSampleTimeEdit = GetDlgItem(IDC_SUSPENSIONFILTER_SAMPLE_OUTPUTTIME);
+			_A(GetObjectCount() >= 1);
+			const CComQIPtr<IRunEventAware> pRunEventAware = GetObject(0);
+			__D(pRunEventAware, E_NOINTERFACE);
+			VARIANT_BOOL bCapture = ATL_VARIANT_FALSE;
+			__C(pRunEventAware->get_Capture(&bCapture));
+			m_CaptureButton.SetCheck(bCapture != ATL_VARIANT_FALSE);
+			if(bCapture != ATL_VARIANT_FALSE)
+				Refresh();
+			UpdateControls();
+			m_ChangeMap.RemoveAll();
+			m_bActivating = FALSE;
+		}
+		_ATLCATCH(Exception)
+		{
+			AtlExceptionMessageBox(m_hWnd, Exception);
+			for(CWindow Window = GetWindow(GW_CHILD); Window.IsWindow(); Window = Window.GetWindow(GW_HWNDNEXT))
+				Window.EnableWindow(FALSE);
+		}
+		return TRUE;
+	}
+	LRESULT OnDestroy()
+	{
+		return 0;
+	}
+	LRESULT OnCaptureButtonClicked(UINT, INT, HWND)
+	{
+		CWaitCursor WaitCursor;
+		const CComQIPtr<IRunEventAware> pRunEventAware = GetObject(0);
+		if(pRunEventAware)
+			_ATLTRY
+			{
+				const BOOL bCapture = m_CaptureButton.GetCheck();
+				__C(pRunEventAware->put_Capture(bCapture ? ATL_VARIANT_TRUE : ATL_VARIANT_FALSE));
+			}
+			_ATLCATCHALL()
+			{
+				_Z_EXCEPTION();
+			}
+		UpdateControls();
+		return 0;
+	}
+	LRESULT OnRefresh(UINT, INT, HWND)
+	{
+		CWaitCursor WaitCursor;
+		Refresh();
+		UpdateControls();
+		return 0;
+	}
+
+// COlePropertyPageT, IRoPropertyPageT, IPropertyPage2, IPropertyPage
+	STDMETHOD(Apply)()
+	{
+		_Z4(atlTraceCOM, 4, _T("...\n"));
+		_ATLTRY
+		{
+			//if(!m_ChangeMap.IsEmpty())
+			{
+				//CWaitCursor WaitCursor;
+				//m_ChangeMap.RemoveAll();
+				SetDirty(FALSE);
+			}
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return S_OK;
+	}
+};
+
+OBJECT_ENTRY_AUTO(__uuidof(RunEventPropertyPage), CRunEventPropertyPage)
 
 ////////////////////////////////////////////////////////////
 // CFilterGraphHelper
@@ -1738,7 +1918,7 @@ public:
 						#pragma region Runtime Property Bag
 						_ATLTRY
 						{
-							const CString sPropertyBagText = CPropertyBagHelper::GetPropertyBagText(Data.m_pBaseFilter, CComQIPtr<ISpy>(m_Owner.m_pFilterGraph));
+							const CString sPropertyBagText = CRunPropertyBagHelper::GetPropertyBagText(Data.m_pBaseFilter, CComQIPtr<ISpy>(m_Owner.m_pFilterGraph));
 							if(!sPropertyBagText.IsEmpty())
 							{
 								sText += AtlFormatString(_T("## ") _T("Runtime Properties") _T("\r\n") _T("\r\n"));
@@ -1914,11 +2094,11 @@ public:
 	}
 	CFilterGraphHelper()
 	{
-		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		_Z4_THIS();
 	}
 	~CFilterGraphHelper()
 	{
-		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		_Z4_THIS();
 	}
 	static CString FormatIdentifier(LPCSTR pszValue)
 	{
@@ -2684,7 +2864,7 @@ public:
 				{
 					const CComPtr<IBaseFilter>& pBaseFilter = FilterArray[nIndex];
 					//_Z4(atlTraceGeneral, 4, _T("pBaseFilter 0x%p \"%ls\"\n"), pBaseFilter, _FilterGraphHelper::GetFilterName(pBaseFilter));
-					const CString sPropertyBagText = CPropertyBagHelper::GetPropertyBagText(pBaseFilter, pSpy);
+					const CString sPropertyBagText = CRunPropertyBagHelper::GetPropertyBagText(pBaseFilter, pSpy);
 					if(sPropertyBagText.IsEmpty())
 						continue;
 					if(!bRunPropertyBagHeaderAdded)
