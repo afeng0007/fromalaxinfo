@@ -19,9 +19,9 @@
 #include "Common.h"
 
 ////////////////////////////////////////////////////////////
-// 
+// CRunPropertyBagHelper
 
-class CPropertyBagHelper
+class CRunPropertyBagHelper
 {
 public:
 
@@ -48,7 +48,7 @@ protected:
 	}
 
 public:
-// CPropertyBagHelper
+// CRunPropertyBagHelper
 	static CComVariantArray ReadRunPropertyBag(IUnknown* pBaseFilterUnknown, BOOL bAllowExtension = TRUE)
 	{
 		CComVariantArray vValue;

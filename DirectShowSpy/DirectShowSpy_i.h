@@ -4,7 +4,7 @@
 
 
  /* File created by MIDL compiler version 7.00.0555 */
-/* at Wed May 07 14:27:04 2014
+/* at Wed May 28 01:18:35 2014
  */
 /* Compiler settings for DirectShowSpy.idl:
     Oicf, W1, Zp8, env=Win32 (32b run), target_arch=X86 7.00.0555 
@@ -175,6 +175,24 @@ typedef struct RunPropertyBagPropertyPage RunPropertyBagPropertyPage;
 #endif /* __cplusplus */
 
 #endif 	/* __RunPropertyBagPropertyPage_FWD_DEFINED__ */
+
+
+#ifndef __IRunEventAware_FWD_DEFINED__
+#define __IRunEventAware_FWD_DEFINED__
+typedef interface IRunEventAware IRunEventAware;
+#endif 	/* __IRunEventAware_FWD_DEFINED__ */
+
+
+#ifndef __RunEventPropertyPage_FWD_DEFINED__
+#define __RunEventPropertyPage_FWD_DEFINED__
+
+#ifdef __cplusplus
+typedef class RunEventPropertyPage RunEventPropertyPage;
+#else
+typedef struct RunEventPropertyPage RunEventPropertyPage;
+#endif /* __cplusplus */
+
+#endif 	/* __RunEventPropertyPage_FWD_DEFINED__ */
 
 
 /* header files for imported files */
@@ -1582,6 +1600,155 @@ EXTERN_C const CLSID CLSID_RunPropertyBagPropertyPage;
 
 class DECLSPEC_UUID("76127943-D22E-4C4E-9D9B-173C224D0EE4")
 RunPropertyBagPropertyPage;
+#endif
+
+#ifndef __IRunEventAware_INTERFACE_DEFINED__
+#define __IRunEventAware_INTERFACE_DEFINED__
+
+/* interface IRunEventAware */
+/* [unique][helpstring][nonextensible][uuid][object] */ 
+
+
+EXTERN_C const IID IID_IRunEventAware;
+
+#if defined(__cplusplus) && !defined(CINTERFACE)
+    
+    MIDL_INTERFACE("DA0D924F-1AC0-496D-AE44-CC2BD8CE7CFA")
+    IRunEventAware : public IDispatch
+    {
+    public:
+        virtual /* [id][propget] */ HRESULT STDMETHODCALLTYPE get_Value( 
+            /* [retval][out] */ VARIANT *pvValue) = 0;
+        
+        virtual /* [id][propget] */ HRESULT STDMETHODCALLTYPE get_Capture( 
+            /* [retval][out] */ VARIANT_BOOL *pbCapture) = 0;
+        
+        virtual /* [id][propput] */ HRESULT STDMETHODCALLTYPE put_Capture( 
+            /* [in] */ VARIANT_BOOL bCapture) = 0;
+        
+    };
+    
+#else 	/* C style interface */
+
+    typedef struct IRunEventAwareVtbl
+    {
+        BEGIN_INTERFACE
+        
+        HRESULT ( STDMETHODCALLTYPE *QueryInterface )( 
+            IRunEventAware * This,
+            /* [in] */ REFIID riid,
+            /* [annotation][iid_is][out] */ 
+            __RPC__deref_out  void **ppvObject);
+        
+        ULONG ( STDMETHODCALLTYPE *AddRef )( 
+            IRunEventAware * This);
+        
+        ULONG ( STDMETHODCALLTYPE *Release )( 
+            IRunEventAware * This);
+        
+        HRESULT ( STDMETHODCALLTYPE *GetTypeInfoCount )( 
+            IRunEventAware * This,
+            /* [out] */ UINT *pctinfo);
+        
+        HRESULT ( STDMETHODCALLTYPE *GetTypeInfo )( 
+            IRunEventAware * This,
+            /* [in] */ UINT iTInfo,
+            /* [in] */ LCID lcid,
+            /* [out] */ ITypeInfo **ppTInfo);
+        
+        HRESULT ( STDMETHODCALLTYPE *GetIDsOfNames )( 
+            IRunEventAware * This,
+            /* [in] */ REFIID riid,
+            /* [size_is][in] */ LPOLESTR *rgszNames,
+            /* [range][in] */ UINT cNames,
+            /* [in] */ LCID lcid,
+            /* [size_is][out] */ DISPID *rgDispId);
+        
+        /* [local] */ HRESULT ( STDMETHODCALLTYPE *Invoke )( 
+            IRunEventAware * This,
+            /* [in] */ DISPID dispIdMember,
+            /* [in] */ REFIID riid,
+            /* [in] */ LCID lcid,
+            /* [in] */ WORD wFlags,
+            /* [out][in] */ DISPPARAMS *pDispParams,
+            /* [out] */ VARIANT *pVarResult,
+            /* [out] */ EXCEPINFO *pExcepInfo,
+            /* [out] */ UINT *puArgErr);
+        
+        /* [id][propget] */ HRESULT ( STDMETHODCALLTYPE *get_Value )( 
+            IRunEventAware * This,
+            /* [retval][out] */ VARIANT *pvValue);
+        
+        /* [id][propget] */ HRESULT ( STDMETHODCALLTYPE *get_Capture )( 
+            IRunEventAware * This,
+            /* [retval][out] */ VARIANT_BOOL *pbCapture);
+        
+        /* [id][propput] */ HRESULT ( STDMETHODCALLTYPE *put_Capture )( 
+            IRunEventAware * This,
+            /* [in] */ VARIANT_BOOL bCapture);
+        
+        END_INTERFACE
+    } IRunEventAwareVtbl;
+
+    interface IRunEventAware
+    {
+        CONST_VTBL struct IRunEventAwareVtbl *lpVtbl;
+    };
+
+    
+
+#ifdef COBJMACROS
+
+
+#define IRunEventAware_QueryInterface(This,riid,ppvObject)	\
+    ( (This)->lpVtbl -> QueryInterface(This,riid,ppvObject) ) 
+
+#define IRunEventAware_AddRef(This)	\
+    ( (This)->lpVtbl -> AddRef(This) ) 
+
+#define IRunEventAware_Release(This)	\
+    ( (This)->lpVtbl -> Release(This) ) 
+
+
+#define IRunEventAware_GetTypeInfoCount(This,pctinfo)	\
+    ( (This)->lpVtbl -> GetTypeInfoCount(This,pctinfo) ) 
+
+#define IRunEventAware_GetTypeInfo(This,iTInfo,lcid,ppTInfo)	\
+    ( (This)->lpVtbl -> GetTypeInfo(This,iTInfo,lcid,ppTInfo) ) 
+
+#define IRunEventAware_GetIDsOfNames(This,riid,rgszNames,cNames,lcid,rgDispId)	\
+    ( (This)->lpVtbl -> GetIDsOfNames(This,riid,rgszNames,cNames,lcid,rgDispId) ) 
+
+#define IRunEventAware_Invoke(This,dispIdMember,riid,lcid,wFlags,pDispParams,pVarResult,pExcepInfo,puArgErr)	\
+    ( (This)->lpVtbl -> Invoke(This,dispIdMember,riid,lcid,wFlags,pDispParams,pVarResult,pExcepInfo,puArgErr) ) 
+
+
+#define IRunEventAware_get_Value(This,pvValue)	\
+    ( (This)->lpVtbl -> get_Value(This,pvValue) ) 
+
+#define IRunEventAware_get_Capture(This,pbCapture)	\
+    ( (This)->lpVtbl -> get_Capture(This,pbCapture) ) 
+
+#define IRunEventAware_put_Capture(This,bCapture)	\
+    ( (This)->lpVtbl -> put_Capture(This,bCapture) ) 
+
+#endif /* COBJMACROS */
+
+
+#endif 	/* C style interface */
+
+
+
+
+#endif 	/* __IRunEventAware_INTERFACE_DEFINED__ */
+
+
+EXTERN_C const CLSID CLSID_RunEventPropertyPage;
+
+#ifdef __cplusplus
+
+class DECLSPEC_UUID("AD0E84E9-DE25-4C1A-85A5-47406604E144")
+RunEventPropertyPage;
 #endif
 #endif /* __AlaxInfoDirectShowSpy_LIBRARY_DEFINED__ */
 

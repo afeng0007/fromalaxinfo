@@ -112,7 +112,10 @@
     <ClInclude Include="FilterGraphHelper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="PropertyBag.h">
+    <ClInclude Include="RunEvent.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="RunPropertyBag.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
