@@ -1,0 +1,19 @@
+////////////////////////////////////////////////////////////
+// Copyright (C) Roman Ryltsov, 2013-2014
+// Created by Roman Ryltsov roman@alax.info
+//
+// A permission to use the source code is granted as long as reference to 
+// source website http://alax.info is retained.
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	uuid(0B8EB8F0-0D1A-4A52-BF68-2366BCA4956B),
+	version(1.0),
+]
+library AlaxInfoDirectionControl
+{
+	importlib("stdole2.tlb");
+};
+

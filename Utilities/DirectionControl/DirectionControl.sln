@@ -1,0 +1,38 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectionControl", "DirectionControl.vcxproj", "{29612A69-A9D0-48D2-A386-5840C41E02E5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
+		Development Release Trace|Win32 = Development Release Trace|Win32
+		Development Release Trace|x64 = Development Release Trace|x64
+		Release Trace|Win32 = Release Trace|Win32
+		Release Trace|x64 = Release Trace|x64
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{29612A69-A9D0-48D2-A386-5840C41E02E5}.Debug|Win32.ActiveCfg = Debug|Win32
+		{29612A69-A9D0-48D2-A386-5840C41E02E5}.Debug|Win32.Build.0 = Debug|Win32
+		{29612A69-A9D0-48D2-A386-5840C41E02E5}.Debug|x64.ActiveCfg = Debug|x64
+		{29612A69-A9D0-48D2-A386-5840C41E02E5}.Debug|x64.Build.0 = Debug|x64
+		{29612A69-A9D0-48D2-A386-5840C41E02E5}.Release|Win32.ActiveCfg = Release|Win32
+		{29612A69-A9D0-48D2-A386-5840C41E02E5}.Release|Win32.Build.0 = Release|Win32
+		{29612A69-A9D0-48D2-A386-5840C41E02E5}.Release|x64.ActiveCfg = Release|x64
+		{29612A69-A9D0-48D2-A386-5840C41E02E5}.Release|x64.Build.0 = Release|x64
+		{29612A69-A9D0-48D2-A386-5840C41E02E5}.Release Trace|Win32.ActiveCfg = Release Trace|Win32
+		{29612A69-A9D0-48D2-A386-5840C41E02E5}.Release Trace|Win32.Build.0 = Release Trace|Win32
+		{29612A69-A9D0-48D2-A386-5840C41E02E5}.Release Trace|x64.ActiveCfg = Release Trace|x64
+		{29612A69-A9D0-48D2-A386-5840C41E02E5}.Release Trace|x64.Build.0 = Release Trace|x64
+		{29612A69-A9D0-48D2-A386-5840C41E02E5}.Development Release Trace|Win32.ActiveCfg = Development Release Trace|Win32
+		{29612A69-A9D0-48D2-A386-5840C41E02E5}.Development Release Trace|Win32.Build.0 = Development Release Trace|Win32
+		{29612A69-A9D0-48D2-A386-5840C41E02E5}.Development Release Trace|x64.ActiveCfg = Development Release Trace|x64
+		{29612A69-A9D0-48D2-A386-5840C41E02E5}.Development Release Trace|x64.Build.0 = Development Release Trace|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
