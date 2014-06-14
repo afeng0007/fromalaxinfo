@@ -81,6 +81,7 @@ protected:
 		_A(IsWindow());
 		_A((GetStyle() & SS_TYPEMASK) == SS_LEFT); //_A((UINT) ((GetStyle() & SS_TYPEMASK) - SS_LEFT) < (SS_RIGHT - SS_LEFT + 1));
 		//ModifyStyle(0, SS_NOTIFY);
+		_A(GetExStyle() & WS_EX_TRANSPARENT);
 		CWindow Parent = GetParent();
 		pT->UpdateLayout();
 		m_nVersion = 0;
@@ -136,9 +137,9 @@ public:
 		if(!m_bLayoutValid)
 			return;
 		m_nToleranceArrowSize = m_nArrowSize * 3 / 4;
-		m_ArrowHandlePosition = Transform(0, m_nArrowSize - 5, m_fAngle);
-		m_ToleranceArrowHandlePositionA = Transform(0, m_nToleranceArrowSize - 4, m_fAngle - m_fToleranceAngle / 2);
-		m_ToleranceArrowHandlePositionB = Transform(0, m_nToleranceArrowSize - 4, m_fAngle + m_fToleranceAngle / 2);
+		m_ArrowHandlePosition = Transform(0, m_nArrowSize - 6, m_fAngle);
+		m_ToleranceArrowHandlePositionA = Transform(0, m_nToleranceArrowSize - 6, m_fAngle - m_fToleranceAngle / 2);
+		m_ToleranceArrowHandlePositionB = Transform(0, m_nToleranceArrowSize - 6, m_fAngle + m_fToleranceAngle / 2);
 	}
 	VOID EraseBackground(CDCHandle Dc)
 	{
@@ -222,9 +223,27 @@ public:
 		static const LONG F = 1;
 		Dc.Ellipse(m_CenterPosition.x - D, m_CenterPosition.y - D, m_CenterPosition.x + D + F, m_CenterPosition.y + D + F);
 	}
-	static BOOL Close(POINT PositionA, POINT PositionB, LONG nDistanceThreshold = 6)
+	static BOOL Close(CPoint PositionA, CPoint PositionB, LONG nDistanceThreshold, CPoint* pRelativePosition = NULL)
 	{
+		if(pRelativePosition)
+			*pRelativePosition = PositionA - PositionB;
 		return (PositionA.x - PositionB.x) * (PositionA.x - PositionB.x) + (PositionA.y - PositionB.y) * (PositionA.y - PositionB.y) < (nDistanceThreshold * nDistanceThreshold);
+	}
+	UINT DragModeFromPosition(CPoint Position, CPoint* pRelativePosition = NULL) const
+	{
+		if(Close(m_ToleranceArrowHandlePositionA, Position, 6, pRelativePosition))
+			return 2;
+		if(Close(m_ToleranceArrowHandlePositionB, Position, 6, pRelativePosition))
+			return 3;
+		if(Close(m_ArrowHandlePosition, Position, 6, pRelativePosition))
+			return 1;
+		if(Close(m_ToleranceArrowHandlePositionA, Position, 10, pRelativePosition))
+			return 2;
+		if(Close(m_ToleranceArrowHandlePositionB, Position, 10, pRelativePosition))
+			return 3;
+		if(Close(m_ArrowHandlePosition, Position, 10, pRelativePosition))
+			return 1;
+		return 0;
 	}
 	DOUBLE GetAngle() const
 	{
@@ -233,6 +252,30 @@ public:
 	DOUBLE GetToleranceAngle() const
 	{
 		return m_fToleranceAngle;
+	}
+	VOID SetAngle(DOUBLE fAngle)
+	{
+		T* pT = static_cast<T*>(this);
+		if(m_fAngle == fAngle)
+			return;
+		m_fAngle = fAngle;
+		m_nVersion++;
+		if(!pT->IsWindow())
+			return;
+		pT->UpdateLayout();
+		pT->Invalidate();
+	}
+	VOID SetToleranceAngle(DOUBLE fToleranceAngle)
+	{
+		T* pT = static_cast<T*>(this);
+		if(m_fToleranceAngle == fToleranceAngle)
+			return;
+		m_fToleranceAngle = fToleranceAngle;
+		m_nVersion++;
+		if(!pT->IsWindow())
+			return;
+		pT->UpdateLayout();
+		pT->Invalidate();
 	}
 
 // CWindowImplBaseT
@@ -325,7 +368,8 @@ public:
 			if(GetCursorPos(&Position))
 			{
 				_W(ScreenToClient(&Position));
-				if(Close(m_ArrowHandlePosition, Position) || Close(m_ToleranceArrowHandlePositionA, Position) || Close(m_ToleranceArrowHandlePositionB, Position))
+				const UINT nDragMode = DragModeFromPosition(Position);
+				if(nDragMode)
 				{
 					::SetCursor(AtlLoadSysCursor(IDC_SIZEALL));
 					return TRUE;
@@ -351,7 +395,11 @@ public:
 			{
 				CPoint AlignPosition = Position - m_DragRelativeButtonDownPosition;
 				const DOUBLE fAngle = atan2((DOUBLE) (Position.y - m_CenterPosition.y), (DOUBLE) (Position.x - m_CenterPosition.x)) + M_PI / 2;
-				m_fToleranceAngle = 2 * abs(fAngle - m_fAngle);
+				DOUBLE fToleranceAngle = abs(fAngle - m_fAngle);
+				if(fToleranceAngle > M_PI)
+					fToleranceAngle = 2 * M_PI - fToleranceAngle;
+				_A(fToleranceAngle >= 0 && fToleranceAngle <= M_PI);
+				m_fToleranceAngle = 2 * fToleranceAngle;
 				m_nVersion++;
 			}
 			break;
@@ -359,7 +407,11 @@ public:
 			{
 				CPoint AlignPosition = Position - m_DragRelativeButtonDownPosition;
 				const DOUBLE fAngle = atan2((DOUBLE) (Position.y - m_CenterPosition.y), (DOUBLE) (Position.x - m_CenterPosition.x)) + M_PI / 2;
-				m_fToleranceAngle = 2 * abs(fAngle - m_fAngle);
+				DOUBLE fToleranceAngle = abs(fAngle - m_fAngle);
+				if(fToleranceAngle > M_PI)
+					fToleranceAngle = 2 * M_PI - fToleranceAngle;
+				_A(fToleranceAngle >= 0 && fToleranceAngle <= M_PI);
+				m_fToleranceAngle = 2 * fToleranceAngle;
 				m_nVersion++;
 			}
 			break;
@@ -383,23 +435,13 @@ public:
 			return 0;
 		if(!(nButton & MK_LBUTTON))
 			return 0;
-		m_nDragMode = 0;
-		if(Close(m_ToleranceArrowHandlePositionA, Position))
-		{
-			m_nDragMode = 2;
-			m_DragRelativeButtonDownPosition = Position - m_ToleranceArrowHandlePositionA;
-		} else if(Close(m_ToleranceArrowHandlePositionB, Position))
-		{
-			m_nDragMode = 3;
-			m_DragRelativeButtonDownPosition = Position - m_ToleranceArrowHandlePositionB;
-		} else if(Close(m_ArrowHandlePosition, Position))
-		{
-			m_nDragMode = 1;
-			m_DragRelativeButtonDownPosition = Position - m_ArrowHandlePosition;
-		} else
+		CPoint RelativePosition;
+		m_nDragMode = DragModeFromPosition(Position, &RelativePosition);
+		if(!m_nDragMode)
 			return 0;
-		m_nDragVersion = m_nVersion;
 		m_DragButtonDownPosition = Position;
+		m_DragRelativeButtonDownPosition = RelativePosition;
+		m_nDragVersion = m_nVersion;
 		SetCapture();
 		::SetCursor(AtlLoadSysCursor(IDC_SIZEALL));
 		return 0;
