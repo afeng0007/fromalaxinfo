@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////
+// Copyright (C) Roman Ryltsov, 2008-2014
 // Created by Roman Ryltsov roman@alax.info
-// $Id$
 
 #pragma once
 

@@ -1,8 +1,6 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2008-2012
+// Copyright (C) Roman Ryltsov, 2008-2014
 // Created by Roman Ryltsov roman@alax.info
-// 
-// $Id$
 
 #include "stdafx.h"
 #include "resource.h"
@@ -24,20 +22,18 @@ public:
 
 public:
 // CRenderInterlacedVideoModule
-	CRenderInterlacedVideoModule() throw()
+	CRenderInterlacedVideoModule()
 	{
-		#if defined(_DEBUG)
-		AtlTraceLoadSettings(NULL);
-		#endif // defined(_DEBUG)
+		AtlTraceSetDefaultSettings();
 		_W(CExceptionFilter::Initialize());
-		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		_Z4_THIS();
 	}
-	~CRenderInterlacedVideoModule() throw()
+	~CRenderInterlacedVideoModule()
 	{
-		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		_Z4_THIS();
 		CExceptionFilter::Terminate();
 	}
-	HRESULT PreMessageLoop(INT nShowCommand) throw()
+	HRESULT PreMessageLoop(INT nShowCommand)
 	{
 		_ATLTRY
 		{
@@ -52,7 +48,7 @@ public:
 		}
 		return S_OK;
 	}
-	VOID RunMessageLoop() throw()
+	VOID RunMessageLoop()
 	{
 		Lock();
 		{
@@ -66,7 +62,7 @@ public:
 		}
 		Unlock();
 	}
-	HRESULT PostMessageLoop() throw()
+	HRESULT PostMessageLoop()
 	{
 		_ATLTRY
 		{
