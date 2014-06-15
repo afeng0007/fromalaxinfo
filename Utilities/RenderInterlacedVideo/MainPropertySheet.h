@@ -1,8 +1,6 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2008-2012
+// Copyright (C) Roman Ryltsov, 2008-2014
 // Created by Roman Ryltsov roman@alax.info
-// 
-// $Id$
 
 #pragma once
 
@@ -13,13 +11,40 @@
 #include <evr.h>
 #include <evr9.h>
 #include <dxva.h>
+#import "libid:B9EC374B-834B-4DA9-BFB5-C1872CE736FF" raw_interfaces_only // AlaxInfoDirectShowSpy
 #include "rodshow.h"
+
+////////////////////////////////////////////////////////////
+// CVrWindowT
+
+template <typename T>
+class CVrWindowT
+{
+public:
+// CVrWindowT
+	VOID DoHelperModal(IUnknown* pUnknown, LPCTSTR pszCaption = NULL)
+	{
+		T* pT = static_cast<T*>(this);
+		CComPtr<AlaxInfoDirectShowSpy::IFilterGraphHelper> pFilterGraphHelper;
+		const HRESULT nCoCreateInstanceResult = pFilterGraphHelper.CoCreateInstance(__uuidof(AlaxInfoDirectShowSpy::FilterGraphHelper));
+		if(SUCCEEDED(nCoCreateInstanceResult))
+		{
+			__C(pFilterGraphHelper->put_FilterGraph(pUnknown));
+			__C(pFilterGraphHelper->DoPropertyFrameModal((LONG) (LONG_PTR) pT->m_hWnd));
+			return;
+		}
+		COlePropertyFrameDialog Dialog(pUnknown, pszCaption);
+		Dialog.SetObjectPages();
+		Dialog.DoModal(pT->m_hWnd);
+	}
+};
 
 ////////////////////////////////////////////////////////////
 // CVmr7Window
 
 class CVmr7Window :
-	public CControlWindowT<CVmr7Window>
+	public CControlWindowT<CVmr7Window>,
+	public CVrWindowT<CVmr7Window>
 {
 public:
 
@@ -38,7 +63,7 @@ public:
 
 public:
 // CVmr7Window
-	static CLSID GetRendererClassIdentifier() throw()
+	static CLSID GetRendererClassIdentifier()
 	{
 		return CLSID_VideoMixingRenderer;
 	}
@@ -62,20 +87,27 @@ public:
 		m_pVmrWindowlessControl = CComQIPtr<IVMRWindowlessControl>(m_pBaseFilter);
 		__D(m_pVmrWindowlessControl, E_NOINTERFACE);
 		__C(m_pVmrWindowlessControl->SetVideoClippingWindow(m_hWnd));
-		CRect VideoPosition = GetVideoPosition();
-		_Z4(atlTraceGeneral, 4, _T(".m_pVmrWindowlessControl 0x%p, VideoPosition at (%d, %d) size (%d, %d)\n"), m_pVmrWindowlessControl, VideoPosition.left, VideoPosition.top, VideoPosition.Width(), VideoPosition.Height());
-		__C(m_pVmrWindowlessControl->SetVideoPosition(NULL, VideoPosition));
+		UpdateVideoPosition();
 	}
-	VOID Terminate() throw()
+	VOID Terminate()
 	{
 		m_pBaseFilter = NULL;
 		m_pVmrWindowlessControl = NULL;
 	}
-	CRect GetVideoPosition() const throw()
+	CRect GetVideoPosition() const
 	{
 		CRect Position;
 		_W(GetClientRect(Position));
 		return Position;
+	}
+	BOOL UpdateVideoPosition()
+	{
+		_A(m_pVmrWindowlessControl && IsWindow());
+		CRect VideoPosition = GetVideoPosition();
+		_Z4(atlTraceGeneral, 4, _T("m_pVmrWindowlessControl 0x%p, VideoPosition at (%d, %d) size (%d, %d)\n"), m_pVmrWindowlessControl, VideoPosition.left, VideoPosition.top, VideoPosition.Width(), VideoPosition.Height());
+		const HRESULT nSetVideoPositionResult = m_pVmrWindowlessControl->SetVideoPosition(NULL, VideoPosition);
+		__C(nSetVideoPositionResult); //_Z45_DSHRESULT(nSetVideoPositionResult);
+		return SUCCEEDED(nSetVideoPositionResult);
 	}
 
 // Window Message Handlers
@@ -95,7 +127,7 @@ public:
 		{
 			CPaintDC Dc(m_hWnd);
 			const HRESULT nRepaintVideoResult = m_pVmrWindowlessControl->RepaintVideo(m_hWnd, Dc);
-			_Z4(atlTraceUI, SUCCEEDED(nRepaintVideoResult) ? 6 : 4, _T("nRepaintVideoResult 0x%08x\n"), nRepaintVideoResult);
+			_Z45_DSHRESULT(nRepaintVideoResult);
 		} else
 			SetMsgHandled(FALSE);
 		return 0;
@@ -105,7 +137,7 @@ public:
 		if(m_pVmrWindowlessControl)
 		{
 			const HRESULT nDisplayModeChangedResult = m_pVmrWindowlessControl->DisplayModeChanged();
-			_Z4(atlTraceUI, 4, _T("nDisplayModeChangedResult 0x%08x\n"), nDisplayModeChangedResult);
+			_Z4_DSHRESULT(nDisplayModeChangedResult);
 		}
 		return 0;
 	}
@@ -113,19 +145,12 @@ public:
 	{
 		if(nType != SIZE_MINIMIZED)
 			if(m_pVmrWindowlessControl)
-			{
-				CRect VideoPosition = GetVideoPosition();
-				const HRESULT nSetVideoPositionResult = m_pVmrWindowlessControl->SetVideoPosition(NULL, &VideoPosition);
-				_Z4(atlTraceUI, SUCCEEDED(nSetVideoPositionResult) ? 6 : 4, _T("nSetVideoPositionResult 0x%08x\n"), nSetVideoPositionResult);
-			}
+				UpdateVideoPosition();
 		return 0;
 	}
 	LRESULT OnLButtonDblClk(UINT, CPoint Position)
 	{
-		COlePropertyFrameDialog Dialog;
-		Dialog.SetObject(m_pBaseFilter);
-		Dialog.SetObjectPages();
-		Dialog.DoModal(m_hWnd);
+		DoHelperModal(m_pBaseFilter, _T("VMR-7"));
 		return 0;
 	}
 };
@@ -134,7 +159,8 @@ public:
 // CVmr9Window
 
 class CVmr9Window :
-	public CControlWindowT<CVmr9Window>
+	public CControlWindowT<CVmr9Window>,
+	public CVrWindowT<CVmr9Window>
 {
 public:
 
@@ -152,8 +178,8 @@ public:
 	CComPtr<IVMRWindowlessControl9> m_pVmrWindowlessControl;
 
 public:
-// CVmr7Window
-	static CLSID GetRendererClassIdentifier() throw()
+// CVmr9Window
+	static CLSID GetRendererClassIdentifier()
 	{
 		return CLSID_VideoMixingRenderer9;
 	}
@@ -174,20 +200,27 @@ public:
 		m_pVmrWindowlessControl = CComQIPtr<IVMRWindowlessControl9>(m_pBaseFilter);
 		__D(m_pVmrWindowlessControl, E_NOINTERFACE);
 		__C(m_pVmrWindowlessControl->SetVideoClippingWindow(m_hWnd));
-		CRect VideoPosition = GetVideoPosition();
-		_Z4(atlTraceGeneral, 4, _T(".m_pVmrWindowlessControl 0x%p, VideoPosition at (%d, %d) size (%d, %d)\n"), m_pVmrWindowlessControl, VideoPosition.left, VideoPosition.top, VideoPosition.Width(), VideoPosition.Height());
-		__C(m_pVmrWindowlessControl->SetVideoPosition(NULL, VideoPosition));
+		UpdateVideoPosition();
 	}
-	VOID Terminate() throw()
+	VOID Terminate()
 	{
 		m_pBaseFilter = NULL;
 		m_pVmrWindowlessControl = NULL;
 	}
-	CRect GetVideoPosition() const throw()
+	CRect GetVideoPosition() const
 	{
 		CRect Position;
 		_W(GetClientRect(Position));
 		return Position;
+	}
+	BOOL UpdateVideoPosition()
+	{
+		_A(m_pVmrWindowlessControl && IsWindow());
+		CRect VideoPosition = GetVideoPosition();
+		_Z4(atlTraceGeneral, 4, _T("m_pVmrWindowlessControl 0x%p, VideoPosition at (%d, %d) size (%d, %d)\n"), m_pVmrWindowlessControl, VideoPosition.left, VideoPosition.top, VideoPosition.Width(), VideoPosition.Height());
+		const HRESULT nSetVideoPositionResult = m_pVmrWindowlessControl->SetVideoPosition(NULL, VideoPosition);
+		__C(nSetVideoPositionResult); //_Z45_DSHRESULT(nSetVideoPositionResult);
+		return SUCCEEDED(nSetVideoPositionResult);
 	}
 
 // Window Message Handlers
@@ -207,7 +240,7 @@ public:
 		{
 			CPaintDC Dc(m_hWnd);
 			const HRESULT nRepaintVideoResult = m_pVmrWindowlessControl->RepaintVideo(m_hWnd, Dc);
-			_Z4(atlTraceUI, SUCCEEDED(nRepaintVideoResult) ? 6 : 4, _T("nRepaintVideoResult 0x%08x\n"), nRepaintVideoResult);
+			_Z45_DSHRESULT(nRepaintVideoResult);
 		} else
 			SetMsgHandled(FALSE);
 		return 0;
@@ -217,7 +250,7 @@ public:
 		if(m_pVmrWindowlessControl)
 		{
 			const HRESULT nDisplayModeChangedResult = m_pVmrWindowlessControl->DisplayModeChanged();
-			_Z4(atlTraceUI, 4, _T("nDisplayModeChangedResult 0x%08x\n"), nDisplayModeChangedResult);
+			_Z45_DSHRESULT(nDisplayModeChangedResult);
 		}
 		return 0;
 	}
@@ -225,19 +258,12 @@ public:
 	{
 		if(nType != SIZE_MINIMIZED)
 			if(m_pVmrWindowlessControl)
-			{
-				CRect VideoPosition = GetVideoPosition();
-				const HRESULT nSetVideoPositionResult = m_pVmrWindowlessControl->SetVideoPosition(NULL, &VideoPosition);
-				_Z4(atlTraceUI, SUCCEEDED(nSetVideoPositionResult) ? 6 : 4, _T("nSetVideoPositionResult 0x%08x\n"), nSetVideoPositionResult);
-			}
+				UpdateVideoPosition();
 		return 0;
 	}
 	LRESULT OnLButtonDblClk(UINT, CPoint Position)
 	{
-		COlePropertyFrameDialog Dialog;
-		Dialog.SetObject(m_pBaseFilter);
-		Dialog.SetObjectPages();
-		Dialog.DoModal(m_hWnd);
+		DoHelperModal(m_pBaseFilter, _T("VMR-9"));
 		return 0;
 	}
 };
@@ -246,7 +272,8 @@ public:
 // CEvrWindow
 
 class CEvrWindow :
-	public CControlWindowT<CEvrWindow>
+	public CControlWindowT<CEvrWindow>,
+	public CVrWindowT<CEvrWindow>
 {
 public:
 
@@ -264,7 +291,7 @@ public:
 
 public:
 // CEvrWindow
-	static CLSID GetRendererClassIdentifier() throw()
+	static CLSID GetRendererClassIdentifier()
 	{
 		return CLSID_EnhancedVideoRenderer;
 	}
@@ -285,21 +312,28 @@ public:
 		_A(pMfVideoDisplayControl);
 		m_pMfVideoDisplayControl = pMfVideoDisplayControl;
 		__C(pMfVideoDisplayControl->SetVideoWindow(m_hWnd));
-		CRect VideoPosition = GetVideoPosition();
-		_Z4(atlTraceGeneral, 4, _T("pMfVideoDisplayControl 0x%p, VideoPosition at (%d, %d) size (%d, %d)\n"), pMfVideoDisplayControl, VideoPosition.left, VideoPosition.top, VideoPosition.Width(), VideoPosition.Height());
-		__C(pMfVideoDisplayControl->SetVideoPosition(NULL, VideoPosition));
+		UpdateVideoPosition();
 		//__C(pMfVideoDisplayControl->SetAspectRatioMode(MFVideoARMode_None)); // As opposed to default MFVideoARMode_Picture - disable letterboxing
 	}
-	VOID Terminate() throw()
+	VOID Terminate()
 	{
 		m_pBaseFilter = NULL;
 		m_pMfVideoDisplayControl = NULL;
 	}
-	CRect GetVideoPosition() const throw()
+	CRect GetVideoPosition() const
 	{
 		CRect Position;
 		_W(GetClientRect(Position));
 		return Position;
+	}
+	BOOL UpdateVideoPosition()
+	{
+		_A(m_pMfVideoDisplayControl && IsWindow());
+		CRect VideoPosition = GetVideoPosition();
+		_Z4(atlTraceGeneral, 4, _T("m_pMfVideoDisplayControl 0x%p, VideoPosition at (%d, %d) size (%d, %d)\n"), m_pMfVideoDisplayControl, VideoPosition.left, VideoPosition.top, VideoPosition.Width(), VideoPosition.Height());
+		const HRESULT nSetVideoPositionResult = m_pMfVideoDisplayControl->SetVideoPosition(NULL, VideoPosition);
+		__C(nSetVideoPositionResult); //_Z45_DSHRESULT(nSetVideoPositionResult);
+		return SUCCEEDED(nSetVideoPositionResult);
 	}
 
 // Window Message Handlers
@@ -328,19 +362,12 @@ public:
 	{
 		if(nType != SIZE_MINIMIZED)
 			if(m_pMfVideoDisplayControl)
-			{
-				CRect VideoPosition = GetVideoPosition();
-				const HRESULT nSetVideoPositionResult = m_pMfVideoDisplayControl->SetVideoPosition(NULL, &VideoPosition);
-				_Z4(atlTraceUI, SUCCEEDED(nSetVideoPositionResult) ? 6 : 4, _T("nSetVideoPositionResult 0x%08x\n"), nSetVideoPositionResult);
-			}
+				UpdateVideoPosition();
 		return 0;
 	}
 	LRESULT OnLButtonDblClk(UINT, CPoint Position)
 	{
-		COlePropertyFrameDialog Dialog;
-		Dialog.SetObject(m_pBaseFilter);
-		Dialog.SetObjectPages();
-		Dialog.DoModal(m_hWnd);
+		DoHelperModal(m_pBaseFilter, _T("EVR"));
 		return 0;
 	}
 };
@@ -407,7 +434,7 @@ public:
 
 		public:
 		// CThreadContext
-			CThreadContext(CEvent& TerminationEvent) throw() :
+			CThreadContext(CEvent& TerminationEvent) :
 				CPushSourceFilter::CThreadContext(TerminationEvent),
 				m_nMediaSampleIndex(0)
 			{
@@ -447,11 +474,11 @@ public:
 
 		public:
 		// COutputPin
-			COutputPin() throw()
+			COutputPin()
 			{
 				_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
 			}
-			~COutputPin() throw()
+			~COutputPin()
 			{
 				_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
 			}
@@ -460,7 +487,7 @@ public:
 				//CRoCriticalSectionLock DataLock(GetDataCriticalSection());
 				_W(MediaTypeList.AddTail(GetFilter()->m_pRequestedMediaType));
 			}
-			BOOL CheckMediaType(const CMediaType& pMediaType) const throw()
+			BOOL CheckMediaType(const CMediaType& pMediaType) const
 			{
 				_A(pMediaType);
 				if(pMediaType->majortype != MEDIATYPE_Video)
@@ -471,7 +498,7 @@ public:
 				//	return TRUE;
 				return CVideoInfoHeader::Compare(&GetFilter()->m_pRequestedMediaType.GetCompatibleVideoInfoHeader(), &pMediaType.GetCompatibleVideoInfoHeader(), FALSE);
 			}
-			BOOL DecideMemAllocatorProperties(IMemAllocator* pMemAllocator, ALLOCATOR_PROPERTIES Properties) throw()
+			BOOL DecideMemAllocatorProperties(IMemAllocator* pMemAllocator, ALLOCATOR_PROPERTIES Properties)
 			{
 				static const SIZE_T g_nMiminalBufferCount = 8;
 				Properties.cBuffers = max(Properties.cBuffers, (LONG) g_nMiminalBufferCount);
@@ -495,15 +522,7 @@ public:
 			BOOL ComposeMediaSample(CThreadContext& ThreadContext, IMediaSample* pMediaSample)
 			{
 				CMediaSampleProperties OutputProperties(pMediaSample);
-				#pragma region Dynamic Type Change
-				if(OutputProperties.dwSampleFlags & AM_SAMPLE_TYPECHANGED)
-				{
-					_A(OutputProperties.pMediaType);
-					_A(CheckMediaType(OutputProperties.pMediaType));
-					SetMediaType(OutputProperties.pMediaType);
-				} else
-					_A(!OutputProperties.pMediaType);
-				#pragma endregion 
+				HandleMediaTypeChange(OutputProperties);
 				const CMediaType pMediaType = GetMediaType();
 				const CVideoInfoHeader2* pVideoInfoHeader2 = pMediaType.GetVideoInfoHeader2();
 				OutputProperties.dwTypeSpecificFlags = (!(ThreadContext.m_nMediaSampleIndex & 1) ? AM_VIDEO_FLAG_FIELD2 : AM_VIDEO_FLAG_FIELD1);
@@ -550,18 +569,18 @@ public:
 
 	public:
 	// CSourceFilter
-		CSourceFilter() throw() :
+		CSourceFilter() :
 			CBasePersistT<CSourceFilter>(GetDataCriticalSection()),
 			m_bWeave(FALSE),
 			m_bColorize(FALSE)
 		{
 			_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
 		}
-		~CSourceFilter() throw()
+		~CSourceFilter()
 		{
 			_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
 		}
-		HRESULT FinalConstruct() throw()
+		HRESULT FinalConstruct()
 		{
 			_ATLTRY
 			{
@@ -574,7 +593,7 @@ public:
 			}
 			return S_OK;
 		}
-		VOID FinalRelease() throw()
+		VOID FinalRelease()
 		{
 			m_pOutputPin = NULL;
 		}
@@ -590,7 +609,7 @@ public:
 		{
 			m_pOutputPin->DeliverNewSegment(nStartTime, nStopTime, fRate);
 		}
-		static BOOL CanCue() throw()
+		static BOOL CanCue()
 		{
 			return FALSE;
 		}
@@ -602,15 +621,15 @@ public:
 		{
 			m_pOutputPin->RunPin(nStartTime);
 		}
-		VOID PauseFilter() throw()
+		VOID PauseFilter()
 		{
 			m_pOutputPin->PausePin();
 		}
-		VOID StopFilter() throw()
+		VOID StopFilter()
 		{
 			m_pOutputPin->StopPin();
 		}
-		const CObjectPtr<COutputPin>& GetOutputPin() const throw()
+		const CObjectPtr<COutputPin>& GetOutputPin() const
 		{
 			return m_pOutputPin;
 		}
@@ -642,26 +661,26 @@ public:
 			pMediaType->lSampleSize = pBitmapInfoHeader->biSizeImage;
 			m_pRequestedMediaType = pMediaType;
 		}
-		const CMediaType& GetRequestedMediaType() const throw()
+		const CMediaType& GetRequestedMediaType() const
 		{
 			return m_pRequestedMediaType;
 		}
-		BOOL GetWeave() const throw()
+		BOOL GetWeave() const
 		{
 			CRoCriticalSectionLock DataLock(GetDataCriticalSection());
 			return m_bWeave;
 		}
-		VOID SetWeave(BOOL bWeave) throw()
+		VOID SetWeave(BOOL bWeave)
 		{
 			CRoCriticalSectionLock DataLock(GetDataCriticalSection());
 			m_bWeave = bWeave;
 		}
-		BOOL GetColorize() const throw()
+		BOOL GetColorize() const
 		{
 			CRoCriticalSectionLock DataLock(GetDataCriticalSection());
 			return m_bColorize;
 		}
-		VOID SetColorize(BOOL bColorize) throw()
+		VOID SetColorize(BOOL bColorize)
 		{
 			CRoCriticalSectionLock DataLock(GetDataCriticalSection());
 			m_bColorize = bColorize;
@@ -683,11 +702,11 @@ public:
 
 	public:
 	// CAmGraphBuilderCallback
-		CAmGraphBuilderCallback() throw()
+		CAmGraphBuilderCallback()
 		{
 			_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
 		}
-		~CAmGraphBuilderCallback() throw()
+		~CAmGraphBuilderCallback()
 		{
 			_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
 		}
@@ -699,7 +718,7 @@ public:
 		}
 
 	// IAMGraphBuilderCallback
-		STDMETHOD(SelectedFilter)(IMoniker* pMoniker) throw()
+		STDMETHOD(SelectedFilter)(IMoniker* pMoniker)
 		{
 			_Z5(atlTraceCOM, 5, _T("...\n"));
 			_ATLTRY
@@ -723,7 +742,7 @@ public:
 			}
 			return S_OK;
 		}
-		STDMETHOD(CreatedFilter)(IBaseFilter* pBaseFilter) throw()
+		STDMETHOD(CreatedFilter)(IBaseFilter* pBaseFilter)
 		{
 			_Z5(atlTraceCOM, 5, _T("...\n"));
 			_ATLTRY
@@ -740,11 +759,135 @@ public:
 	};
 
 	////////////////////////////////////////////////////
+	// CVrPropertyPageT
+
+	template <typename T>
+	class CVrPropertyPageT
+	{
+	public:
+	// CVrPropertyPageT
+		VOID HandleMediaEvent(LONG nEventCode, LONG_PTR nParameter1, LONG_PTR nParameter2)
+		{
+			T* pT = static_cast<T*>(this);
+			switch(nEventCode)
+			{
+			#pragma region EC_COMPLETE
+			case EC_COMPLETE:
+				_Z2(atlTraceGeneral, 2, _T("Filter Graph EC_COMPLETE (0x%X) Event, nParameter1 0x%08X, nParameter2 0x%08X\n"), nEventCode, nParameter1, nParameter2);
+				break;
+			#pragma endregion 
+			#pragma region EC_USERABORT
+			case EC_USERABORT:
+				_Z2(atlTraceGeneral, 2, _T("Filter Graph EC_USERABORT (0x%X) Event, nParameter1 0x%08X, nParameter2 0x%08X\n"), nEventCode, nParameter1, nParameter2);
+				break;
+			#pragma endregion 
+			#pragma region EC_ERRORABORT
+			case EC_ERRORABORT:
+				_Z2(atlTraceGeneral, 2, _T("Filter Graph EC_ERRORABORT (0x%X) Event, nParameter1 0x%08X, nParameter2 0x%08X\n"), nEventCode, nParameter1, nParameter2);
+				_A(FAILED(nParameter1));
+				AtlMessageBoxEx(pT->m_hWnd, (LPCTSTR) AtlFormatString(_T("EC_ERRORABORT Event: %s."), Ds::FormatResult((HRESULT) nParameter1).TrimRight(_T("\t\n\r ."))), IDS_ERROR, MB_ICONERROR | MB_OK);
+				break;
+			#pragma endregion 
+			#pragma region EC_PAUSED
+			case EC_PAUSED:
+				_Z2(atlTraceGeneral, 2, _T("Filter Graph EC_PAUSED (0x%X) Event, nParameter1 0x%08X, nParameter2 0x%08X\n"), nEventCode, nParameter1, nParameter2);
+				break;
+			#pragma endregion 
+			#pragma region EC_VMR_RENDERDEVICE_SET
+			case EC_VMR_RENDERDEVICE_SET:
+				{
+					CString sParameter1;
+					switch(nParameter1)
+					{
+					case VMR_RENDER_DEVICE_OVERLAY:
+						sParameter1 = AtlFormatString(_T("VMR_RENDER_DEVICE_OVERLAY (0x%02X)"), nParameter1);
+						break;
+					case VMR_RENDER_DEVICE_VIDMEM:
+						sParameter1 = AtlFormatString(_T("VMR_RENDER_DEVICE_VIDMEM (0x%02X)"), nParameter1);
+						break;
+					case VMR_RENDER_DEVICE_SYSMEM:
+						sParameter1 = AtlFormatString(_T("VMR_RENDER_DEVICE_SYSMEM (0x%02X)"), nParameter1);
+						break;
+					default:
+						sParameter1 = AtlFormatString(_T("0x%02X"), nParameter1);
+
+					}
+					_Z2(atlTraceGeneral, 2, _T("Filter Graph EC_VMR_RENDERDEVICE_SET (0x%X) Event, nParameter1 %s, nParameter2 0x%08X\n"), nEventCode, sParameter1, nParameter2);
+				}
+				break;
+			#pragma endregion 
+			default:
+				#pragma region EC_xxx (Development)
+				#if _DEVELOPMENT
+					#define A(x) { x, #x },
+					static const struct
+					{
+						LONG nEventCode;
+						LPCSTR pszEventName;
+					} g_pMap[] = 
+					{
+						A(EC_COMPLETE)
+						A(EC_USERABORT)
+						A(EC_ERRORABORT)
+						A(EC_TIME)
+						A(EC_REPAINT)
+						A(EC_STREAM_ERROR_STOPPED)
+						A(EC_STREAM_ERROR_STILLPLAYING)
+						A(EC_ERROR_STILLPLAYING)
+						A(EC_PALETTE_CHANGED)
+						A(EC_VIDEO_SIZE_CHANGED)
+						A(EC_QUALITY_CHANGE)
+						A(EC_SHUTTING_DOWN)
+						A(EC_CLOCK_CHANGED)
+						A(EC_PAUSED)
+						A(EC_OPENING_FILE)
+						A(EC_BUFFERING_DATA)
+						A(EC_FULLSCREEN_LOST)
+						A(EC_ACTIVATE)
+						A(EC_NEED_RESTART)
+						A(EC_WINDOW_DESTROYED)
+						A(EC_DISPLAY_CHANGED)
+						A(EC_STARVATION)
+						A(EC_OLE_EVENT)
+						A(EC_NOTIFY_WINDOW)
+						A(EC_STREAM_CONTROL_STOPPED)
+						A(EC_STREAM_CONTROL_STARTED)
+						A(EC_END_OF_SEGMENT)
+						A(EC_SEGMENT_STARTED)
+						A(EC_LENGTH_CHANGED)
+						A(EC_DEVICE_LOST)
+						A(EC_SAMPLE_NEEDED)
+						A(EC_PROCESSING_LATENCY)
+						A(EC_SAMPLE_LATENCY)
+						A(EC_SCRUB_TIME)
+						A(EC_STEP_COMPLETE)
+						A(EC_WMT_INDEX_EVENT)
+						A(EC_WMT_EVENT)
+					};
+					#undef A
+					BOOL bFound = FALSE;
+					for(SIZE_T nIndex = 0; nIndex < DIM(g_pMap); nIndex++)
+						if(g_pMap[nIndex].nEventCode == nEventCode)
+						{
+							_Z2(atlTraceGeneral, 2, _T("Filter Graph %hs Event, nEventCode 0x%X, nParameter1 0x%08X, nParameter2 0x%08X\n"), g_pMap[nIndex].pszEventName, nEventCode, nParameter1, nParameter2);
+							bFound = TRUE;
+							break;
+						}
+					if(!bFound)
+				#endif // _DEVELOPMENT
+				#pragma endregion 
+				_Z2(atlTraceGeneral, 2, _T("Filter Graph Event, nEventCode 0x%X, nParameter1 0x%08X, nParameter2 0x%08X\n"), nEventCode, nParameter1, nParameter2);
+			}
+		}
+	};
+
+	////////////////////////////////////////////////////
 	// CVmr7PropertyPage
 
 	class CVmr7PropertyPage :
 		public CPropertyPageT<CVmr7PropertyPage>,
-		public CDialogResize<CVmr7PropertyPage>
+		public CDialogResize<CVmr7PropertyPage>,
+		public CVrPropertyPageT<CVmr7PropertyPage>
 	{
 	public:
 		enum { IDD = IDD_MAIN_VMR7 };
@@ -828,7 +971,7 @@ public:
 			_W(m_RendererWindow.MoveWindow(VideoPosition));
 		}
 
-	// Window Message Handelrs
+	// Window Message Handlers
 		LRESULT OnInitDialog(HWND, LPARAM)
 		{
 			m_VideoStatic = GetDlgItem(IDC_MAIN_VMR7_VIDEO);
@@ -863,7 +1006,7 @@ public:
 			UpdateControls();
 			return 0;
 		}
-		LRESULT OnDestroy() throw()
+		LRESULT OnDestroy()
 		{
 			if(m_FilterGraph.m_pMediaControl)
 				_V(m_FilterGraph.m_pMediaControl->Stop());
@@ -978,16 +1121,7 @@ public:
 					__C(nGetEventResult);
 					_ATLTRY
 					{
-						switch(nEventCode)
-						{
-						case EC_ERRORABORT:
-							_Z2(atlTraceGeneral, 2, _T("nEventCode EC_ERRORABORT 0x%02X, nParameter1 0x%08x, nParameter2 0x%08x\n"), nEventCode, nParameter1, nParameter2);
-							_A(FAILED(nParameter1));
-							AtlMessageBoxEx(m_hWnd, (LPCTSTR) AtlFormatString(_T("EC_ERRORABORT Event: %s."), AtlFormatSystemMessage((HRESULT) nParameter1).TrimRight(_T("\t\n\r ."))), IDS_ERROR, MB_ICONERROR | MB_OK);
-							break;
-						default:
-							_Z1(atlTraceGeneral, 1, _T("nEventCode 0x%02X, nParameter1 0x%08x, nParameter2 0x%08x\n"), nEventCode, nParameter1, nParameter2);
-						}
+						HandleMediaEvent(nEventCode, nParameter1, nParameter2);
 					}
 					_ATLCATCHALL()
 					{
@@ -1015,7 +1149,8 @@ public:
 
 	class CVmr9PropertyPage :
 		public CPropertyPageT<CVmr9PropertyPage>,
-		public CDialogResize<CVmr9PropertyPage>
+		public CDialogResize<CVmr9PropertyPage>,
+		public CVrPropertyPageT<CVmr9PropertyPage>
 	{
 	public:
 		enum { IDD = IDD_MAIN_VMR9 };
@@ -1099,7 +1234,7 @@ public:
 			_W(m_RendererWindow.MoveWindow(VideoPosition));
 		}
 
-	// Window Message Handelrs
+	// Window Message Handlers
 		LRESULT OnInitDialog(HWND, LPARAM)
 		{
 			m_VideoStatic = GetDlgItem(IDC_MAIN_VMR9_VIDEO);
@@ -1117,6 +1252,7 @@ public:
 			CObjectPtr<CAmGraphBuilderCallback> pAmGraphBuilderCallback;
 			pAmGraphBuilderCallback.Construct();
 			pAmGraphBuilderCallback->SetGraphBuilder(m_FilterGraph.m_pFilterGraph);
+
 			const CComPtr<IBaseFilter> pBaseFilter = m_RendererWindow.CoCreateBaseFilterInstance();
 			__C(m_FilterGraph->AddFilter(pBaseFilter, CT2CW(_T("VMR-9"))));
 			m_RendererWindow.Create(m_hWnd);
@@ -1131,10 +1267,75 @@ public:
 			__C(m_FilterGraph->AddFilter(pSourceFilter, CT2CW(_T("Source"))));
 			__C(m_FilterGraph->Connect(pSourceFilter->GetOutputPin(), _FilterGraphHelper::GetFilterPin(m_RendererWindow.m_pBaseFilter)));
 			__C(m_FilterGraph.m_pMediaEventEx->SetNotifyWindow((OAHWND) m_hWnd, WM_FILTERGRAPHEVENT, (LONG_PTR) this));
+
+			__C(m_FilterGraph.m_pMediaEventEx->CancelDefaultHandling(EC_DISPLAY_CHANGED));
+			_W(GetParent().SetWindowPos(NULL, 1680 + 100, 100, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE));
+			CRect RendererPosition;
+			_W(m_RendererWindow.GetWindowRect(RendererPosition));
+
+			CComQIPtr<IVMRMonitorConfig9> pVmrMonitorConfig9 = pBaseFilter;
+			UINT nMonitor, nDefaultMonitor;
+			__C(pVmrMonitorConfig9->GetMonitor(&nMonitor));
+			__C(pVmrMonitorConfig9->GetDefaultMonitor(&nDefaultMonitor));
+			_Z4(atlTraceGeneral, 4, _T("nMonitor %d, nDefaultMonitor %d\n"), nMonitor, nDefaultMonitor);
+			CTempBufferT<VMR9MonitorInfo> pMonitorInformations(32);
+			DWORD nMonitorInformationCount = 0;
+			__C(pVmrMonitorConfig9->GetAvailableMonitors(pMonitorInformations, 32, &nMonitorInformationCount));
+			for(DWORD nMonitorIndex = 0; nMonitorIndex < nMonitorInformationCount; nMonitorIndex++)
+			{
+				const VMR9MonitorInfo& MonitorInformation = pMonitorInformations[nMonitorIndex];
+				const CRect& MonitorPosition = reinterpret_cast<const CRect&>(MonitorInformation.rcMonitor);
+				_Z4(atlTraceGeneral, 4, _T("MonitorInformation.uDevID %d, .hMon 0x%08X, .dwFlags 0x%X, .szDevice \"%ls\", .szDescription \"%ls\"\n"), 
+					MonitorInformation.uDevID,
+					//MonitorInformation.rcMonitor.left, ...
+					MonitorInformation.hMon, MonitorInformation.dwFlags, 
+					MonitorInformation.szDevice, MonitorInformation.szDescription,
+					//MonitorInformation.liDriverVersion,
+					//MonitorInformation.dwVendorId, MonitorInformation.dwDeviceId, MonitorInformation.dwSubSysId, MonitorInformation.dwRevision,
+					0);
+				if(MonitorPosition.PtInRect(RendererPosition.TopLeft()) && MonitorPosition.PtInRect(RendererPosition.BottomRight()))
+				{
+					_Z4(atlTraceGeneral, 4, _T("MonitorInformation.uDevID %d\n"), MonitorInformation.uDevID);
+					HRESULT nSetMonitorResult = pVmrMonitorConfig9->SetMonitor(MonitorInformation.uDevID);
+					_Z45_DSHRESULT(nSetMonitorResult);
+					if(nSetMonitorResult == VFW_E_WRONG_STATE)
+					{
+						const CComPtr<IPin> pInputPin = _FilterGraphHelper::GetFilterPin(pBaseFilter, PINDIR_INPUT);
+						const CComPtr<IPin> pOutputPin = _FilterGraphHelper::GetPeerPin(pInputPin);
+						__D(pInputPin && pOutputPin, E_NOINTERFACE);
+						const CMediaType pMediaType = _FilterGraphHelper::GetPinMediaType(pOutputPin);
+						__C(m_FilterGraph.Disconnect(pOutputPin));
+						__C(m_FilterGraph.Disconnect(pInputPin));
+
+
+						//m_RendererWindow.Terminate();
+						//__C(m_FilterGraph.RemoveFilter(pBaseFilter));
+						nSetMonitorResult = pVmrMonitorConfig9->SetMonitor(MonitorInformation.uDevID);
+						_Z45_DSHRESULT(nSetMonitorResult);
+						//__C(m_FilterGraph->AddFilter(pBaseFilter, CT2CW(_T("VMR-9"))));
+						//m_RendererWindow.Initialize(pBaseFilter);
+						m_RendererWindow.UpdateVideoPosition();
+						
+
+						if(SUCCEEDED(nSetMonitorResult))
+						{
+							const HRESULT nConnectResult = m_FilterGraph.ConnectDirect(pOutputPin, pInputPin, pMediaType);
+							_Z45_DSHRESULT(nConnectResult);
+							__C(nConnectResult);
+						}
+					}
+					__C(nSetMonitorResult);
+					__C(pVmrMonitorConfig9->GetMonitor(&nMonitor));
+					__C(pVmrMonitorConfig9->GetDefaultMonitor(&nDefaultMonitor));
+					_Z4(atlTraceGeneral, 4, _T("nMonitor %d, nDefaultMonitor %d\n"), nMonitor, nDefaultMonitor);
+					break;
+				}
+			}
+
 			UpdateControls();
 			return 0;
 		}
-		LRESULT OnDestroy() throw()
+		LRESULT OnDestroy()
 		{
 			if(m_FilterGraph.m_pMediaControl)
 				_V(m_FilterGraph.m_pMediaControl->Stop());
@@ -1249,16 +1450,7 @@ public:
 					__C(nGetEventResult);
 					_ATLTRY
 					{
-						switch(nEventCode)
-						{
-						case EC_ERRORABORT:
-							_Z2(atlTraceGeneral, 2, _T("nEventCode EC_ERRORABORT 0x%02X, nParameter1 0x%08x, nParameter2 0x%08x\n"), nEventCode, nParameter1, nParameter2);
-							_A(FAILED(nParameter1));
-							AtlMessageBoxEx(m_hWnd, (LPCTSTR) AtlFormatString(_T("EC_ERRORABORT Event: %s."), AtlFormatSystemMessage((HRESULT) nParameter1).TrimRight(_T("\t\n\r ."))), IDS_ERROR, MB_ICONERROR | MB_OK);
-							break;
-						default:
-							_Z1(atlTraceGeneral, 1, _T("nEventCode 0x%02X, nParameter1 0x%08x, nParameter2 0x%08x\n"), nEventCode, nParameter1, nParameter2);
-						}
+						HandleMediaEvent(nEventCode, nParameter1, nParameter2);
 					}
 					_ATLCATCHALL()
 					{
@@ -1286,7 +1478,8 @@ public:
 
 	class CEvrPropertyPage :
 		public CPropertyPageT<CEvrPropertyPage>,
-		public CDialogResize<CEvrPropertyPage>
+		public CDialogResize<CEvrPropertyPage>,
+		public CVrPropertyPageT<CEvrPropertyPage>
 	{
 	public:
 		enum { IDD = IDD_MAIN_EVR };
@@ -1370,7 +1563,7 @@ public:
 			_W(m_RendererWindow.MoveWindow(VideoPosition));
 		}
 
-	// Window Message Handelrs
+	// Window Message Handlers
 		LRESULT OnInitDialog(HWND, LPARAM)
 		{
 			m_VideoStatic = GetDlgItem(IDC_MAIN_EVR_VIDEO);
@@ -1405,7 +1598,7 @@ public:
 			UpdateControls();
 			return 0;
 		}
-		LRESULT OnDestroy() throw()
+		LRESULT OnDestroy()
 		{
 			if(m_FilterGraph.m_pMediaControl)
 				_V(m_FilterGraph.m_pMediaControl->Stop());
@@ -1521,16 +1714,7 @@ public:
 					__C(nGetEventResult);
 					_ATLTRY
 					{
-						switch(nEventCode)
-						{
-						case EC_ERRORABORT:
-							_Z2(atlTraceGeneral, 2, _T("nEventCode EC_ERRORABORT 0x%02X, nParameter1 0x%08x, nParameter2 0x%08x\n"), nEventCode, nParameter1, nParameter2);
-							_A(FAILED(nParameter1));
-							AtlMessageBoxEx(m_hWnd, (LPCTSTR) AtlFormatString(_T("EC_ERRORABORT Event: %s."), AtlFormatSystemMessage((HRESULT) nParameter1).TrimRight(_T("\t\n\r ."))), IDS_ERROR, MB_ICONERROR | MB_OK);
-							break;
-						default:
-							_Z1(atlTraceGeneral, 1, _T("nEventCode 0x%02X, nParameter1 0x%08x, nParameter2 0x%08x\n"), nEventCode, nParameter1, nParameter2);
-						}
+						HandleMediaEvent(nEventCode, nParameter1, nParameter2);
 					}
 					_ATLCATCHALL()
 					{
@@ -1566,9 +1750,9 @@ public:
 		m_Vmr9PropertyPage(this),
 		m_EvrPropertyPage(this)
 	{
-		AddPage(m_Vmr7PropertyPage);
+		//AddPage(m_Vmr7PropertyPage);
 		AddPage(m_Vmr9PropertyPage);
-		AddPage(m_EvrPropertyPage);
+		//AddPage(m_EvrPropertyPage);
 	}
 	BOOL SetInitialPosition()
 	{
@@ -1601,7 +1785,7 @@ public:
 		return CString(_PersistHelper::StringFromIdentifier(DeinterlaceMode));
 	}
 
-// Window Message Handelrs
+// Window Message Handlers
 	LRESULT OnSetLargerInitialPosition(UINT, WPARAM, LPARAM)
 	{
 		CRect Position;
