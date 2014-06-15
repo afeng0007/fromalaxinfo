@@ -191,11 +191,13 @@ public:
 			m_nMonitorInformationCount(0)
 		{
 		}
-		CMonitorInformation(IVMRMonitorConfig9* pVmrMonitorConfig)
+		CMonitorInformation(IVMRMonitorConfig9* pVmrMonitorConfig) :
+			m_nMonitorInformationCount(0)
 		{
 			Initialize(pVmrMonitorConfig);
 		}
-		CMonitorInformation(IUnknown* pUnknown)
+		CMonitorInformation(IUnknown* pUnknown) :
+			m_nMonitorInformationCount(0)
 		{
 			Initialize(pUnknown);
 		}
@@ -1337,7 +1339,6 @@ public:
 			CObjectPtr<CAmGraphBuilderCallback> pAmGraphBuilderCallback;
 			pAmGraphBuilderCallback.Construct();
 			pAmGraphBuilderCallback->SetGraphBuilder(m_FilterGraph.m_pFilterGraph);
-
 			const CComPtr<IBaseFilter> pBaseFilter = m_RendererWindow.CoCreateBaseFilterInstance();
 			__C(m_FilterGraph->AddFilter(pBaseFilter, CT2CW(_T("VMR-9"))));
 			m_RendererWindow.Create(m_hWnd);
@@ -1353,7 +1354,7 @@ public:
 			__C(m_FilterGraph->Connect(pSourceFilter->GetOutputPin(), _FilterGraphHelper::GetFilterPin(m_RendererWindow.m_pBaseFilter)));
 			__C(m_FilterGraph.m_pMediaEventEx->SetNotifyWindow((OAHWND) m_hWnd, WM_FILTERGRAPHEVENT, (LONG_PTR) this));
 			#pragma region Simulate EC_DISPLAY_CHANGED (Development)
-			#if _DEVELOPMENT
+			#if _DEVELOPMENT && FALSE
 				__C(m_FilterGraph.m_pMediaEventEx->CancelDefaultHandling(EC_DISPLAY_CHANGED));
 				_W(GetParent().SetWindowPos(NULL, 1680 + 100, 100, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE));
 				CRect RendererPosition;
@@ -1798,9 +1799,9 @@ public:
 		m_Vmr9PropertyPage(this),
 		m_EvrPropertyPage(this)
 	{
-		//AddPage(m_Vmr7PropertyPage);
+		AddPage(m_Vmr7PropertyPage);
 		AddPage(m_Vmr9PropertyPage);
-		//AddPage(m_EvrPropertyPage);
+		AddPage(m_EvrPropertyPage);
 	}
 	BOOL SetInitialPosition()
 	{
