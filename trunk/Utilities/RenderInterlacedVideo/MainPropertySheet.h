@@ -174,6 +174,91 @@ BEGIN_MSG_MAP_EX(CVmr9Window)
 END_MSG_MAP()
 
 public:
+
+	////////////////////////////////////////////////////////
+	// CMonitorInformation
+
+	class CMonitorInformation
+	{
+	public:
+		CComPtr<IVMRMonitorConfig9> m_pVmrMonitorConfig;
+		CTempBufferT<VMR9MonitorInfo> m_pMonitorInformations;
+		SIZE_T m_nMonitorInformationCount;
+
+	public:
+	// CMonitorInformation
+		CMonitorInformation() :
+			m_nMonitorInformationCount(0)
+		{
+		}
+		CMonitorInformation(IVMRMonitorConfig9* pVmrMonitorConfig)
+		{
+			Initialize(pVmrMonitorConfig);
+		}
+		CMonitorInformation(IUnknown* pUnknown)
+		{
+			Initialize(pUnknown);
+		}
+		VOID Initialize(IVMRMonitorConfig9* pVmrMonitorConfig)
+		{
+			_A(pVmrMonitorConfig);
+			m_pVmrMonitorConfig = pVmrMonitorConfig;
+			DWORD nMonitorInformationCount = 0;
+			m_pVmrMonitorConfig->GetAvailableMonitors(NULL, 0, &nMonitorInformationCount);
+			if(nMonitorInformationCount < 32)
+				nMonitorInformationCount = 32;
+			m_pMonitorInformations.Free();
+			_W(m_pMonitorInformations.Allocate(nMonitorInformationCount));
+			__C(m_pVmrMonitorConfig->GetAvailableMonitors(m_pMonitorInformations, nMonitorInformationCount, &nMonitorInformationCount));
+			m_nMonitorInformationCount = nMonitorInformationCount;
+		}
+		VOID Initialize(IUnknown* pUnknown)
+		{
+			const CComQIPtr<IVMRMonitorConfig9> pVmrMonitorConfig = pUnknown;
+			__D(pVmrMonitorConfig, E_NOINTERFACE);
+			Initialize(pVmrMonitorConfig);
+		}
+		VOID TraceMonitor() const
+		{
+			#if _DEVELOPMENT
+				_A(m_pVmrMonitorConfig);
+				UINT nMonitor, nDefaultMonitor;
+				__C(m_pVmrMonitorConfig->GetMonitor(&nMonitor));
+				__C(m_pVmrMonitorConfig->GetDefaultMonitor(&nDefaultMonitor));
+				_Z4(atlTraceGeneral, 4, _T("nMonitor %d, nDefaultMonitor %d\n"), nMonitor, nDefaultMonitor);
+			#endif // _DEVELOPMENT
+		}
+		BOOL SuggestMonitor(RECT Position, UINT& nSuggestMonitor) const
+		{
+			BOOL bSuggestMonitorAvailable = FALSE;
+			LONG nSuggestMonitorScore;
+			for(DWORD nIndex = 0; nIndex < m_nMonitorInformationCount; nIndex++)
+			{
+				const VMR9MonitorInfo& MonitorInformation = m_pMonitorInformations[nIndex];
+				const CRect& MonitorPosition = reinterpret_cast<const CRect&>(MonitorInformation.rcMonitor);
+				_Z4(atlTraceGeneral, 4, _T("MonitorInformation.uDevID %d, .hMon 0x%08X, .dwFlags 0x%X, .szDevice \"%ls\", .szDescription \"%ls\"\n"), 
+					MonitorInformation.uDevID,
+					//MonitorInformation.rcMonitor.left, ...
+					MonitorInformation.hMon, MonitorInformation.dwFlags, 
+					MonitorInformation.szDevice, MonitorInformation.szDescription,
+					//MonitorInformation.liDriverVersion,
+					//MonitorInformation.dwVendorId, MonitorInformation.dwDeviceId, MonitorInformation.dwSubSysId, MonitorInformation.dwRevision,
+					0);
+				CRect VisiblePosition;
+				if(!VisiblePosition.IntersectRect(MonitorPosition, &Position))
+					continue;
+				const LONG nScore = VisiblePosition.Height() * VisiblePosition.Width();
+				if(bSuggestMonitorAvailable && nSuggestMonitorScore > nScore)
+					continue;
+				nSuggestMonitor = MonitorInformation.uDevID;
+				bSuggestMonitorAvailable = TRUE;
+				nSuggestMonitorScore = nScore;
+			}
+			return bSuggestMonitorAvailable;
+		}
+	};
+
+public:
 	CComPtr<IBaseFilter> m_pBaseFilter;
 	CComPtr<IVMRWindowlessControl9> m_pVmrWindowlessControl;
 
@@ -1267,71 +1352,34 @@ public:
 			__C(m_FilterGraph->AddFilter(pSourceFilter, CT2CW(_T("Source"))));
 			__C(m_FilterGraph->Connect(pSourceFilter->GetOutputPin(), _FilterGraphHelper::GetFilterPin(m_RendererWindow.m_pBaseFilter)));
 			__C(m_FilterGraph.m_pMediaEventEx->SetNotifyWindow((OAHWND) m_hWnd, WM_FILTERGRAPHEVENT, (LONG_PTR) this));
-
-			__C(m_FilterGraph.m_pMediaEventEx->CancelDefaultHandling(EC_DISPLAY_CHANGED));
-			_W(GetParent().SetWindowPos(NULL, 1680 + 100, 100, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE));
-			CRect RendererPosition;
-			_W(m_RendererWindow.GetWindowRect(RendererPosition));
-
-			CComQIPtr<IVMRMonitorConfig9> pVmrMonitorConfig9 = pBaseFilter;
-			UINT nMonitor, nDefaultMonitor;
-			__C(pVmrMonitorConfig9->GetMonitor(&nMonitor));
-			__C(pVmrMonitorConfig9->GetDefaultMonitor(&nDefaultMonitor));
-			_Z4(atlTraceGeneral, 4, _T("nMonitor %d, nDefaultMonitor %d\n"), nMonitor, nDefaultMonitor);
-			CTempBufferT<VMR9MonitorInfo> pMonitorInformations(32);
-			DWORD nMonitorInformationCount = 0;
-			__C(pVmrMonitorConfig9->GetAvailableMonitors(pMonitorInformations, 32, &nMonitorInformationCount));
-			for(DWORD nMonitorIndex = 0; nMonitorIndex < nMonitorInformationCount; nMonitorIndex++)
-			{
-				const VMR9MonitorInfo& MonitorInformation = pMonitorInformations[nMonitorIndex];
-				const CRect& MonitorPosition = reinterpret_cast<const CRect&>(MonitorInformation.rcMonitor);
-				_Z4(atlTraceGeneral, 4, _T("MonitorInformation.uDevID %d, .hMon 0x%08X, .dwFlags 0x%X, .szDevice \"%ls\", .szDescription \"%ls\"\n"), 
-					MonitorInformation.uDevID,
-					//MonitorInformation.rcMonitor.left, ...
-					MonitorInformation.hMon, MonitorInformation.dwFlags, 
-					MonitorInformation.szDevice, MonitorInformation.szDescription,
-					//MonitorInformation.liDriverVersion,
-					//MonitorInformation.dwVendorId, MonitorInformation.dwDeviceId, MonitorInformation.dwSubSysId, MonitorInformation.dwRevision,
-					0);
-				if(MonitorPosition.PtInRect(RendererPosition.TopLeft()) && MonitorPosition.PtInRect(RendererPosition.BottomRight()))
+			#pragma region Simulate EC_DISPLAY_CHANGED (Development)
+			#if _DEVELOPMENT
+				__C(m_FilterGraph.m_pMediaEventEx->CancelDefaultHandling(EC_DISPLAY_CHANGED));
+				_W(GetParent().SetWindowPos(NULL, 1680 + 100, 100, 0, 0, SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE));
+				CRect RendererPosition;
+				_W(m_RendererWindow.GetWindowRect(RendererPosition));
+				CVmr9Window::CMonitorInformation MonitorInformation(pBaseFilter);
+				UINT nMonitor;
+				if(MonitorInformation.SuggestMonitor(RendererPosition, nMonitor))
 				{
-					_Z4(atlTraceGeneral, 4, _T("MonitorInformation.uDevID %d\n"), MonitorInformation.uDevID);
-					HRESULT nSetMonitorResult = pVmrMonitorConfig9->SetMonitor(MonitorInformation.uDevID);
+					_Z4(atlTraceGeneral, 4, _T("nMonitor %d\n"), nMonitor);
+					_A(MonitorInformation.m_pVmrMonitorConfig->SetMonitor(nMonitor) == VFW_E_WRONG_STATE);
+					const CComPtr<IPin> pInputPin = _FilterGraphHelper::GetFilterPin(pBaseFilter, PINDIR_INPUT);
+					const CComPtr<IPin> pOutputPin = _FilterGraphHelper::GetPeerPin(pInputPin);
+					__D(pInputPin && pOutputPin, E_NOINTERFACE);
+					const CMediaType pMediaType = _FilterGraphHelper::GetPinMediaType(pOutputPin);
+					__C(m_FilterGraph.Disconnect(pOutputPin));
+					__C(m_FilterGraph.Disconnect(pInputPin));
+					const HRESULT nSetMonitorResult = MonitorInformation.m_pVmrMonitorConfig->SetMonitor(nMonitor);
 					_Z45_DSHRESULT(nSetMonitorResult);
-					if(nSetMonitorResult == VFW_E_WRONG_STATE)
-					{
-						const CComPtr<IPin> pInputPin = _FilterGraphHelper::GetFilterPin(pBaseFilter, PINDIR_INPUT);
-						const CComPtr<IPin> pOutputPin = _FilterGraphHelper::GetPeerPin(pInputPin);
-						__D(pInputPin && pOutputPin, E_NOINTERFACE);
-						const CMediaType pMediaType = _FilterGraphHelper::GetPinMediaType(pOutputPin);
-						__C(m_FilterGraph.Disconnect(pOutputPin));
-						__C(m_FilterGraph.Disconnect(pInputPin));
-
-
-						//m_RendererWindow.Terminate();
-						//__C(m_FilterGraph.RemoveFilter(pBaseFilter));
-						nSetMonitorResult = pVmrMonitorConfig9->SetMonitor(MonitorInformation.uDevID);
-						_Z45_DSHRESULT(nSetMonitorResult);
-						//__C(m_FilterGraph->AddFilter(pBaseFilter, CT2CW(_T("VMR-9"))));
-						//m_RendererWindow.Initialize(pBaseFilter);
-						m_RendererWindow.UpdateVideoPosition();
-						
-
-						if(SUCCEEDED(nSetMonitorResult))
-						{
-							const HRESULT nConnectResult = m_FilterGraph.ConnectDirect(pOutputPin, pInputPin, pMediaType);
-							_Z45_DSHRESULT(nConnectResult);
-							__C(nConnectResult);
-						}
-					}
-					__C(nSetMonitorResult);
-					__C(pVmrMonitorConfig9->GetMonitor(&nMonitor));
-					__C(pVmrMonitorConfig9->GetDefaultMonitor(&nDefaultMonitor));
-					_Z4(atlTraceGeneral, 4, _T("nMonitor %d, nDefaultMonitor %d\n"), nMonitor, nDefaultMonitor);
-					break;
+					m_RendererWindow.UpdateVideoPosition();
+					const HRESULT nConnectResult = m_FilterGraph.ConnectDirect(pOutputPin, pInputPin, pMediaType);
+					_Z45_DSHRESULT(nConnectResult);
+					if(FAILED(nConnectResult))
+						__C(m_FilterGraph.Connect(pOutputPin, pInputPin));
 				}
-			}
-
+			#endif // _DEVELOPMENT
+			#pragma endregion
 			UpdateControls();
 			return 0;
 		}
