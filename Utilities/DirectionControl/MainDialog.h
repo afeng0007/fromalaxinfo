@@ -121,8 +121,9 @@ public:
 	{
 		CPoint Value;
 		const DOUBLE S = sin(fAngle), C = cos(fAngle);
-		Value.x = (LONG) Round(fX * C + fY * S);
-		Value.y = (LONG) Round(fX * S - fY * C);
+		// NOTE: Clockwise from Right
+		Value.x = (LONG) Round(+ fX * C + fY * S);
+		Value.y = (LONG) Round(- fX * S + fY * C);
 		Value.Offset(m_CenterPosition);
 		return Value;
 	}
@@ -137,9 +138,9 @@ public:
 		if(!m_bLayoutValid)
 			return;
 		m_nToleranceArrowSize = m_nArrowSize * 3 / 4;
-		m_ArrowHandlePosition = Transform(0, m_nArrowSize - 6, m_fAngle);
-		m_ToleranceArrowHandlePositionA = Transform(0, m_nToleranceArrowSize - 6, m_fAngle - m_fToleranceAngle / 2);
-		m_ToleranceArrowHandlePositionB = Transform(0, m_nToleranceArrowSize - 6, m_fAngle + m_fToleranceAngle / 2);
+		m_ArrowHandlePosition = Transform(m_nArrowSize - 6, 0, m_fAngle);
+		m_ToleranceArrowHandlePositionA = Transform(m_nToleranceArrowSize - 6, 0, m_fAngle - m_fToleranceAngle / 2);
+		m_ToleranceArrowHandlePositionB = Transform(m_nToleranceArrowSize - 6, 0, m_fAngle + m_fToleranceAngle / 2);
 	}
 	VOID EraseBackground(CDCHandle Dc)
 	{
@@ -167,7 +168,7 @@ public:
 				if(m_fToleranceAngle > 0)
 				{
 					Dc.MoveTo(m_CenterPosition.x, m_CenterPosition.y);
-					Dc.AngleArc(m_CenterPosition.x, m_CenterPosition.y, 2 * m_nToleranceArrowSize / 3, 90.f - (FLOAT) ((m_fAngle - m_fToleranceAngle / 2) * 180 / M_PI), (FLOAT) (-m_fToleranceAngle * 180 / M_PI));
+					Dc.AngleArc(m_CenterPosition.x, m_CenterPosition.y, 2 * m_nToleranceArrowSize / 3, (FLOAT) ((m_fAngle - m_fToleranceAngle / 2) * 180 / M_PI), (FLOAT) (m_fToleranceAngle * 180 / M_PI));
 					static const LONG A = 3;
 					static const LONG B = 7;
 					static const LONG C = 12;
@@ -175,26 +176,26 @@ public:
 					{
 						const DOUBLE fAngle = m_fAngle - m_fToleranceAngle / 2;
 						POINT pArrowPoints[] = {
-							Transform(-A, 0, fAngle),
-							Transform(-A, m_nToleranceArrowSize - C, fAngle),
-							Transform(-B, m_nToleranceArrowSize - D, fAngle),
-							Transform( 0, m_nToleranceArrowSize,     fAngle),
-							Transform(+B, m_nToleranceArrowSize - D, fAngle),
-							Transform(+A, m_nToleranceArrowSize - C, fAngle),
-							Transform(+A, 0, fAngle),
+							Transform(                        0, -A, fAngle),
+							Transform(m_nToleranceArrowSize - C, -A, fAngle),
+							Transform(m_nToleranceArrowSize - D, -B, fAngle),
+							Transform(m_nToleranceArrowSize,      0, fAngle),
+							Transform(m_nToleranceArrowSize - D, +B, fAngle),
+							Transform(m_nToleranceArrowSize - C, +A, fAngle),
+							Transform(                        0, +A, fAngle),
 						};
 						Dc.Polygon(pArrowPoints, DIM(pArrowPoints));
 					}
 					{
 						const DOUBLE fAngle = m_fAngle + m_fToleranceAngle / 2;
 						POINT pArrowPoints[] = {
-							Transform(-A, 0, fAngle),
-							Transform(-A, m_nToleranceArrowSize - C, fAngle),
-							Transform(-B, m_nToleranceArrowSize - D, fAngle),
-							Transform( 0, m_nToleranceArrowSize,     fAngle),
-							Transform(+B, m_nToleranceArrowSize - D, fAngle),
-							Transform(+A, m_nToleranceArrowSize - C, fAngle),
-							Transform(+A, 0, fAngle),
+							Transform(                        0, -A, fAngle),
+							Transform(m_nToleranceArrowSize - C, -A, fAngle),
+							Transform(m_nToleranceArrowSize - D, -B, fAngle),
+							Transform(m_nToleranceArrowSize,      0, fAngle),
+							Transform(m_nToleranceArrowSize - D, +B, fAngle),
+							Transform(m_nToleranceArrowSize - C, +A, fAngle),
+							Transform(                        0, +A, fAngle),
 						};
 						Dc.Polygon(pArrowPoints, DIM(pArrowPoints));
 					}
@@ -208,13 +209,13 @@ public:
 			static const LONG C = 12;
 			static const LONG D = 14;
 			POINT pArrowPoints[] = {
-				Transform(-A, 0, m_fAngle),
-				Transform(-A, m_nArrowSize - C, m_fAngle),
-				Transform(-B, m_nArrowSize - D, m_fAngle),
-				Transform( 0, m_nArrowSize,     m_fAngle),
-				Transform(+B, m_nArrowSize - D, m_fAngle),
-				Transform(+A, m_nArrowSize - C, m_fAngle),
-				Transform(+A, 0, m_fAngle),
+				Transform(               0, -A, m_fAngle),
+				Transform(m_nArrowSize - C, -A, m_fAngle),
+				Transform(m_nArrowSize - D, -B, m_fAngle),
+				Transform(m_nArrowSize,      0, m_fAngle),
+				Transform(m_nArrowSize - D, +B, m_fAngle),
+				Transform(m_nArrowSize - C, +A, m_fAngle),
+				Transform(               0, +A, m_fAngle),
 			};
 			Dc.Polygon(pArrowPoints, DIM(pArrowPoints));
 			#pragma endregion 
@@ -386,7 +387,7 @@ public:
 		case 1: // Arrow Handle
 			{
 				CPoint AlignPosition = Position - m_DragRelativeButtonDownPosition;
-				const DOUBLE fAngle = atan2((DOUBLE) (Position.y - m_CenterPosition.y), (DOUBLE) (Position.x - m_CenterPosition.x)) + M_PI / 2;
+				const DOUBLE fAngle = atan2(- (DOUBLE) (Position.y - m_CenterPosition.y), (DOUBLE) (Position.x - m_CenterPosition.x));
 				m_fAngle = fAngle;
 				m_nVersion++;
 			}
@@ -394,7 +395,7 @@ public:
 		case 2: // Tolerance Arrow Handle (A)
 			{
 				CPoint AlignPosition = Position - m_DragRelativeButtonDownPosition;
-				const DOUBLE fAngle = atan2((DOUBLE) (Position.y - m_CenterPosition.y), (DOUBLE) (Position.x - m_CenterPosition.x)) + M_PI / 2;
+				const DOUBLE fAngle = atan2(- (DOUBLE) (Position.y - m_CenterPosition.y), (DOUBLE) (Position.x - m_CenterPosition.x));
 				DOUBLE fToleranceAngle = abs(fAngle - m_fAngle);
 				if(fToleranceAngle > M_PI)
 					fToleranceAngle = 2 * M_PI - fToleranceAngle;
@@ -406,7 +407,7 @@ public:
 		case 3: // Tolerance Arrow Handle (B)
 			{
 				CPoint AlignPosition = Position - m_DragRelativeButtonDownPosition;
-				const DOUBLE fAngle = atan2((DOUBLE) (Position.y - m_CenterPosition.y), (DOUBLE) (Position.x - m_CenterPosition.x)) + M_PI / 2;
+				const DOUBLE fAngle = atan2(- (DOUBLE) (Position.y - m_CenterPosition.y), (DOUBLE) (Position.x - m_CenterPosition.x));
 				DOUBLE fToleranceAngle = abs(fAngle - m_fAngle);
 				if(fToleranceAngle > M_PI)
 					fToleranceAngle = 2 * M_PI - fToleranceAngle;
