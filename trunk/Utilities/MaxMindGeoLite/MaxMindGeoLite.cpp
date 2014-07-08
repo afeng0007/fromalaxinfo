@@ -18,7 +18,13 @@
 
 STDAPI DllCanUnloadNow() throw()
 {
-    return _AtlModule.DllCanUnloadNow();
+	#if FALSE
+	    const HRESULT nDllCanUnloadNowResult = _AtlModule.DllCanUnloadNow();
+	    _Z2(atlTraceCOM, 2, _T("nDllCanUnloadNowResult 0x%08x, _AtlModule.GetLockCount() %d\n"), nDllCanUnloadNowResult, _AtlModule.GetLockCount());
+	    return nDllCanUnloadNowResult;
+	#else
+	    return _AtlModule.DllCanUnloadNow();
+	#endif
 }
 
 STDAPI DllGetClassObject(REFCLSID ClassIdentifier, REFIID InterfaceIdentifier, LPVOID* ppvObject) throw()
