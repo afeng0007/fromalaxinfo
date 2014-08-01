@@ -2659,7 +2659,14 @@ public:
 		if(nExtraDataSize)
 		{
 			if(!pnExtraData)
+			{
+				if(nExtraDataSize > pMediaType->cbFormat)
+					nExtraDataSize = pMediaType->cbFormat;
 				pnExtraData = pMediaType->pbFormat + pMediaType->cbFormat - nExtraDataSize;
+			}
+			const SSIZE_T nExtraDataExcessSize = (pnExtraData + nExtraDataSize) - (pMediaType->pbFormat + pMediaType->cbFormat);
+			if(nExtraDataExcessSize > 0)
+				nExtraDataSize -= min((SIZE_T) nExtraDataExcessSize, nExtraDataSize);
 			sText += AtlFormatString(_T("  * ") _T("Extra Data: %s") _T("\r\n"), I(AtlFormatData(pnExtraData, nExtraDataSize).TrimRight()));
 		}
 		#pragma endregion 
