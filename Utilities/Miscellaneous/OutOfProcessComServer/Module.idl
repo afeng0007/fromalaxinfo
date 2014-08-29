@@ -1,0 +1,35 @@
+// OutOfProcessComServer.idl : IDL source for OutOfProcessComServer
+//
+
+// This file will be processed by the MIDL tool to
+// produce the type library (OutOfProcessComServer.tlb) and marshalling code.
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	object,
+	uuid(69AD79FA-E694-47C8-801F-9742B3EDE466),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface IFoo : IDispatch{
+};
+[
+	uuid(3BFC1CF9-B938-4290-973F-0FFFD12BAFE7),
+	version(1.0),
+]
+library OutOfProcessComServerLib
+{
+	importlib("stdole2.tlb");
+	[
+		uuid(90681F9D-B4F6-4860-9C5E-4BE57EE0FEBD)		
+	]
+	coclass Foo
+	{
+		[default] interface IFoo;
+	};
+};
+
+import "shobjidl.idl";
