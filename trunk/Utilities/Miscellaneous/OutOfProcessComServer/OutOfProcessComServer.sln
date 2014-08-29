@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Server", "OutOfProcessComServer.vcxproj", "{1DC22EB7-EB2F-45A8-B137-B858BD07DEA3}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OutOfProcessComServerPS", "OutOfProcessComServerPS.vcxproj", "{3BE92149-512B-40BC-AF0E-9300D1E2D188}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1DC22EB7-EB2F-45A8-B137-B858BD07DEA3} = {1DC22EB7-EB2F-45A8-B137-B858BD07DEA3}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Client", "Client\Client.vcxproj", "{E864E5CC-98FB-4940-BAFD-22CA648EFF93}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1DC22EB7-EB2F-45A8-B137-B858BD07DEA3} = {1DC22EB7-EB2F-45A8-B137-B858BD07DEA3}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1DC22EB7-EB2F-45A8-B137-B858BD07DEA3}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1DC22EB7-EB2F-45A8-B137-B858BD07DEA3}.Debug|Win32.Build.0 = Debug|Win32
+		{1DC22EB7-EB2F-45A8-B137-B858BD07DEA3}.Release|Win32.ActiveCfg = Release|Win32
+		{1DC22EB7-EB2F-45A8-B137-B858BD07DEA3}.Release|Win32.Build.0 = Release|Win32
+		{3BE92149-512B-40BC-AF0E-9300D1E2D188}.Debug|Win32.ActiveCfg = Debug|Win32
+		{3BE92149-512B-40BC-AF0E-9300D1E2D188}.Release|Win32.ActiveCfg = Release|Win32
+		{E864E5CC-98FB-4940-BAFD-22CA648EFF93}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E864E5CC-98FB-4940-BAFD-22CA648EFF93}.Debug|Win32.Build.0 = Debug|Win32
+		{E864E5CC-98FB-4940-BAFD-22CA648EFF93}.Release|Win32.ActiveCfg = Release|Win32
+		{E864E5CC-98FB-4940-BAFD-22CA648EFF93}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
