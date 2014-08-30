@@ -16,7 +16,7 @@
 #pragma once
 
 ////////////////////////////////////////////////////////////
-// Windows definitions
+// Windows
 
 #define STRICT
 #define INLINE_HRESULT_FROM_WIN32
@@ -25,7 +25,7 @@
 #include "targetver.h"
 
 ////////////////////////////////////////////////////////////
-// ATL definitions
+// ATL
 
 #define _ATL_APARTMENT_THREADED
 #define _ATL_NO_AUTOMATIC_NAMESPACE
@@ -76,6 +76,8 @@ using namespace WTL;
 
 ////////////////////////////////////////////////////////////
 // Alax.Info ATL/WTL
+
+#define DIRECTSHOWSPY
 
 #define REGISTRY_PRODUCTROOT	_T("SOFTWARE\\Alax.Info\\Utility")
 #define REGISTRY_FILEROOT		REGISTRY_PRODUCTROOT _T("\\DirectShowSpy")

@@ -421,3 +421,10 @@ public:
 		_Z_EXCEPTION(); \
 	}
 
+#if !defined(DIRECTSHOWSPY_NAMESPACE_PREFIX) 
+	#if defined(DIRECTSHOWSPY) 
+		#define DIRECTSHOWSPY_NAMESPACE_PREFIX
+	#else
+		#define DIRECTSHOWSPY_NAMESPACE_PREFIX AlaxInfoDirectShowSpy::
+	#endif // DIRECTSHOWSPY
+#endif // !defined(DIRECTSHOWSPY_NAMESPACE_PREFIX) 

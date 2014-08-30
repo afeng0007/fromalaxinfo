@@ -53,7 +53,7 @@ public:
 	{
 		CComVariantArray vValue;
 		CRoArrayT<CComVariantArray> Array;
-		const CComQIPtr<IRunPropertyBagAware> pRunPropertyBagAware = pBaseFilterUnknown;
+		const CComQIPtr<DIRECTSHOWSPY_NAMESPACE_PREFIX IRunPropertyBagAware> pRunPropertyBagAware = pBaseFilterUnknown;
 		CComQIPtr<IPropertyBag2> pPropertyBag2;
 		#pragma region Extension
 		if(!pRunPropertyBagAware && bAllowExtension)
@@ -279,20 +279,55 @@ public:
 	{
 		return GetPropertyBagText(reinterpret_cast<CComVariantArray&>(vValue));
 	}
-	static CString GetPropertyBagText(IUnknown* pBaseFilterUnknown, ISpy* pSpy = NULL)
+	__if_exists(ISpy)
 	{
-		const CComQIPtr<IRunPropertyBagAware> pRunPropertyBagAware = pBaseFilterUnknown;
-		CComQIPtr<ISpy> pEffectiveSpy = pSpy;
-		if(!pEffectiveSpy && pRunPropertyBagAware)
-			pEffectiveSpy = _FilterGraphHelper::GetFilterGraph(CComQIPtr<IBaseFilter>(pBaseFilterUnknown));
-		if(pEffectiveSpy)
+		static CString GetPropertyBagText(IUnknown* pBaseFilterUnknown, ISpy* pSpy = NULL)
 		{
-			CComVariantArray vValue;
-			__C(pEffectiveSpy->ReadRunPropertyBag(pBaseFilterUnknown, ATL_VARIANT_TRUE, &vValue));
-			return GetPropertyBagText(vValue);
+			const CComQIPtr<IRunPropertyBagAware> pRunPropertyBagAware = pBaseFilterUnknown;
+			CComQIPtr<ISpy> pEffectiveSpy = pSpy;
+			if(!pEffectiveSpy && pRunPropertyBagAware)
+				pEffectiveSpy = _FilterGraphHelper::GetFilterGraph(CComQIPtr<IBaseFilter>(pBaseFilterUnknown));
+			if(pEffectiveSpy)
+			{
+				CComVariantArray vValue;
+				__C(pEffectiveSpy->ReadRunPropertyBag(pBaseFilterUnknown, ATL_VARIANT_TRUE, &vValue));
+				return GetPropertyBagText(vValue);
+			}
+			if(!pRunPropertyBagAware)
+				return _T("");
+			return GetPropertyBagText(ReadRunPropertyBag(pRunPropertyBagAware));
 		}
-		if(!pRunPropertyBagAware)
-			return _T("");
-		return GetPropertyBagText(ReadRunPropertyBag(pRunPropertyBagAware));
 	}
 };
+
+#if !defined(DIRECTSHOWSPY)
+
+////////////////////////////////////////////////////////////
+// CRunPropertyBagAwareT
+
+template <typename T>
+class ATL_NO_VTABLE CRunPropertyBagAwareT :
+	public IDispatchImpl<DIRECTSHOWSPY_NAMESPACE_PREFIX IRunPropertyBagAware, &__uuidof(DIRECTSHOWSPY_NAMESPACE_PREFIX IRunPropertyBagAware), &__uuidof(DIRECTSHOWSPY_NAMESPACE_PREFIX __AlaxInfoDirectShowSpy)>
+{
+public:
+// CRunPropertyBagAwareT
+
+// AlaxInfoDirectShowSpy::IRunPropertyBagAware
+	STDMETHOD(get_Value)(IUnknown** ppPropertyBagUnknown)
+	{
+		_Z4(atlTraceCOM, 4, _T("...\n"));
+		_ATLTRY
+		{
+			__D(ppPropertyBagUnknown, E_POINTER);
+			T* pT = static_cast<T*>(this);
+			*ppPropertyBagUnknown = (IPropertyBag*) pT->CreatePerformancePropertyBag().Detach();
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return S_OK;
+	}
+};
+
+#endif // !defined(DIRECTSHOWSPY)
