@@ -34,41 +34,41 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Trace|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <PlatformToolset>v100</PlatformToolset>
+    <PlatformToolset>v110_xp</PlatformToolset>
     <UseOfAtl>Static</UseOfAtl>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <PlatformToolset>v100</PlatformToolset>
+    <PlatformToolset>v110_xp</PlatformToolset>
     <UseOfAtl>Static</UseOfAtl>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <PlatformToolset>v100</PlatformToolset>
+    <PlatformToolset>v110_xp</PlatformToolset>
     <UseOfAtl>Dynamic</UseOfAtl>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Trace|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <PlatformToolset>v100</PlatformToolset>
+    <PlatformToolset>v110_xp</PlatformToolset>
     <UseOfAtl>Static</UseOfAtl>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <PlatformToolset>v100</PlatformToolset>
+    <PlatformToolset>v110_xp</PlatformToolset>
     <UseOfAtl>Static</UseOfAtl>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
-    <PlatformToolset>v100</PlatformToolset>
+    <PlatformToolset>v110_xp</PlatformToolset>
     <UseOfAtl>Dynamic</UseOfAtl>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -145,11 +145,11 @@
       <MkTypLibCompatible>false</MkTypLibCompatible>
       <TargetEnvironment>Win32</TargetEnvironment>
       <GenerateStublessProxies>true</GenerateStublessProxies>
-      <TypeLibraryName>$(IntDir)DirectShowSpy.tlb</TypeLibraryName>
-      <HeaderFileName>DirectShowSpy_i.h</HeaderFileName>
+      <TypeLibraryName>$(IntDir)Module.tlb</TypeLibraryName>
+      <HeaderFileName>Module_i.h</HeaderFileName>
       <DllDataFileName />
-      <InterfaceIdentifierFileName>DirectShowSpy_i.c</InterfaceIdentifierFileName>
-      <ProxyFileName>DirectShowSpy_p.c</ProxyFileName>
+      <InterfaceIdentifierFileName>Module_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>Module_p.c</ProxyFileName>
       <ValidateAllParameters>true</ValidateAllParameters>
     </Midl>
     <ClCompile>
@@ -170,7 +170,7 @@
     </ResourceCompile>
     <Link>
       <RegisterOutput>true</RegisterOutput>
-      <ModuleDefinitionFile>.\DirectShowSpy.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>.\Module.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX86</TargetMachine>
@@ -183,11 +183,11 @@
       <MkTypLibCompatible>false</MkTypLibCompatible>
       <TargetEnvironment>X64</TargetEnvironment>
       <GenerateStublessProxies>true</GenerateStublessProxies>
-      <TypeLibraryName>$(IntDir)DirectShowSpy.tlb</TypeLibraryName>
-      <HeaderFileName>DirectShowSpy_i.h</HeaderFileName>
+      <TypeLibraryName>$(IntDir)Module.tlb</TypeLibraryName>
+      <HeaderFileName>Module_i.h</HeaderFileName>
       <DllDataFileName />
-      <InterfaceIdentifierFileName>DirectShowSpy_i.c</InterfaceIdentifierFileName>
-      <ProxyFileName>DirectShowSpy_p.c</ProxyFileName>
+      <InterfaceIdentifierFileName>Module_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>Module_p.c</ProxyFileName>
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
@@ -207,7 +207,7 @@
     </ResourceCompile>
     <Link>
       <RegisterOutput>true</RegisterOutput>
-      <ModuleDefinitionFile>.\DirectShowSpy.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>.\Module.def</ModuleDefinitionFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
       <TargetMachine>MachineX64</TargetMachine>
@@ -220,11 +220,11 @@
       <MkTypLibCompatible>false</MkTypLibCompatible>
       <TargetEnvironment>Win32</TargetEnvironment>
       <GenerateStublessProxies>true</GenerateStublessProxies>
-      <TypeLibraryName>$(IntDir)DirectShowSpy.tlb</TypeLibraryName>
-      <HeaderFileName>DirectShowSpy_i.h</HeaderFileName>
+      <TypeLibraryName>$(IntDir)Module.tlb</TypeLibraryName>
+      <HeaderFileName>Module_i.h</HeaderFileName>
       <DllDataFileName />
-      <InterfaceIdentifierFileName>DirectShowSpy_i.c</InterfaceIdentifierFileName>
-      <ProxyFileName>DirectShowSpy_p.c</ProxyFileName>
+      <InterfaceIdentifierFileName>Module_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>Module_p.c</ProxyFileName>
       <ValidateAllParameters>true</ValidateAllParameters>
     </Midl>
     <ClCompile>
@@ -250,7 +250,7 @@
     </ResourceCompile>
     <Link>
       <RegisterOutput>true</RegisterOutput>
-      <ModuleDefinitionFile>.\DirectShowSpy.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>.\Module.def</ModuleDefinitionFile>
       <DelayLoadDLLs>dbghelp.dll;psapi.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -266,11 +266,11 @@
       <MkTypLibCompatible>false</MkTypLibCompatible>
       <TargetEnvironment>X64</TargetEnvironment>
       <GenerateStublessProxies>true</GenerateStublessProxies>
-      <TypeLibraryName>$(IntDir)DirectShowSpy.tlb</TypeLibraryName>
-      <HeaderFileName>DirectShowSpy_i.h</HeaderFileName>
+      <TypeLibraryName>$(IntDir)Module.tlb</TypeLibraryName>
+      <HeaderFileName>Module_i.h</HeaderFileName>
       <DllDataFileName />
-      <InterfaceIdentifierFileName>DirectShowSpy_i.c</InterfaceIdentifierFileName>
-      <ProxyFileName>DirectShowSpy_p.c</ProxyFileName>
+      <InterfaceIdentifierFileName>Module_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>Module_p.c</ProxyFileName>
     </Midl>
     <ClCompile>
       <Optimization>Full</Optimization>
@@ -295,7 +295,7 @@
     </ResourceCompile>
     <Link>
       <RegisterOutput>true</RegisterOutput>
-      <ModuleDefinitionFile>.\DirectShowSpy.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>.\Module.def</ModuleDefinitionFile>
       <DelayLoadDLLs>dbghelp.dll;psapi.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -311,11 +311,11 @@
       <MkTypLibCompatible>false</MkTypLibCompatible>
       <TargetEnvironment>Win32</TargetEnvironment>
       <GenerateStublessProxies>true</GenerateStublessProxies>
-      <TypeLibraryName>$(IntDir)DirectShowSpy.tlb</TypeLibraryName>
-      <HeaderFileName>DirectShowSpy_i.h</HeaderFileName>
+      <TypeLibraryName>$(IntDir)Module.tlb</TypeLibraryName>
+      <HeaderFileName>Module_i.h</HeaderFileName>
       <DllDataFileName />
-      <InterfaceIdentifierFileName>DirectShowSpy_i.c</InterfaceIdentifierFileName>
-      <ProxyFileName>DirectShowSpy_p.c</ProxyFileName>
+      <InterfaceIdentifierFileName>Module_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>Module_p.c</ProxyFileName>
       <ValidateAllParameters>true</ValidateAllParameters>
     </Midl>
     <ClCompile>
@@ -341,7 +341,7 @@
     </ResourceCompile>
     <Link>
       <RegisterOutput>true</RegisterOutput>
-      <ModuleDefinitionFile>.\DirectShowSpy.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>.\Module.def</ModuleDefinitionFile>
       <DelayLoadDLLs>dbghelp.dll;psapi.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -357,11 +357,11 @@
       <MkTypLibCompatible>false</MkTypLibCompatible>
       <TargetEnvironment>X64</TargetEnvironment>
       <GenerateStublessProxies>true</GenerateStublessProxies>
-      <TypeLibraryName>$(IntDir)DirectShowSpy.tlb</TypeLibraryName>
-      <HeaderFileName>DirectShowSpy_i.h</HeaderFileName>
+      <TypeLibraryName>$(IntDir)Module.tlb</TypeLibraryName>
+      <HeaderFileName>Module_i.h</HeaderFileName>
       <DllDataFileName />
-      <InterfaceIdentifierFileName>DirectShowSpy_i.c</InterfaceIdentifierFileName>
-      <ProxyFileName>DirectShowSpy_p.c</ProxyFileName>
+      <InterfaceIdentifierFileName>Module_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>Module_p.c</ProxyFileName>
     </Midl>
     <ClCompile>
       <Optimization>Full</Optimization>
@@ -386,7 +386,7 @@
     </ResourceCompile>
     <Link>
       <RegisterOutput>true</RegisterOutput>
-      <ModuleDefinitionFile>.\DirectShowSpy.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>.\Module.def</ModuleDefinitionFile>
       <DelayLoadDLLs>dbghelp.dll;psapi.dll;%(DelayLoadDLLs)</DelayLoadDLLs>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <SubSystem>Windows</SubSystem>
@@ -398,7 +398,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Configuration.cpp" />
-    <ClCompile Include="DirectShowSpy.cpp" />
+    <ClCompile Include="Module.cpp" />
     <ClCompile Include="dllmain.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </PrecompiledHeader>
@@ -429,7 +429,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="DirectShowSpy_i.c">
+    <ClCompile Include="Module_i.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </PrecompiledHeader>
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>
@@ -452,15 +452,15 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\Repository-Private\Utilities\EmailTools\_Bin\Win32\Release\EmailTools\EmailTools.tlb" />
-    <None Include="DirectShowSpy.def" />
-    <None Include="DirectShowSpy.rgs" />
+    <None Include="Module.def" />
+    <None Include="Module.rgs" />
     <None Include="FilterGraphSpy.rgs" />
     <None Include="FilterMapperSpy.rgs" />
     <None Include="GenericClass.rgs" />
     <None Include="GenericPropertyPage.rgs" />
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="DirectShowSpy.idl" />
+    <Midl Include="Module.idl" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AboutDialog.h" />
@@ -478,7 +478,7 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="SystemDeviceEnumeratorSpy.h" />
     <ClInclude Include="targetver.h" />
-    <ClInclude Include="DirectShowSpy_i.h" />
+    <ClInclude Include="Module_i.h" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="AddFilter.ico" />
@@ -492,7 +492,7 @@
     <Image Include="Success.ico" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="DirectShowSpy.rc" />
+    <ResourceCompile Include="Module.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

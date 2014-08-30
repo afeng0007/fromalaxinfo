@@ -22,9 +22,6 @@
     <ClCompile Include="Configuration.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DirectShowSpy.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="dllmain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -34,20 +31,17 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="DirectShowSpy_i.c">
-      <Filter>Generated Files</Filter>
-    </ClCompile>
     <ClCompile Include="Helper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Module.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Module_i.c">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="DirectShowSpy.def">
-      <Filter>Source Files</Filter>
-    </None>
-    <None Include="DirectShowSpy.rgs">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="FilterGraphSpy.rgs">
       <Filter>Resource Files</Filter>
     </None>
@@ -63,11 +57,12 @@
     <None Include="GenericPropertyPage.rgs">
       <Filter>Resource Files</Filter>
     </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Midl Include="DirectShowSpy.idl">
+    <None Include="Module.rgs">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="Module.def">
       <Filter>Source Files</Filter>
-    </Midl>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AboutDialog.h">
@@ -103,9 +98,6 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="DirectShowSpy_i.h">
-      <Filter>Generated Files</Filter>
-    </ClInclude>
     <ClInclude Include="FilterGraphList.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -117,6 +109,9 @@
     </ClInclude>
     <ClInclude Include="RunPropertyBag.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Module_i.h">
+      <Filter>Generated Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -149,8 +144,13 @@
     </Image>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="DirectShowSpy.rc">
+    <ResourceCompile Include="Module.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Midl Include="Module.idl">
+      <Filter>Source Files</Filter>
+    </Midl>
   </ItemGroup>
 </Project>

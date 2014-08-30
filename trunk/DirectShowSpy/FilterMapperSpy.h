@@ -17,7 +17,7 @@
 
 #include "rodshow.h"
 #include <..\Samples\multimedia\directshow\misc\mapper\fil_data.h>
-#include "DirectShowSpy_i.h"
+#include "Module_i.h"
 #include "Common.h"
 
 ////////////////////////////////////////////////////////////

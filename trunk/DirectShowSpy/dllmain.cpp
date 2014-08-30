@@ -15,7 +15,7 @@
 
 #include "stdafx.h"
 #include "resource.h"
-#include "DirectShowSpy_i.h"
+#include "Module_i.h"
 #include "dllmain.h"
 
 ////////////////////////////////////////////////////////////

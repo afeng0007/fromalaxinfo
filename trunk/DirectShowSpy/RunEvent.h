@@ -15,8 +15,6 @@
 
 #pragma once
 
-#include "DirectShowSpy_i.h"
-
 ////////////////////////////////////////////////////////////
 // CRunEventHelper
 
@@ -27,7 +25,7 @@ public:
 	////////////////////////////////////////////////////////
 	// CEventsT, CEvents
 
-	template <SIZE_T t_nItemCapacity = 256, SIZE_T t_nItemTextLength = 128>
+	template <SIZE_T t_nItemCapacity = 256, SIZE_T t_nItemTextLength = 256>
 	class CEventsT
 	{
 	public:
@@ -199,3 +197,99 @@ public:
 public:
 // CRunEventHelper
 };
+
+#if defined(DIRECTSHOWSPY_IRUNXXX_TEMPLATE)
+
+////////////////////////////////////////////////////////////
+// CRunPropertyBagAwareT
+
+template <typename T>
+class ATL_NO_VTABLE CRunPropertyBagAwareT :
+	public IDispatchImpl<AlaxInfoDirectShowSpy::IRunPropertyBagAware, &__uuidof(AlaxInfoDirectShowSpy::IRunPropertyBagAware), &__uuidof(AlaxInfoDirectShowSpy::__AlaxInfoDirectShowSpy)>
+{
+public:
+// CRunPropertyBagAwareT
+
+// AlaxInfoDirectShowSpy::IRunPropertyBagAware
+	STDMETHOD(get_Value)(IUnknown** ppPropertyBagUnknown)
+	{
+		_Z4(atlTraceCOM, 4, _T("...\n"));
+		_ATLTRY
+		{
+			__D(ppPropertyBagUnknown, E_POINTER);
+			T* pT = static_cast<T*>(this);
+			*ppPropertyBagUnknown = (IPropertyBag*) pT->CreatePerformancePropertyBag().Detach();
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return S_OK;
+	}
+};
+
+////////////////////////////////////////////////////////////
+// CRunEventAwareT
+
+template <typename T>
+class ATL_NO_VTABLE CRunEventAwareT :
+	public IDispatchImpl<AlaxInfoDirectShowSpy::IRunEventAware, &__uuidof(AlaxInfoDirectShowSpy::IRunEventAware), &__uuidof(AlaxInfoDirectShowSpy::__AlaxInfoDirectShowSpy)>
+{
+protected:
+	CRunEventHelper::CEvents m_Events;
+
+public:
+// CRunEventAwareT
+	
+// AlaxInfoDirectShowSpy::IRunEventAware
+	STDMETHOD(get_Value)(VARIANT* pvEvents)
+	{
+		_Z4(atlTraceCOM, 4, _T("...\n"));
+		_ATLTRY
+		{
+			__D(pvEvents, E_POINTER);
+			VariantInit(pvEvents);
+			T* pT = static_cast<T*>(this);
+			//CRoCriticalSectionLock DataLock(pT->GetDataCriticalSection());
+			_V(m_Events.GetAsVariant().Detach(pvEvents));
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return S_OK;
+	}
+	STDMETHOD(get_Capture)(VARIANT_BOOL* pbCapture)
+	{
+		_Z4(atlTraceCOM, 4, _T("...\n"));
+		_ATLTRY
+		{
+			__D(pbCapture, E_POINTER);
+			T* pT = static_cast<T*>(this);
+			//CRoCriticalSectionLock DataLock(pT->GetDataCriticalSection());
+			*pbCapture = m_Events.IsCapture() ? ATL_VARIANT_TRUE : ATL_VARIANT_FALSE;
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return S_OK;
+	}
+	STDMETHOD(put_Capture)(VARIANT_BOOL bCapture)
+	{
+		_Z4(atlTraceCOM, 4, _T("bCapture %d\n"), bCapture);
+		_ATLTRY
+		{
+			T* pT = static_cast<T*>(this);
+			//CRoCriticalSectionLock DataLock(pT->GetDataCriticalSection());
+			m_Events.SetCapture(bCapture != ATL_VARIANT_FALSE);
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return S_OK;
+	}
+};
+
+#endif // defined(DIRECTSHOWSPY_IRUNXXX_TEMPLATE)

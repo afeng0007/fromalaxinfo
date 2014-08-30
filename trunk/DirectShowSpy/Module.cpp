@@ -15,7 +15,7 @@
 
 #include "stdafx.h"
 #include "resource.h"
-#include "DirectShowSpy_i.h"
+#include "Module_i.h"
 #include "dllmain.h"
 
 #if defined(_WIN32_WCE) && !defined(_CE_DCOM) && !defined(_CE_ALLOW_SINGLE_THREADED_OBJECTS_IN_MTA)

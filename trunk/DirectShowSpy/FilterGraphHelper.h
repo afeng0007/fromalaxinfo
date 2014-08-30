@@ -17,7 +17,7 @@
 
 #include "rofiles.h"
 #include "rodshow.h"
-#include "DirectShowSpy_i.h"
+#include "Module_i.h"
 #include "Common.h"
 #include "RunPropertyBag.h"
 #include "RunEvent.h"
