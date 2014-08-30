@@ -15,7 +15,7 @@
 
 #pragma once
 
-#include "DirectShowSpy_i.h"
+#include "Module_i.h"
 #include "Common.h"
 
 ////////////////////////////////////////////////////////////

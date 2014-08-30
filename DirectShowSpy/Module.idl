@@ -202,6 +202,8 @@ library AlaxInfoDirectShowSpy
 	[
 		object,
 		uuid(E267813C-8F29-4D69-A776-CD462494FCE4),
+		dual,
+		oleautomation,
 		nonextensible,
 		helpstring("IRunPropertyBagAware Interface"),
 		pointer_default(unique)
@@ -221,6 +223,8 @@ library AlaxInfoDirectShowSpy
 	[
 		object,
 		uuid(DA0D924F-1AC0-496D-AE44-CC2BD8CE7CFA),
+		dual,
+		oleautomation,
 		nonextensible,
 		helpstring("IRunEventAware Interface"),
 		pointer_default(unique)

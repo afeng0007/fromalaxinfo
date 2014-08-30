@@ -16,7 +16,7 @@
 #pragma once
 
 #include "rodshow.h"
-#include "DirectShowSpy_i.h"
+#include "Module_i.h"
 #include "Common.h"
 
 ////////////////////////////////////////////////////////////
