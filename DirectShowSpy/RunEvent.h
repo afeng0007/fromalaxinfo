@@ -198,42 +198,14 @@ public:
 // CRunEventHelper
 };
 
-#if defined(DIRECTSHOWSPY_IRUNXXX_TEMPLATE)
-
-////////////////////////////////////////////////////////////
-// CRunPropertyBagAwareT
-
-template <typename T>
-class ATL_NO_VTABLE CRunPropertyBagAwareT :
-	public IDispatchImpl<AlaxInfoDirectShowSpy::IRunPropertyBagAware, &__uuidof(AlaxInfoDirectShowSpy::IRunPropertyBagAware), &__uuidof(AlaxInfoDirectShowSpy::__AlaxInfoDirectShowSpy)>
-{
-public:
-// CRunPropertyBagAwareT
-
-// AlaxInfoDirectShowSpy::IRunPropertyBagAware
-	STDMETHOD(get_Value)(IUnknown** ppPropertyBagUnknown)
-	{
-		_Z4(atlTraceCOM, 4, _T("...\n"));
-		_ATLTRY
-		{
-			__D(ppPropertyBagUnknown, E_POINTER);
-			T* pT = static_cast<T*>(this);
-			*ppPropertyBagUnknown = (IPropertyBag*) pT->CreatePerformancePropertyBag().Detach();
-		}
-		_ATLCATCH(Exception)
-		{
-			_C(Exception);
-		}
-		return S_OK;
-	}
-};
+#if !defined(DIRECTSHOWSPY)
 
 ////////////////////////////////////////////////////////////
 // CRunEventAwareT
 
 template <typename T>
 class ATL_NO_VTABLE CRunEventAwareT :
-	public IDispatchImpl<AlaxInfoDirectShowSpy::IRunEventAware, &__uuidof(AlaxInfoDirectShowSpy::IRunEventAware), &__uuidof(AlaxInfoDirectShowSpy::__AlaxInfoDirectShowSpy)>
+	public IDispatchImpl<DIRECTSHOWSPY_NAMESPACE_PREFIX IRunEventAware, &__uuidof(DIRECTSHOWSPY_NAMESPACE_PREFIX IRunEventAware), &__uuidof(DIRECTSHOWSPY_NAMESPACE_PREFIX __AlaxInfoDirectShowSpy)>
 {
 protected:
 	CRunEventHelper::CEvents m_Events;
@@ -292,4 +264,4 @@ public:
 	}
 };
 
-#endif // defined(DIRECTSHOWSPY_IRUNXXX_TEMPLATE)
+#endif // !defined(DIRECTSHOWSPY)
