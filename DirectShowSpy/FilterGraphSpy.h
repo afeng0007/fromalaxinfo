@@ -572,7 +572,7 @@ public:
 		_A(ppvObject);
 		if(m_pPrivateAmGraphBuilderCallback)
 		{
-			reinterpret_cast<CComPtr<IObjectWithSite>&>(*ppvObject) = static_cast<T*>(this);
+			*ppvObject = CComPtr<IObjectWithSite>(static_cast<T*>(this)).Detach();
 			return S_OK;
 		}
 		_A(m_pInnerUnknown);
