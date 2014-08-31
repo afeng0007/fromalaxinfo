@@ -55,9 +55,6 @@
     </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Host.rgs">
       <Filter>Resource Files</Filter>
     </None>

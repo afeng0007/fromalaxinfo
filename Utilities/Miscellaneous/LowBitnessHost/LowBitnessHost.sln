@@ -9,6 +9,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "HostPS", "Host\HostPS.vcxpr
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Application", "Application\Application.csproj", "{701623D3-C9BD-4C6B-80A2-25712074A8BD}"
+	ProjectSection(ProjectDependencies) = postProject
+		{05C734FF-2514-467E-A750-00E1EB5F3CE1} = {05C734FF-2514-467E-A750-00E1EB5F3CE1}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
