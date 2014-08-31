@@ -58,6 +58,12 @@ copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.%C%" .
 
 @set A=..\..\Repository-Public
 
+@set B=ShowHresult
+@set C=exe
+copy /b /y "%A%\Utilities\%B%\_Bin\Release\%B%.%C%" .
+rem copy /b /y "%A%\Utilities\%B%\_Bin\%B%-Win32.%C%" .
+rem copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.%C%" .
+
 @set B=LogProcessExceptions
 @set C=exe
 copy /b /y "%A%\Utilities\%B%\_Bin\%B%-Win32.%C%" .
