@@ -28,7 +28,7 @@
     <UseDebugLibraries>true</UseDebugLibraries>
     <UseOfAtl>Dynamic</UseOfAtl>
     <CharacterSet>Unicode</CharacterSet>
-    <PlatformToolset>v100</PlatformToolset>
+    <PlatformToolset>v110_xp</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -36,7 +36,7 @@
     <UseOfAtl>Static</UseOfAtl>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <PlatformToolset>v100</PlatformToolset>
+    <PlatformToolset>v110_xp</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Trace|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -44,7 +44,7 @@
     <UseOfAtl>Static</UseOfAtl>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <PlatformToolset>v100</PlatformToolset>
+    <PlatformToolset>v110_xp</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Development Release Trace|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -52,7 +52,7 @@
     <UseOfAtl>Static</UseOfAtl>
     <CharacterSet>Unicode</CharacterSet>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <PlatformToolset>v100</PlatformToolset>
+    <PlatformToolset>v110_xp</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -105,11 +105,11 @@
       <MkTypLibCompatible>false</MkTypLibCompatible>
       <TargetEnvironment>Win32</TargetEnvironment>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <HeaderFileName>ShowHresult_i.h</HeaderFileName>
-      <InterfaceIdentifierFileName>ShowHresult_i.c</InterfaceIdentifierFileName>
-      <ProxyFileName>ShowHresult_p.c</ProxyFileName>
+      <HeaderFileName>Module_i.h</HeaderFileName>
+      <InterfaceIdentifierFileName>Module_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>Module_p.c</ProxyFileName>
       <GenerateStublessProxies>true</GenerateStublessProxies>
-      <TypeLibraryName>$(IntDir)ShowHresult.tlb</TypeLibraryName>
+      <TypeLibraryName>$(IntDir)Module.tlb</TypeLibraryName>
       <DllDataFileName>
       </DllDataFileName>
       <ValidateAllParameters>true</ValidateAllParameters>
@@ -124,8 +124,10 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <PostBuildEvent>
-      <Message>Performing registration</Message>
-      <Command>"$(TargetPath)" /RegServer</Command>
+      <Message>
+      </Message>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -148,11 +150,11 @@
       <MkTypLibCompatible>false</MkTypLibCompatible>
       <TargetEnvironment>Win32</TargetEnvironment>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <HeaderFileName>ShowHresult_i.h</HeaderFileName>
-      <InterfaceIdentifierFileName>ShowHresult_i.c</InterfaceIdentifierFileName>
-      <ProxyFileName>ShowHresult_p.c</ProxyFileName>
+      <HeaderFileName>Module_i.h</HeaderFileName>
+      <InterfaceIdentifierFileName>Module_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>Module_p.c</ProxyFileName>
       <GenerateStublessProxies>true</GenerateStublessProxies>
-      <TypeLibraryName>$(IntDir)ShowHresult.tlb</TypeLibraryName>
+      <TypeLibraryName>$(IntDir)Module.tlb</TypeLibraryName>
       <DllDataFileName>
       </DllDataFileName>
       <ValidateAllParameters>true</ValidateAllParameters>
@@ -170,8 +172,10 @@
       <DelayLoadDLLs>dbghelp.dll</DelayLoadDLLs>
     </Link>
     <PostBuildEvent>
-      <Message>Performing registration</Message>
-      <Command>"$(TargetPath)" /RegServer</Command>
+      <Message>
+      </Message>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Trace|Win32'">
@@ -194,11 +198,11 @@
       <MkTypLibCompatible>false</MkTypLibCompatible>
       <TargetEnvironment>Win32</TargetEnvironment>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <HeaderFileName>ShowHresult_i.h</HeaderFileName>
-      <InterfaceIdentifierFileName>ShowHresult_i.c</InterfaceIdentifierFileName>
-      <ProxyFileName>ShowHresult_p.c</ProxyFileName>
+      <HeaderFileName>Module_i.h</HeaderFileName>
+      <InterfaceIdentifierFileName>Module_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>Module_p.c</ProxyFileName>
       <GenerateStublessProxies>true</GenerateStublessProxies>
-      <TypeLibraryName>$(IntDir)ShowHresult.tlb</TypeLibraryName>
+      <TypeLibraryName>$(IntDir)Module.tlb</TypeLibraryName>
       <DllDataFileName>
       </DllDataFileName>
       <ValidateAllParameters>true</ValidateAllParameters>
@@ -216,8 +220,10 @@
       <DelayLoadDLLs>dbghelp.dll</DelayLoadDLLs>
     </Link>
     <PostBuildEvent>
-      <Message>Performing registration</Message>
-      <Command>"$(TargetPath)" /RegServer</Command>
+      <Message>
+      </Message>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Development Release Trace|Win32'">
@@ -240,11 +246,11 @@
       <MkTypLibCompatible>false</MkTypLibCompatible>
       <TargetEnvironment>Win32</TargetEnvironment>
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <HeaderFileName>ShowHresult_i.h</HeaderFileName>
-      <InterfaceIdentifierFileName>ShowHresult_i.c</InterfaceIdentifierFileName>
-      <ProxyFileName>ShowHresult_p.c</ProxyFileName>
+      <HeaderFileName>Module_i.h</HeaderFileName>
+      <InterfaceIdentifierFileName>Module_i.c</InterfaceIdentifierFileName>
+      <ProxyFileName>Module_p.c</ProxyFileName>
       <GenerateStublessProxies>true</GenerateStublessProxies>
-      <TypeLibraryName>$(IntDir)ShowHresult.tlb</TypeLibraryName>
+      <TypeLibraryName>$(IntDir)Module.tlb</TypeLibraryName>
       <DllDataFileName>
       </DllDataFileName>
       <ValidateAllParameters>true</ValidateAllParameters>
@@ -262,13 +268,15 @@
       <DelayLoadDLLs>dbghelp.dll</DelayLoadDLLs>
     </Link>
     <PostBuildEvent>
-      <Message>Performing registration</Message>
-      <Command>"$(TargetPath)" /RegServer</Command>
+      <Message>
+      </Message>
+      <Command>
+      </Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="ShowHresult.cpp" />
-    <ClCompile Include="ShowHresult_i.c">
+    <ClCompile Include="Application.cpp" />
+    <ClCompile Include="Module_i.c">
       <CompileAsManaged Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</CompileAsManaged>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
       </PrecompiledHeader>
@@ -281,6 +289,10 @@
       </PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Development Release Trace|Win32'">
       </PrecompiledHeader>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development Release Trace|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Trace|Win32'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
@@ -307,7 +319,12 @@
     </None>
     <ClInclude Include="NotifyIconWindow.h" />
     <ClInclude Include="Resource.h" />
-    <ClInclude Include="ShowHresult_i.h" />
+    <ClInclude Include="Module_i.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development Release Trace|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Trace|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="SlIdentifier.inc">
       <FileType>CppHeader</FileType>
     </ClInclude>
@@ -327,7 +344,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="ShowHresult.rc" />
+    <ResourceCompile Include="Module.rc" />
   </ItemGroup>
   <ItemGroup>
     <None Include="D3dIdentifier.inc">
@@ -347,7 +364,12 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="ShowHresult.idl" />
+    <Midl Include="Module.idl">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Development Release Trace|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release Trace|Win32'">true</ExcludedFromBuild>
+    </Midl>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
