@@ -169,11 +169,11 @@ public:
 		CAmGraphBuilderCallback() :
 			m_pSpy(NULL)
 		{
-			_Z5(atlTraceRefcount, 5, _T("this 0x%p\n"), this);
+			_Z5_THIS();
 		}
 		~CAmGraphBuilderCallback()
 		{
-			_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+			_Z5_THIS();
 		}
 		VOID Initialize(T* pSpy)
 		{
@@ -195,7 +195,7 @@ public:
 			const HRESULT nSetSiteResult = pObjectWithSite->SetSite(this);
 			if(SUCCEEDED(nSetSiteResult))
 				return TRUE;
-			_Z4(atlTraceRefcount, 4, _T("nSetSiteResult 0x%08x\n"), nSetSiteResult);
+			_Z4_HRESULT(nSetSiteResult);
 			return FALSE;
 		}
 		BOOL SetGraphBuilder(IUnknown* pObjectWithSiteUnknown)
@@ -215,7 +215,7 @@ public:
 				if(pSpy)
 					if(pSpy->SelectedFilter(pMoniker, nSelectedFilterResult))
 					{
-						_Z4(atlTraceGeneral, 4, _T("this 0x%p, nSelectedFilterResult 0x%08x\n"), this, nSelectedFilterResult);
+						_Z4(atlTraceGeneral, 4, _T("this 0x%p, nSelectedFilterResult 0x%08X\n"), this, nSelectedFilterResult);
 						return nSelectedFilterResult;
 					}
 			}
@@ -236,7 +236,7 @@ public:
 				if(pSpy)
 					if(pSpy->CreatedFilter(pBaseFilter, nCreatedFilterResult))
 					{
-						_Z4(atlTraceGeneral, 4, _T("this 0x%p, nCreatedFilterResult 0x%08x\n"), this, nCreatedFilterResult);
+						_Z4(atlTraceGeneral, 4, _T("this 0x%p, nCreatedFilterResult 0x%08X\n"), this, nCreatedFilterResult);
 						return nCreatedFilterResult;
 					}
 			}
@@ -386,12 +386,12 @@ public:
 	CSpyT()	:
 		m_hQuartzModule(NULL)
 	{
-		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		_Z4_THIS();
 		ZeroMemory(&m_Time, sizeof m_Time);
 	}
 	~CSpyT()
 	{
-		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		_Z4_THIS();
 	}
 	HRESULT FinalConstruct()
 	{
@@ -477,7 +477,7 @@ public:
 				DLLCANUNLOADNOW DllCanUnloadNow = (DLLCANUNLOADNOW) GetProcAddress(hModule, "DllCanUnloadNow");
 				__E(DllCanUnloadNow);
 				const HRESULT nDllCanUnloadNowResult = DllCanUnloadNow();
-				_Z4(atlTraceRefcount, 4, _T("nDllCanUnloadNowResult 0x%08x\n"), nDllCanUnloadNowResult); 
+				_Z4_HRESULT(nDllCanUnloadNowResult); 
 			#endif // defined(_DEBUG)
 			_A(!m_hQuartzModule);
 			m_hQuartzModule = hModule;
@@ -996,7 +996,7 @@ public:
 			OnRun(pT, &bDefault);
 		HOOK_EPILOG()
 		const HRESULT nRunResult = m_pInnerMediaControl->Run();
-		_Z4(atlTraceGeneral, 4, _T("nRunResult 0x%08x\n"), nRunResult);
+		_Z4_DSHRESULT(nRunResult);
 		return nRunResult;
 	}
 	STDMETHOD(Pause)()
@@ -1161,7 +1161,7 @@ public:
 // IMediaEventEx
 	STDMETHOD(SetNotifyWindow)(OAHWND nWindowHandle, LONG nMessage, LONG_PTR nParameter)
 	{
-		_Z4(atlTraceCOM, 4, _T("nWindowHandle 0x%08x, nMessage 0x%04x, nParameter %p\n"), nWindowHandle, nMessage, nParameter);
+		_Z4(atlTraceCOM, 4, _T("nWindowHandle 0x%08X, nMessage 0x%04x, nParameter %p\n"), nWindowHandle, nMessage, nParameter);
 		return m_pInnerMediaEventEx->SetNotifyWindow(nWindowHandle, nMessage, nParameter);
 	}
 	STDMETHOD(SetNotifyFlags)(LONG nNotifyFlags)

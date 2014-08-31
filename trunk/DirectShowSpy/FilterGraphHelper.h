@@ -907,6 +907,8 @@ public:
 					CreateTitleFont(m_TitleFont, m_TitleStatic);
 					m_FileListView.Initialize(GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_LOG_FILE));
 					m_nFileListViewGroupViewEnabled = m_FileListView.EnableGroupView(TRUE);
+					if(!m_nFileListViewGroupViewEnabled)
+						m_nFileListViewGroupViewEnabled = m_FileListView.IsGroupViewEnabled() ? 1 : -1;
 					m_TruncateComboBox.Initialize(GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_LOG_TRUNCATE));
 					m_DeleteComboBox.Initialize(GetDlgItem(IDC_FILTERGRAPHHELPER_EMAIL_LOG_DELETE));
 					DlgResize_Init(FALSE, FALSE);
@@ -2683,11 +2685,11 @@ public:
 		if(pProcessData)
 			sText += AtlFormatString(_T("* ") _T("Process: %s (%s) %s") _T("\r\n"), I(pProcessData->m_nIdentifier), I(pProcessData->m_nIdentifier, _T("0x%X")), I(FindFileName(pProcessData->m_sImagePath)));
 		#pragma region IMediaControl
+		OAFilterState State = (OAFilterState) -1;
 		const CComQIPtr<IMediaControl> pMediaControl = pFilterGraph;
 		if(pMediaControl)
 			_ATLTRY
 			{
-				OAFilterState State;
 				const HRESULT nGetStateResult = pMediaControl->GetState(0, &State);
 				_Z45_DSHRESULT(nGetStateResult);
 				static const LPCTSTR g_ppszStates[] = { _T("Stopped"), _T("Paused"), _T("Running"), };
@@ -2759,14 +2761,12 @@ public:
 			#pragma region Connection
 			sText += AtlFormatString(_T("## ") _T("Connections") _T("\r\n") _T("\r\n"));
 			INT nConnectionIndex = 0;
-			for(SIZE_T nFilterIndex = 0; nFilterIndex < FilterArray.GetCount(); nFilterIndex++)
+			for(auto&& pBaseFilter: FilterArray)
 			{
-				const CComPtr<IBaseFilter>& pBaseFilter = FilterArray[nFilterIndex];
 				_FilterGraphHelper::CPinArray PinArray;
 				_FilterGraphHelper::GetFilterPins(pBaseFilter, PINDIR_OUTPUT, PinArray);
-				for(SIZE_T nPinIndex = 0; nPinIndex < PinArray.GetCount(); nPinIndex++)
+				for(auto&& pOutputPin: PinArray)
 				{
-					const CComPtr<IPin>& pOutputPin = PinArray[nPinIndex];
 					const CComPtr<IPin> pInputPin = _FilterGraphHelper::GetPeerPin(pOutputPin);
 					if(!pInputPin)
 						continue;
@@ -2817,6 +2817,69 @@ public:
 			}
 			sText += _T("\r\n");
 			#pragma endregion 
+			if(State > State_Stopped)
+			{
+				#pragma region Memory Allocator
+				INT nConnectionIndex = 0;
+				for(auto&& pBaseFilter: FilterArray)
+				{
+					_FilterGraphHelper::CPinArray PinArray;
+					_FilterGraphHelper::GetFilterPins(pBaseFilter, PINDIR_INPUT, PinArray);
+					for(auto&& pInputPin: PinArray)
+					{
+						_ATLTRY
+						{
+							const CComQIPtr<IMemInputPin> pMemInputPin = pInputPin;
+							if(!pMemInputPin)
+								continue; // No IMemInputPin
+							const CComPtr<IPin> pOutputPin = _FilterGraphHelper::GetPeerPin(pInputPin);
+							if(!pOutputPin)
+								continue; // Not Connected
+							CComPtr<IMemAllocator> pMemAllocator;
+							pMemInputPin->GetAllocator(&pMemAllocator);
+							if(!pMemAllocator)
+								continue; // No Memory Allocator
+							ALLOCATOR_PROPERTIES Properties;
+							const HRESULT nGetPropertiesResult = pMemAllocator->GetProperties(&Properties);
+							_Z45_DSHRESULT(nGetPropertiesResult);
+							if(FAILED(nGetPropertiesResult))
+								continue; // No Memory Allocator Properties
+							const CComQIPtr<IMemAllocatorCallbackTemp> pMemAllocatorCallbackTemp = pMemAllocator;
+							BOOL bFreeCountAvailable;
+							LONG nFreeCount;
+							if(pMemAllocatorCallbackTemp)
+							{
+								const HRESULT nGetFreeCountResult = pMemAllocatorCallbackTemp->GetFreeCount(&nFreeCount);
+								_Z45_DSHRESULT(nGetFreeCountResult);
+								bFreeCountAvailable = SUCCEEDED(nGetFreeCountResult);
+							} else
+								bFreeCountAvailable = FALSE;
+							CString sConnectionText = AtlFormatString(_T("%s - %s"), I(_FilterGraphHelper::GetPinFullName(pInputPin)), I(_FilterGraphHelper::GetPinFullName(pOutputPin)));
+							sConnectionText += _T(": ");
+							CRoArrayT<CString> Array;
+							Array.Add(AtlFormatString(_T("%s buffers"), I(Properties.cBuffers)));
+							if(bFreeCountAvailable)
+								Array.Add(AtlFormatString(_T("%s free buffers"), I(nFreeCount)));
+							Array.Add(AtlFormatString(_T("%s bytes per buffer"), I(Properties.cbBuffer)));
+							if(Properties.cbAlign > 1)
+								Array.Add(AtlFormatString(_T("%s byte alignment"), I(Properties.cbAlign)));
+							if(Properties.cbPrefix > 0)
+								Array.Add(AtlFormatString(_T("%s byte prefix"), I(Properties.cbPrefix)));
+							sConnectionText += _StringHelper::Join(Array, _T(", "));
+							if(!nConnectionIndex)
+								sText += AtlFormatString(_T("## ") _T("Memory Allocators") _T("\r\n") _T("\r\n"));
+							sText += AtlFormatString(_T("%d. ") _T("%s") _T("\r\n"), ++nConnectionIndex, sConnectionText);
+						}
+						_ATLCATCHALL()
+						{
+							_Z_EXCEPTION();
+						}
+					}
+				}
+				if(nConnectionIndex)
+					sText += _T("\r\n");
+				#pragma endregion
+			}
 			#pragma region IMediaSeeking
 			BOOL bMediaSeekingHeaderAdded = FALSE;
 			for(SIZE_T nFilterIndex = 0; nFilterIndex < FilterArray.GetCount(); nFilterIndex++)
@@ -2832,28 +2895,28 @@ public:
 						continue;
 					if(!bMediaSeekingHeaderAdded)
 					{
-						sText += AtlFormatString(_T(" ## ") _T("Media Seeking/Position") _T("\r\n") _T("\r\n"));
+						sText += AtlFormatString(_T("## ") _T("Media Seeking/Position") _T("\r\n") _T("\r\n"));
 						bMediaSeekingHeaderAdded = TRUE;
 					}
-					sText += AtlFormatString(_T(" * ") _T("Pin: %s") _T("\r\n"), I(_FilterGraphHelper::GetPinFullName(pOutputPin)));
+					sText += AtlFormatString(_T("* ") _T("Pin: %s") _T("\r\n"), I(_FilterGraphHelper::GetPinFullName(pOutputPin)));
 					_ATLTRY
 					{
 						DWORD nCapabilities = 0;
 						if(SUCCEEDED(pMediaSeeking->GetCapabilities(&nCapabilities)))
-							sText += AtlFormatString(_T("  * ") _T("Capabilities: %s") _T("\r\n"), I(AtlFormatString(_T("0x%X"), nCapabilities)));
+							sText += AtlFormatString(_T(" * ") _T("Capabilities: %s") _T("\r\n"), I(AtlFormatString(_T("0x%X"), nCapabilities)));
 						LONGLONG nDuration = 0, nPosition = 0, nStopPosition = 0;
 						if(SUCCEEDED(pMediaSeeking->GetDuration(&nDuration)))
-							sText += AtlFormatString(_T("  * ") _T("Duration: %s (%s seconds)") _T("\r\n"), I(_FilterGraphHelper::FormatSecondTime((DOUBLE) nDuration / 1E7)), I(_StringHelper::FormatNumber((DOUBLE) nDuration / 1E7, 3)));
+							sText += AtlFormatString(_T(" * ") _T("Duration: %s (%s seconds)") _T("\r\n"), I(_FilterGraphHelper::FormatSecondTime((DOUBLE) nDuration / 1E7)), I(_StringHelper::FormatNumber((DOUBLE) nDuration / 1E7, 3)));
 						if(SUCCEEDED(pMediaSeeking->GetCurrentPosition(&nPosition)))
-							sText += AtlFormatString(_T("  * ") _T("Position: %s (%s seconds)") _T("\r\n"), I(_FilterGraphHelper::FormatSecondTime((DOUBLE) nPosition / 1E7)), I(_StringHelper::FormatNumber((DOUBLE) nPosition / 1E7, 3)));
+							sText += AtlFormatString(_T(" * ") _T("Position: %s (%s seconds)") _T("\r\n"), I(_FilterGraphHelper::FormatSecondTime((DOUBLE) nPosition / 1E7)), I(_StringHelper::FormatNumber((DOUBLE) nPosition / 1E7, 3)));
 						if(SUCCEEDED(pMediaSeeking->GetStopPosition(&nStopPosition)))
-							sText += AtlFormatString(_T("  * ") _T("Stop Position: %s (%s seconds)") _T("\r\n"), I(_FilterGraphHelper::FormatSecondTime((DOUBLE) nStopPosition / 1E7)), I(_StringHelper::FormatNumber((DOUBLE) nStopPosition / 1E7, 3)));
+							sText += AtlFormatString(_T(" * ") _T("Stop Position: %s (%s seconds)") _T("\r\n"), I(_FilterGraphHelper::FormatSecondTime((DOUBLE) nStopPosition / 1E7)), I(_StringHelper::FormatNumber((DOUBLE) nStopPosition / 1E7, 3)));
 						DOUBLE fRate = 1.0;
 						if(SUCCEEDED(pMediaSeeking->GetRate(&fRate)))
-							sText += AtlFormatString(_T("  * ") _T("Rate: %s") _T("\r\n"), I(_StringHelper::FormatNumber(fRate, 3)));
+							sText += AtlFormatString(_T(" * ") _T("Rate: %s") _T("\r\n"), I(_StringHelper::FormatNumber(fRate, 3)));
 						LONGLONG nPreroll = 0;
 						if(SUCCEEDED(pMediaSeeking->GetPreroll(&nPreroll)) && nPreroll)
-							sText += AtlFormatString(_T("  * ") _T("Preroll: %s seconds") _T("\r\n"), I(_StringHelper::FormatNumber((DOUBLE) nPreroll / 1E7, 3)));
+							sText += AtlFormatString(_T(" * ") _T("Preroll: %s seconds") _T("\r\n"), I(_StringHelper::FormatNumber((DOUBLE) nPreroll / 1E7, 3)));
 					}
 					_ATLCATCHALL()
 					{

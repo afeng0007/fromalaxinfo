@@ -79,11 +79,11 @@ public:
 	// CPropertyBag
 		CPropertyBag()
 		{
-			_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+			_Z4_THIS();
 		}
 		~CPropertyBag()
 		{
-			_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+			_Z4_THIS();
 		}
 		VOID Initialize(IPropertyBag* pPropertyBag)
 		{
@@ -246,11 +246,11 @@ public:
 	// CMoniker
 		CMoniker()
 		{
-			_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+			_Z4_THIS();
 		}
 		~CMoniker()
 		{
-			_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+			_Z4_THIS();
 		}
 		VOID Initialize(IMoniker* pMoniker)
 		{
@@ -524,11 +524,11 @@ public:
 	// CEnumMoniker
 		CEnumMoniker()
 		{
-			_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+			_Z4_THIS();
 		}
 		~CEnumMoniker()
 		{
-			_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+			_Z4_THIS();
 		}
 		VOID Initialize(IEnumMoniker* pEnumMoniker)
 		{
@@ -657,11 +657,11 @@ public:
 	CSystemDeviceEnumeratorSpyT() throw() :
 		m_hDevEnumModule(NULL)
 	{
-		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		_Z4_THIS();
 	}
 	~CSystemDeviceEnumeratorSpyT() throw()
 	{
-		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		_Z4_THIS();
 	}
 	HRESULT FinalConstruct() throw()
 	{

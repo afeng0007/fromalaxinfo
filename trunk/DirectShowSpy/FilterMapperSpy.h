@@ -112,11 +112,11 @@ public:
 	CFilterMapperSpyT() throw() :
 		m_hQuartzModule(NULL)
 	{
-		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		_Z4_THIS();
 	}
 	~CFilterMapperSpyT() throw()
 	{
-		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		_Z4_THIS();
 	}
 	HRESULT FinalConstruct() throw()
 	{
