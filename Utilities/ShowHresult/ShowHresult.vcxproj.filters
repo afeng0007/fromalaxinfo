@@ -25,10 +25,10 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ShowHresult.cpp">
+    <ClCompile Include="Application.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ShowHresult_i.c">
+    <ClCompile Include="Module_i.c">
       <Filter>Generated Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -42,20 +42,15 @@
     <ClInclude Include="Resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ShowHresult_i.h">
-      <Filter>Generated Files</Filter>
-    </ClInclude>
     <ClInclude Include="NotifyIconWindow.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="SlIdentifier.inc">
       <Filter>Header Files\Include Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="ShowHresult.rc">
-      <Filter>Resource Files</Filter>
-    </ResourceCompile>
+    <ClInclude Include="Module_i.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Module.ico">
@@ -108,8 +103,13 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="ShowHresult.idl">
+    <Midl Include="Module.idl">
       <Filter>Source Files</Filter>
     </Midl>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Module.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>

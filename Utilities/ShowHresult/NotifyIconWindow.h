@@ -29,8 +29,8 @@
 #include <cryptxml.h>
 #include <functiondiscoveryerror.h>
 #include <infotech.h>
-#include <naperror.h>
-#include <pstore.h>
+//#include <naperror.h> - merged with winerror.h in SDK 8.0
+//#include <pstore.h> - missing in SDK 8.0
 #include <sherrors.h>
 #include <ShObjIdl.h>
 #include <SubsMgr.h>
@@ -518,13 +518,13 @@ private:
 
 public:
 // CNotifyIconWindow
-	static ULONGLONG GetCommonControlsVersion() throw()
+	static ULONGLONG GetCommonControlsVersion()
 	{
 		DWORD nMajorVersion, nMinorVersion;
 		_W(SUCCEEDED(AtlGetCommCtrlVersion(&nMajorVersion, &nMinorVersion)));
 		return (ULONGLONG) ((nMajorVersion << 16) + nMinorVersion) << 32;
 	}
-	static ULONGLONG GetShellVersion() throw()
+	static ULONGLONG GetShellVersion()
 	{
 		DWORD nMajorVersion, nMinorVersion;
 		_W(SUCCEEDED(AtlGetShellVersion(&nMajorVersion, &nMinorVersion)));
@@ -541,7 +541,7 @@ public:
 	{
 		return AtlLoadString(IDS_NOTIFYICON_DEFAULTTIPTITLE);
 	}
-	static DWORD GetDefaultInfoFlags() throw()
+	static DWORD GetDefaultInfoFlags()
 	{
 		return NIIF_NONE;
 	}
@@ -556,33 +556,33 @@ public:
 			_W(Shell_NotifyIcon(NIM_MODIFY, &m_NotifyIconData));
 		}
 	}
-	static BOOL IsDecimal(TCHAR nCharacter) throw()
+	static BOOL IsDecimal(TCHAR nCharacter)
 	{
 		return _tcschr(_T("0123456789"), nCharacter) != NULL;
 	}
-	static BOOL IsDecimal(const TCHAR* pszCharacters, SIZE_T nCount) throw()
+	static BOOL IsDecimal(const TCHAR* pszCharacters, SIZE_T nCount)
 	{
 		for(SIZE_T nIndex = 0; nIndex < nCount; nIndex++)
 			if(!IsDecimal(pszCharacters[nIndex]))
 				return FALSE;
 		return TRUE;
 	}
-	static BOOL IsDecimal(const TCHAR* pszCharacters) throw()
+	static BOOL IsDecimal(const TCHAR* pszCharacters)
 	{
 		return IsDecimal(pszCharacters, _tcslen(pszCharacters));
 	}
-	static BOOL IsHexadecimal(TCHAR nCharacter) throw()
+	static BOOL IsHexadecimal(TCHAR nCharacter)
 	{
 		return _tcschr(_T("0123456789ABCDEFabcdef"), nCharacter) != NULL;
 	}
-	static BOOL IsHexadecimal(const TCHAR* pszCharacters, SIZE_T nCount) throw()
+	static BOOL IsHexadecimal(const TCHAR* pszCharacters, SIZE_T nCount)
 	{
 		for(SIZE_T nIndex = 0; nIndex < nCount; nIndex++)
 			if(!IsHexadecimal(pszCharacters[nIndex]))
 				return FALSE;
 		return TRUE;
 	}
-	static BOOL IsHexadecimal(const TCHAR* pszCharacters) throw()
+	static BOOL IsHexadecimal(const TCHAR* pszCharacters)
 	{
 		return IsHexadecimal(pszCharacters, _tcslen(pszCharacters));
 	}
@@ -760,7 +760,7 @@ public:
 		#endif // defined(_DEBUG)
 		return TRUE;
 	}
-	LRESULT OnDestroy() throw()
+	LRESULT OnDestroy()
 	{
 		_pAtlModule->Unlock();
 		_W(ChangeClipboardChain(m_NextClipboardViewerWindow));
@@ -844,12 +844,12 @@ public:
 		ShellExecute(m_hWnd, NULL, CW2CT(Identifier.GetValue()), NULL, NULL, SW_SHOWDEFAULT);
 		return 0;
 	}
-	LRESULT OnNotifyIcon(UINT uMsg, WPARAM wParam, LPARAM lParam) throw()
+	LRESULT OnNotifyIcon(UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
 		_A(wParam == m_NotifyIconData.uID);
 		return SendMessage((UINT) lParam);
 	}
-	LRESULT OnApplicationAbout(UINT, INT, HWND) throw()
+	LRESULT OnApplicationAbout(UINT, INT, HWND)
 	{
 		CAboutDialog Dialog;
 		EnableWindow(FALSE);
@@ -857,7 +857,7 @@ public:
 		EnableWindow(TRUE);
 		return 0;
 	}
-	LRESULT OnApplicationExit(UINT = 0, INT = ID_APP_EXIT, HWND = NULL) throw()
+	LRESULT OnApplicationExit(UINT = 0, INT = ID_APP_EXIT, HWND = NULL)
 	{
 		PostQuitMessage(0);
 		return 0;
