@@ -138,9 +138,6 @@
     <ResourceCompile Include="Host.rc" />
   </ItemGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="Foo.rgs" />
     <None Include="Host.rgs" />
   </ItemGroup>
