@@ -33,12 +33,12 @@ public:
 	{
 		AtlTraceSetDefaultSettings();
 		TraceModuleVersion();
-		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		_Z4_THIS();
 		_W(CExceptionFilter::Initialize());
 	}
 	~CDirectShowSpyModule() throw()
 	{
-		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		_Z4_THIS();
 		CExceptionFilter::Terminate();
 	}
 

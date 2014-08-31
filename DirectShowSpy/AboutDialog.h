@@ -68,11 +68,11 @@ public:
 	}
 	CAboutDialog() throw()
 	{
-		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		_Z4_THIS();
 	}
 	~CAboutDialog() throw()
 	{
-		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		_Z4_THIS();
 	}
 
 // Window message handlers
