@@ -63,6 +63,7 @@
     <None Include="Module.def">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="..\..\Repository-Private\Utilities\EmailTools\_Bin\EmailTools-Win32.tlb" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AboutDialog.h">

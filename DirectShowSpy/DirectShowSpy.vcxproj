@@ -451,6 +451,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\Repository-Private\Utilities\EmailTools\_Bin\EmailTools-Win32.tlb" />
     <None Include="..\..\Repository-Private\Utilities\EmailTools\_Bin\Win32\Release\EmailTools\EmailTools.tlb" />
     <None Include="Module.def" />
     <None Include="Module.rgs" />
