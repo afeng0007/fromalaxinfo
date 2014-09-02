@@ -54,6 +54,19 @@ interface ISpy : IDispatch
 };
 [
 	object,
+	uuid(E59EED72-E94A-44D9-8C1F-6535A4C1D6C9),
+	dual,
+	oleautomation,
+	nonextensible,
+	helpstring("IFilterGraphMemoryAllocatorData Interface"),
+	pointer_default(unique)
+]
+interface IFilterGraphMemoryAllocatorData : IDispatch
+{
+	[id(DISPID_VALUE), propget] HRESULT Value([out, retval] VARIANT* pvValue);
+};
+[
+	object,
 	uuid(A7490000-3A5D-455D-9B81-2025B74CD4CD),
 	nonextensible,
 	helpstring("ISpyEx Interface"),
@@ -164,6 +177,7 @@ library AlaxInfoDirectShowSpy
 		[default] interface ISpy;
 		//interface ISpyEx;
 		interface IModuleVersionInformation;
+		interface IFilterGraphMemoryAllocatorData;
 	};
 	[
 		uuid(2C281C40-8853-4a30-99D3-9DCFF2C015C9),
@@ -174,6 +188,7 @@ library AlaxInfoDirectShowSpy
 		[default] interface ISpy;
 		//interface ISpyEx;
 		interface IModuleVersionInformation;
+		interface IFilterGraphMemoryAllocatorData;
 	};
 	[
 		uuid(B6274D9B-1AD3-4c32-83C5-35DC33CAFF47),

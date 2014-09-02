@@ -523,6 +523,239 @@ public:
 		};
 
 		////////////////////////////////////////////////////
+		// CMemoryAllocatorDialog
+
+		class CMemoryAllocatorDialog :
+			public CDialogImpl<CMemoryAllocatorDialog>,
+			public CDialogResize<CMemoryAllocatorDialog>
+		{
+		public:
+			enum { IDD = IDD_FILTERGRAPHHELPER_MEMORYALLOCATOR };
+
+		BEGIN_MSG_MAP_EX(CMemoryAllocatorDialog)
+			//CHAIN_MSG_MAP(CDialogImpl<CMemoryAllocatorDialog>)
+			CHAIN_MSG_MAP(CDialogResize<CMemoryAllocatorDialog>)
+			MSG_WM_INITDIALOG(OnInitDialog)
+			MSG_LVN_GETDISPINFO(IDC_FILTERGRAPHHELPER_MEMORYALLOCATOR_LIST, OnListViewGetDispInfo)
+			MSG_LVN_GETINFOTIP(IDC_FILTERGRAPHHELPER_MEMORYALLOCATOR_LIST, OnListViewGetInfoTip)
+			COMMAND_ID_HANDLER_EX(IDC_FILTERGRAPHHELPER_MEMORYALLOCATOR_REFRESH, OnRefresh)
+			REFLECT_NOTIFICATIONS()
+		END_MSG_MAP()
+
+		BEGIN_DLGRESIZE_MAP(CMemoryAllocatorDialog)
+			DLGRESIZE_CONTROL(IDC_FILTERGRAPHHELPER_MEMORYALLOCATOR_LIST, DLSZ_SIZE_X | DLSZ_SIZE_Y)
+			DLGRESIZE_CONTROL(IDC_FILTERGRAPHHELPER_MEMORYALLOCATOR_REFRESH, DLSZ_MOVE_Y)
+		END_DLGRESIZE_MAP()
+
+		public:
+
+			////////////////////////////////////////////////
+			// CMemoryAllocatorData
+
+			class CMemoryAllocatorData
+			{
+			public:
+				LONG_PTR m_nIdentifier;
+				CString m_sNames;
+				HRESULT m_nMemAllocatorResult;
+				LONG m_nBufferCount;
+				LONG m_nBufferSize;
+				LONG m_nBufferAlign;
+				LONG m_nBufferPrefix;
+				HRESULT m_nMemAllocatorCallbackTempResult;
+				LONG m_nFreeBufferCount;
+
+			public:
+			// CMemoryAllocatorData
+				VOID Initialize(CRoArrayT<CComVariantArray>& Array)
+				{
+					SIZE_T nIndex = 0;
+					__D(nIndex + 2 + 1 + 1 <= Array.GetCount(), E_UNNAMED);
+					m_nIdentifier = Array[nIndex++].GetAsType(VT_I4).lVal;
+					m_sNames = Array[nIndex++].GetAsType(VT_BSTR).bstrVal;
+					m_nMemAllocatorResult = Array[nIndex++].GetAsType(VT_I4).lVal;
+					if(SUCCEEDED(m_nMemAllocatorResult))
+					{
+						__D(nIndex + 4 <= Array.GetCount(), E_UNNAMED);
+						m_nBufferCount = Array[nIndex++].GetAsType(VT_I4).lVal;
+						m_nBufferSize = Array[nIndex++].GetAsType(VT_I4).lVal;
+						m_nBufferAlign = Array[nIndex++].GetAsType(VT_I4).lVal;
+						m_nBufferPrefix = Array[nIndex++].GetAsType(VT_I4).lVal;
+					}
+					m_nMemAllocatorCallbackTempResult = Array[nIndex++].GetAsType(VT_I4).lVal;
+					if(SUCCEEDED(m_nMemAllocatorCallbackTempResult))
+					{
+						__D(nIndex + 1 <= Array.GetCount(), E_UNNAMED);
+						m_nFreeBufferCount = Array[nIndex++].GetAsType(VT_I4).lVal;
+					}
+				}
+			};
+
+		private:
+			CPropertyFrameDialog* m_pOwner;
+			BOOL m_bActivating;
+			CStatic m_TitleStatic;
+			CFont m_TitleFont;
+			CRoListViewT<CMemoryAllocatorData, CRoListControlDataTraitsT> m_ListView;
+			CButton m_RefreshButton;
+			CRoMapT<INT_PTR, BOOL> m_ChangeMap;
+
+		public:
+		// CMemoryAllocatorDialog
+			VOID UpdateListView()
+			{
+				CWindowRedraw ListViewRedraw(m_ListView);
+				CRoArrayT<INT> ValidItemArray;
+				_ATLTRY
+				{
+					const CComQIPtr<IFilterGraphMemoryAllocatorData> pFilterGraphMemoryAllocatorData = m_pOwner->m_Owner.m_pFilterGraph;
+					if(pFilterGraphMemoryAllocatorData)
+					{
+						CComVariantArray vValue;
+						__C(pFilterGraphMemoryAllocatorData->get_Value(&vValue));
+						if(vValue.vt > VT_NULL)
+						{
+							CRoArrayT<CComVariantArray> ItemArray;
+							vValue.ToElementArray(ItemArray);
+							for(auto&& vItemValue: ItemArray)
+							{
+								CRoArrayT<CComVariantArray> ItemItemArray;
+								vItemValue.ToElementArray(ItemItemArray);
+								// SUGG: Reuse existing list view items instead of full list replacement
+								CMemoryAllocatorData Data;
+								Data.Initialize(ItemItemArray);
+								const INT nItem = m_ListView.InsertItem(m_ListView.GetItemCount(), Data);
+								ValidItemArray.Add(nItem);
+							}
+						}
+					}
+				}
+				_ATLCATCHALL()
+				{
+					m_ListView.DeleteAllItems();
+					ValidItemArray.RemoveAll();
+					_ATLRETHROW;
+				}
+				for(INT nItem = m_ListView.GetItemCount() - 1; nItem >= 0; nItem--)
+					if(!ValidItemArray.FindFirst(nItem))
+						m_ListView.DeleteItem(nItem);
+			}
+
+		// Window Message Handler
+			LRESULT OnInitDialog(HWND, LPARAM lParam)
+			{
+				m_pOwner = (CPropertyFrameDialog*) lParam;
+				m_bActivating = TRUE;
+				_ATLTRY
+				{
+					CWaitCursor WaitCursor;
+					m_TitleStatic = GetDlgItem(IDC_FILTERGRAPHHELPER_MEMORYALLOCATOR_TITLE);
+					CreateTitleFont(m_TitleFont, m_TitleStatic);
+					m_ListView.Initialize(GetDlgItem(IDC_FILTERGRAPHHELPER_MEMORYALLOCATOR_LIST));
+					m_RefreshButton = GetDlgItem(IDC_FILTERGRAPHHELPER_MEMORYALLOCATOR_REFRESH);
+					DlgResize_Init(FALSE, FALSE);
+					_ATLTRY
+					{
+						UpdateListView();
+					}
+					_ATLCATCHALL()
+					{
+						_Z_EXCEPTION();
+					}
+					m_bActivating = FALSE;
+				}
+				_ATLCATCH(Exception)
+				{
+					for(CWindow Window = GetWindow(GW_CHILD); Window; Window = Window.GetWindow(GW_HWNDNEXT))
+						Window.EnableWindow(FALSE);
+					AtlExceptionMessageBox(m_hWnd, Exception);
+				}
+				return TRUE;
+			}
+			LRESULT OnListViewGetDispInfo(NMLVDISPINFO* pHeader)
+			{
+				const CMemoryAllocatorData& Data = m_ListView.DataFromParameter(pHeader->item.lParam);
+				if(pHeader->item.mask & LVIF_TEXT)
+				{
+					CString& sTextBuffer = m_ListView.GetTextBufferString(TRUE);
+					switch(pHeader->item.iSubItem)
+					{
+					case 1: // Buffer Count
+						if(SUCCEEDED(Data.m_nMemAllocatorResult))
+							sTextBuffer = _StringHelper::FormatNumber(Data.m_nBufferCount);
+						break;
+					case 2: // Free Buffer Count
+						if(SUCCEEDED(Data.m_nMemAllocatorCallbackTempResult))
+							sTextBuffer = _StringHelper::FormatNumber(Data.m_nFreeBufferCount);
+						break;
+					case 3: // Buffer Size
+						if(SUCCEEDED(Data.m_nMemAllocatorResult))
+							sTextBuffer = _StringHelper::FormatNumber(Data.m_nBufferSize);
+						break;
+					default: // Name
+						sTextBuffer = Data.m_sNames;
+					}
+					pHeader->item.pszText = m_ListView.GetTextBuffer();
+				}
+				return 0;
+			}
+			LRESULT OnListViewGetInfoTip(NMLVGETINFOTIP* pHeader)
+			{
+				const CMemoryAllocatorData& Data = m_ListView.GetItemData(pHeader->iItem);
+				CString& sTextBuffer = m_ListView.GetTextBufferString(TRUE);
+				//sTextBuffer.AppendFormat(_T("Identifier: 0x%08X") _T("\r\n"), Data.m_nIdentifier);
+				if(SUCCEEDED(Data.m_nMemAllocatorResult))
+				{
+					sTextBuffer.AppendFormat(_T("Buffer Count: %s") _T("\r\n"), _StringHelper::FormatNumber(Data.m_nBufferCount));
+					sTextBuffer.AppendFormat(_T("Buffer Size: %s (%s total)") _T("\r\n"), _StringHelper::FormatNumber(Data.m_nBufferSize), _StringHelper::FormatNumber(Data.m_nBufferCount * Data.m_nBufferSize));
+					if(Data.m_nBufferAlign > 1)
+						sTextBuffer.AppendFormat(_T("Buffer Alignment: %s") _T("\r\n"), _StringHelper::FormatNumber(Data.m_nBufferAlign));
+					if(Data.m_nBufferPrefix > 0)
+						sTextBuffer.AppendFormat(_T("Buffer Prefix: %s") _T("\r\n"), _StringHelper::FormatNumber(Data.m_nBufferPrefix));
+				} else
+					sTextBuffer.AppendFormat(_T("IMemAllocator: %s") _T("\r\n"), Ds::FormatResult(Data.m_nMemAllocatorResult, _T("Error 0x%08X")));
+				if(SUCCEEDED(Data.m_nMemAllocatorCallbackTempResult))
+				{
+					sTextBuffer.AppendFormat(_T("Free Buffer Count: %s") _T("\r\n"), _StringHelper::FormatNumber(Data.m_nFreeBufferCount));
+				} else
+					sTextBuffer.AppendFormat(_T("IMemAllocatorCallbackTemp: %s") _T("\r\n"), Ds::FormatResult(Data.m_nMemAllocatorCallbackTempResult, _T("Error 0x%08X")));
+				CString sNames = Data.m_sNames;
+				sNames.Replace(_T(", "), _T("|"));
+				CRoArrayT<CString> Array;
+				_StringHelper::Split(sNames, _T('|'), Array);
+				if(!Array.IsEmpty())
+				{
+					sTextBuffer.Append(_T("\r\n") _T("Pin Connections:") _T("\r\n"));
+					for(auto&& sName: Array)
+					{
+						sTextBuffer.AppendFormat(_T("  ") _T("%s") _T("\r\n"), sName);
+					}
+				}
+				sTextBuffer.TrimRight(_T("\t\n\r ."));
+				#pragma region Clipboard Copy
+				if(GetKeyState(VK_CONTROL) < 0 && GetKeyState(VK_SHIFT) < 0)
+					_ATLTRY
+					{
+						SetClipboardText(m_hWnd, sTextBuffer);
+						MessageBeep(MB_OK);
+					}
+					_ATLCATCHALL()
+					{
+						_Z_EXCEPTION();
+						MessageBeep(MB_ICONERROR);
+					}
+				#pragma endregion
+				_tcsncpy_s(pHeader->pszText, pHeader->cchTextMax, m_ListView.GetTextBuffer(), _TRUNCATE);
+				return 0;
+			}
+			LRESULT OnRefresh(UINT, INT, HWND)
+			{
+				UpdateListView();
+				return 0;
+			}
+		};
+
+		////////////////////////////////////////////////////
 		// CActionDialog
 
 		class CActionDialog :
@@ -1462,6 +1695,7 @@ public:
 				TYPE_FILTERS,
 				TYPE_FILTER,
 				TYPE_FILTERPROPERTYPAGE,
+				TYPE_MEMORYALLOCATOR,
 				TYPE_ACTION,
 				TYPE_EMAIL,
 				TYPE_EMAIL_LOG,
@@ -1539,6 +1773,7 @@ public:
 		BOOL m_bActivating; 
 		CRoTreeViewT<CData, CRoListControlDataTraitsT> m_TreeView;
 		CTreeItem m_FiltersItem;
+		CTreeItem m_MemoryAllocatorItem;
 		CTreeItem m_ActionItem;
 		CTreeItem m_EmailItem;
 		CTreeItem m_EmailLogItem;
@@ -1550,6 +1785,7 @@ public:
 		CButton m_CancelButton;
 		CButton m_ApplyButton;
 		CObjectPtr<CPropertyPageSite> m_pCurrentSite;
+		CMemoryAllocatorDialog m_MemoryAllocatorDialog;
 		CActionDialog m_ActionDialog;
 		CEmailDialog m_EmailDialog;
 		CEmailLogDialog m_EmailLogDialog;
@@ -1640,7 +1876,10 @@ public:
 			m_FiltersItem.m_hTreeItem = FiltersItem;
 			m_FiltersItem.m_pTreeView = &m_TreeView;
 			#pragma endregion
-			CTreeItem ActionItem = m_TreeView.InsertItem(NULL, FiltersItem, CData(CData::TYPE_ACTION), _T("Action"));
+			CTreeItem MemoryAllocatorItem = m_TreeView.InsertItem(NULL, FiltersItem, CData(CData::TYPE_MEMORYALLOCATOR), _T("Memory Allocators"));
+			m_MemoryAllocatorItem.m_hTreeItem = MemoryAllocatorItem;
+			m_MemoryAllocatorItem.m_pTreeView = &m_TreeView;
+			CTreeItem ActionItem = m_TreeView.InsertItem(NULL, MemoryAllocatorItem, CData(CData::TYPE_ACTION), _T("Action"));
 			m_ActionItem.m_hTreeItem = ActionItem;
 			m_ActionItem.m_pTreeView = &m_TreeView;
 			CTreeItem EmailItem = m_TreeView.InsertItem(NULL, ActionItem, CData(CData::TYPE_EMAIL), _T("Email"));
@@ -1683,6 +1922,7 @@ public:
 			const CRect Position = GetTextEditPosition();
 			if(m_pCurrentSite && m_pCurrentSite->m_pPropertyPage)
 				_V(m_pCurrentSite->m_pPropertyPage->Move(Position));
+			_W(m_MemoryAllocatorDialog.SetWindowPos(NULL, Position, SWP_NOZORDER | SWP_NOACTIVATE));
 			_W(m_ActionDialog.SetWindowPos(NULL, Position, SWP_NOZORDER | SWP_NOACTIVATE));
 			_W(m_EmailDialog.SetWindowPos(NULL, Position, SWP_NOZORDER | SWP_NOACTIVATE));
 			_W(m_EmailLogDialog.SetWindowPos(NULL, Position, SWP_NOZORDER | SWP_NOACTIVATE));
@@ -1730,6 +1970,7 @@ public:
 				m_OkButton = GetDlgItem(IDOK);
 				m_CancelButton = GetDlgItem(IDCANCEL);
 				m_ApplyButton = GetDlgItem(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_APPLY);
+				__E(m_MemoryAllocatorDialog.Create(m_hWnd, (LPARAM) this));
 				__E(m_ActionDialog.Create(m_hWnd, (LPARAM) this));
 				__E(m_EmailDialog.Create(m_hWnd, (LPARAM) this));
 				__E(m_EmailLogDialog.Create(m_hWnd, (LPARAM) this));
@@ -1819,6 +2060,8 @@ public:
 			if(TreeItem)
 			{
 				CData& Data = m_TreeView.GetItemData(TreeItem);
+				if(Data.m_Type != CData::TYPE_MEMORYALLOCATOR)
+					m_MemoryAllocatorDialog.ShowWindow(SW_HIDE);
 				if(Data.m_Type != CData::TYPE_ACTION)
 					m_ActionDialog.ShowWindow(SW_HIDE);
 				if(Data.m_Type != CData::TYPE_EMAIL)
@@ -1942,6 +2185,12 @@ public:
 					HideCurrentSite();
 					switch(Data.m_Type)
 					{
+					#pragma region TYPE_MEMORYALLOCATOR
+					case CData::TYPE_MEMORYALLOCATOR:
+						m_TextEdit.ShowWindow(SW_HIDE);
+						_W(m_MemoryAllocatorDialog.SetWindowPos(NULL, GetTextEditPosition(), SWP_NOZORDER | SWP_SHOWWINDOW));
+						break;
+					#pragma endregion
 					#pragma region TYPE_ACTION
 					case CData::TYPE_ACTION:
 						m_TextEdit.ShowWindow(SW_HIDE);
@@ -1963,6 +2212,7 @@ public:
 					default:
 						m_TextEdit.ShowWindow(SW_SHOW);
 						m_TextEdit.SetValue(m_Owner.GetText());
+						m_MemoryAllocatorDialog.ShowWindow(SW_HIDE);
 						m_ActionDialog.ShowWindow(SW_HIDE);
 						m_EmailDialog.ShowWindow(SW_HIDE);
 						m_EmailLogDialog.ShowWindow(SW_HIDE);
@@ -1973,6 +2223,7 @@ public:
 			{
 				HideCurrentSite();
 				m_TextEdit.ShowWindow(SW_HIDE);
+				m_MemoryAllocatorDialog.ShowWindow(SW_HIDE);
 				m_ActionDialog.ShowWindow(SW_HIDE);
 				m_EmailDialog.ShowWindow(SW_HIDE);
 				m_EmailLogDialog.ShowWindow(SW_HIDE);

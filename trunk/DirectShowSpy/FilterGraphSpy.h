@@ -79,6 +79,153 @@ public:
 };
 
 ////////////////////////////////////////////////////////////
+// CFilterGraphMemoryAllocatorData
+
+template <typename T>
+class ATL_NO_VTABLE CFilterGraphMemoryAllocatorDataT :
+	public IDispatchImpl<IFilterGraphMemoryAllocatorData>
+{
+public:
+
+	////////////////////////////////////////////////////////
+	// CMemoryAllocatorData
+
+	class CMemoryAllocatorData
+	{
+	public:
+		CComPtr<IMemAllocator> m_pMemAllocator;
+		CRoArrayT<CString> m_NameArray;
+
+	public:
+	// CMemoryAllocatorData
+		CComVariantArray GetAsVariant() const
+		{
+			CRoArrayT<CComVariantArray> Array;
+			Array.Add(CComVariant((LONG) (LONG_PTR) (IMemAllocator*) m_pMemAllocator));
+			Array.Add(CComVariant(_StringHelper::Join(m_NameArray, _T(", "))));
+			#pragma region IMemAllocator, ALLOCATOR_PROPERTIES
+			_ATLTRY
+			{
+				ALLOCATOR_PROPERTIES Properties;
+				const HRESULT nGetPropertiesResult = m_pMemAllocator->GetProperties(&Properties);
+				__C(nGetPropertiesResult);
+				Array.Add(CComVariant());
+				Array.Add(CComVariant(Properties.cBuffers));
+				Array.Add(CComVariant(Properties.cbBuffer));
+				Array.Add(CComVariant(Properties.cbAlign));
+				Array.Add(CComVariant(Properties.cbPrefix));
+			}
+			_ATLCATCH(Exception)
+			{
+				_Z_ATLEXCEPTION(Exception);
+				Array.Add(CComVariant((LONG) (HRESULT) Exception));
+			}
+			#pragma endregion
+			#pragma region IMemAllocatorCallbackTemp
+			const CComQIPtr<IMemAllocatorCallbackTemp> pMemAllocatorCallbackTemp = m_pMemAllocator;
+			if(pMemAllocatorCallbackTemp)
+			{
+				_ATLTRY
+				{
+					LONG nFreeCount = 0;
+					__C(pMemAllocatorCallbackTemp->GetFreeCount(&nFreeCount));
+					Array.Add(CComVariant());
+					Array.Add(CComVariant(nFreeCount));
+				}
+				_ATLCATCH(Exception)
+				{
+					_Z_ATLEXCEPTION(Exception);
+					Array.Add(CComVariant((LONG) (HRESULT) Exception));
+				}
+			} else
+				Array.Add(CComVariant((LONG) (HRESULT) E_NOINTERFACE));
+			#pragma endregion
+			CComVariantArray vResult;
+			return vResult.FromElementArray(Array);
+		}
+	};
+
+public:
+// CFilterGraphMemoryAllocatorDataT
+	static BOOL CompareMemAllocator(const CMemoryAllocatorData& Data, IMemAllocator* pMemAllocator)
+	{
+		return Data.m_pMemAllocator == pMemAllocator;
+	}
+	CComVariantArray GetValue()
+	{
+		#pragma region Enumerate
+		CRoArrayT<CMemoryAllocatorData> DataArray;
+		{
+			_FilterGraphHelper::CFilterArray FilterArray;
+			_FilterGraphHelper::GetGraphFilters((IFilterGraph2*) static_cast<T*>(this), FilterArray);
+			for(auto&& pBaseFilter: FilterArray)
+			{
+				_ATLTRY
+				{
+					_FilterGraphHelper::CPinArray PinArray;
+					_FilterGraphHelper::GetFilterPins(pBaseFilter, PINDIR_INPUT, PinArray);
+					for(auto&& pInputPin: PinArray)
+					{
+						_ATLTRY
+						{
+							const CComPtr<IPin> pOutputPin = _FilterGraphHelper::GetPeerPin(pInputPin);
+							if(!pOutputPin)
+								continue;
+							const CComQIPtr<IMemInputPin> pMemInputPin = pInputPin;
+							if(!pMemInputPin)
+								continue;
+							CComPtr<IMemAllocator> pMemAllocator;
+							pMemInputPin->GetAllocator(&pMemAllocator);
+							if(!pMemAllocator)
+								continue;
+							SIZE_T nIndex;
+							if(!DataArray.FindFirstThatT<IMemAllocator*>(&CFilterGraphMemoryAllocatorDataT<T>::CompareMemAllocator, pMemAllocator, &nIndex))
+							{
+								nIndex = DataArray.Add();
+								DataArray[nIndex].m_pMemAllocator = pMemAllocator;
+							}
+							CMemoryAllocatorData& Data = DataArray[nIndex];
+							Data.m_NameArray.Add(AtlFormatString(_T("%ls - %ls"), _FilterGraphHelper::GetPinFullName(pOutputPin), _FilterGraphHelper::GetPinFullName(pInputPin)));
+						}
+						_ATLCATCHALL()
+						{
+							_Z_EXCEPTION();
+						}
+					}
+				}
+				_ATLCATCHALL()
+				{
+					_Z_EXCEPTION();
+				}
+			}
+		}
+		#pragma endregion 
+		CRoArrayT<CComVariantArray> Array;
+		for(auto&& Data: DataArray)
+			Array.Add(Data.GetAsVariant());
+		CComVariantArray vResult;
+		return vResult.FromElementArray(Array);
+	}
+
+// IFilterGraphMemoryAllocatorData
+	STDMETHOD(get_Value)(VARIANT* pvValue)
+	{
+		_Z4(atlTraceCOM, 4, _T("this 0x%p\n"), this);
+		_ATLTRY
+		{
+			__D(pvValue, E_POINTER);
+			VariantInit(pvValue);
+			_V(GetValue().Detach(pvValue));
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return S_OK;
+	}
+};
+
+////////////////////////////////////////////////////////////
 // CSpyT
 
 LPCTSTR g_pszAddRemoveHookName = _T("Add/Remove Hooks");
@@ -98,6 +245,7 @@ class ATL_NO_VTABLE CSpyT :
 	public IDispatchImpl<IMediaEventEx, &__uuidof(IMediaEventEx), &__uuidof(Quartz::__QuartzTypeLib)>,
 	public IObjectWithSite,
 	public CModuleVersionInformationT<T>,
+	public CFilterGraphMemoryAllocatorDataT<T>,
 	public CHookHostT<T, IFilterGraphAddRemoveHook, &g_pszAddRemoveHookName>,
 	public CHookHostT<T, IFilterGraphConnectHook, &g_pszConnectHookName>,
 	public CHookHostT<T, IFilterGraphStateControlHook, &g_pszStateControlHookName>
@@ -135,6 +283,7 @@ BEGIN_COM_MAP(CSpy)
 	COM_INTERFACE_ENTRY(IMediaEvent)
 	COM_INTERFACE_ENTRY_FUNC(__uuidof(IObjectWithSite), 0, QueryObjectWithSiteInterface)
 	COM_INTERFACE_ENTRY(IModuleVersionInformation)
+	COM_INTERFACE_ENTRY(IFilterGraphMemoryAllocatorData)
 	COM_INTERFACE_ENTRY_AGGREGATE_BLIND(m_pInnerUnknown)
 	//COM_INTERFACE_ENTRY(IDispatch)
 END_COM_MAP()
