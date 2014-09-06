@@ -3204,6 +3204,71 @@ public:
 			#pragma endregion 
 		}
 		#pragma endregion 
+		#pragma region Clock
+		{
+			sText += AtlFormatString(_T("## ") _T("Clock") _T("\r\n") _T("\r\n"));
+			CComPtr<IReferenceClock> pCurrentReferenceClock;
+			_ATLTRY
+			{
+				const CComQIPtr<IMediaFilter> pMediaFilter = pFilterGraph;
+				if(pMediaFilter)
+					__C(pMediaFilter->GetSyncSource(&pCurrentReferenceClock));
+			}
+			_ATLCATCHALL()
+			{
+				_Z_EXCEPTION();
+			}
+			CStringW sCurrentName;
+			for(auto&& pBaseFilter: FilterArray)
+			{
+				const CComQIPtr<IReferenceClock> pReferenceClock = pBaseFilter;
+				if(!pReferenceClock)
+					continue;
+				const CStringW sName = _FilterGraphHelper::GetFilterName(pBaseFilter);
+				CRoArrayT<CString> Array;
+				_ATLTRY
+				{
+					if(pCurrentReferenceClock == pReferenceClock)
+					{
+						sCurrentName = sName;
+						Array.Add(_T("Current"));
+					}
+					Array.Add(I(pReferenceClock));
+					REFERENCE_TIME nTime = 0;
+					__C(pReferenceClock->GetTime(&nTime));
+					Array.Add(I(_FilterGraphHelper::FormatReferenceTime(nTime)));
+					Array.Add(I(AtlFormatString(_T("0x%I64X"), nTime)));
+				}
+				_ATLCATCHALL()
+				{
+					_Z_EXCEPTION();
+				}
+				sText += AtlFormatString(_T(" * ") _T("%s (%s)") _T("\r\n"), I(sName), _StringHelper::Join(Array, _T(", ")));
+			}
+			if(pCurrentReferenceClock)
+			{
+				if(sCurrentName.IsEmpty())
+				{
+					CRoArrayT<CString> Array;
+					_ATLTRY
+					{
+						Array.Add(I(pCurrentReferenceClock));
+						REFERENCE_TIME nTime = 0;
+						__C(pCurrentReferenceClock->GetTime(&nTime));
+						Array.Add(I(_FilterGraphHelper::FormatReferenceTime(nTime)));
+						Array.Add(I(AtlFormatString(_T("0x%I64X"), nTime)));
+					}
+					_ATLCATCHALL()
+					{
+						_Z_EXCEPTION();
+					}
+					sText += AtlFormatString(_T(" * ") _T("Current: External (%s)") _T("\r\n"), _StringHelper::Join(Array, _T(", ")));
+				}
+			} else
+				sText += AtlFormatString(_T(" * ") _T("Current: None") _T("\r\n"));
+			sText += _T("\r\n");
+		}
+		#pragma endregion 
 		return sText;
 	}
 	#undef I
