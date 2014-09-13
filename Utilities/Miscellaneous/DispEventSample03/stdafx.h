@@ -14,7 +14,10 @@
 #define _ATL_APARTMENT_THREADED
 
 #include <atlbase.h>
+
+#undef _SYSINFOAPI_H_
 #include <atlapp.h>
+#define _SYSINFOAPI_H_
 
 extern CServerAppModule _Module;
 

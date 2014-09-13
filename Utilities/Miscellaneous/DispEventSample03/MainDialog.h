@@ -21,8 +21,10 @@
 class CMainDialog : 
 	public CAxDialogImpl<CMainDialog>,
 	public CDialogResize<CMainDialog>,
-	public IDispEventImpl<IDC_EXPLORER1, CMainDialog, &__uuidof(IE::DWebBrowserEvents2), &__uuidof(IE::__SHDocVw), 1, 0>,
-	public IDispEventImpl<IDC_EXPLORER2, CMainDialog, &__uuidof(IE::DWebBrowserEvents2), &__uuidof(IE::__SHDocVw), 1, 0>
+	//public IDispEventImpl<IDC_EXPLORER1, CMainDialog, &__uuidof(IE::DWebBrowserEvents2), &__uuidof(IE::__SHDocVw), 1, 0>,
+	//public IDispEventImpl<IDC_EXPLORER2, CMainDialog, &__uuidof(IE::DWebBrowserEvents2), &__uuidof(IE::__SHDocVw), 1, 0>
+	public IDispEventImpl<IDC_EXPLORER1, CMainDialog, &DIID_DWebBrowserEvents2, &LIBID_SHDocVw, 1, 1>,
+	public IDispEventImpl<IDC_EXPLORER2, CMainDialog, &DIID_DWebBrowserEvents2, &LIBID_SHDocVw, 1, 1>
 {
 public:
 	enum { IDD = IDD_MAIN };
@@ -44,10 +46,14 @@ BEGIN_DLGRESIZE_MAP(CMainDialog)
 END_DLGRESIZE_MAP()
 
 BEGIN_SINK_MAP(CMainDialog)
-	SINK_ENTRY_EX(IDC_EXPLORER1, __uuidof(IE::DWebBrowserEvents2), 0x00FA, OnExplorer1BeforeNavigate2)
-	SINK_ENTRY_EX(IDC_EXPLORER1, __uuidof(IE::DWebBrowserEvents2), 0x0103, OnExplorer1DocumentComplete)
-	SINK_ENTRY_EX(IDC_EXPLORER2, __uuidof(IE::DWebBrowserEvents2), 0x00FA, OnExplorer2BeforeNavigate2)
-	SINK_ENTRY_EX(IDC_EXPLORER2, __uuidof(IE::DWebBrowserEvents2), 0x0103, OnExplorer2DocumentComplete)
+	//SINK_ENTRY_EX(IDC_EXPLORER1, __uuidof(IE::DWebBrowserEvents2), 0x00FA, OnExplorer1BeforeNavigate2)
+	//SINK_ENTRY_EX(IDC_EXPLORER1, __uuidof(IE::DWebBrowserEvents2), 0x0103, OnExplorer1DocumentComplete)
+	//SINK_ENTRY_EX(IDC_EXPLORER2, __uuidof(IE::DWebBrowserEvents2), 0x00FA, OnExplorer2BeforeNavigate2)
+	//SINK_ENTRY_EX(IDC_EXPLORER2, __uuidof(IE::DWebBrowserEvents2), 0x0103, OnExplorer2DocumentComplete)
+	SINK_ENTRY_EX(IDC_EXPLORER1, DIID_DWebBrowserEvents2, 0x00FA, OnExplorer1BeforeNavigate2)
+	SINK_ENTRY_EX(IDC_EXPLORER1, DIID_DWebBrowserEvents2, 0x0103, OnExplorer1DocumentComplete)
+	SINK_ENTRY_EX(IDC_EXPLORER2, DIID_DWebBrowserEvents2, 0x00FA, OnExplorer2BeforeNavigate2)
+	SINK_ENTRY_EX(IDC_EXPLORER2, DIID_DWebBrowserEvents2, 0x0103, OnExplorer2DocumentComplete)
 END_SINK_MAP() 
 
 public:
