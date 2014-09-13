@@ -121,7 +121,7 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION  1, 0, 0, 29
+ FILEVERSION  1, 0, 0, 36
  PRODUCTVERSION 1,0,0,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
@@ -138,7 +138,7 @@ BEGIN
         BLOCK "040904B0"
         BEGIN
             VALUE "FileDescription", "DispEventSample03 Module"
-            VALUE "FileVersion",  "1, 0, 0, 29\0"
+            VALUE "FileVersion",  "1, 0, 0, 36\0"
             VALUE "InternalName", "DispEventSample03"
             VALUE "LegalCopyright", "Copyright 2009"
             VALUE "OriginalFilename", "DispEventSample03.exe"
