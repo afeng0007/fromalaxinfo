@@ -1695,6 +1695,8 @@ public:
 				TYPE_FILTERS,
 				TYPE_FILTER,
 				TYPE_FILTERPROPERTYPAGE,
+				TYPE_SERVICES,
+				TYPE_SERVICEPROPERTYPAGE,
 				TYPE_MEMORYALLOCATOR,
 				TYPE_ACTION,
 				TYPE_EMAIL,
@@ -1752,6 +1754,15 @@ public:
 			{
 				_A(pPropertyPage);
 			}
+			CData(IPropertyPage* pPropertyPage) :
+				m_Type(TYPE_SERVICEPROPERTYPAGE),
+				m_BaseFilterClassIdentifier(CLSID_NULL),
+				m_PropertyPageClassIdentifier(CLSID_NULL),
+				m_pPropertyPage(pPropertyPage),
+				m_bSiteActivated(FALSE)
+			{
+				_A(pPropertyPage);
+			}
 			CString GetPropertyPageTitle() const
 			{
 				if(!m_pPropertyPage)
@@ -1767,6 +1778,29 @@ public:
 				return sTitle;
 			}
 		};
+
+		////////////////////////////////////////////////////
+		// CObjectPropertyPage
+
+		class CObjectPropertyPage
+		{
+		public:
+			CComPtr<IUnknown> m_pUnknown;
+			CComPtr<IPropertyPage> m_pPropertyPage;
+
+		public:
+		// CObjectPropertyPage
+			CObjectPropertyPage()
+			{
+			}
+			CObjectPropertyPage(IUnknown* pUnknown, IPropertyPage* pPropertyPage) :
+				m_pUnknown(pUnknown),
+				m_pPropertyPage(pPropertyPage)
+			{
+			}
+		};
+
+		typedef CRoArrayT<CObjectPropertyPage> CObjectPropertyPageArray;
 
 	private:
 		CFilterGraphHelper& m_Owner;
@@ -1819,6 +1853,7 @@ public:
 		{
 			CWindowRedraw TreeViewRedraw(m_TreeView);
 			m_TreeView.DeleteAllItems();
+			CTreeItem LastItem;
 			#pragma region Filter
 			CTreeItem FiltersItem = m_TreeView.InsertItem(NULL, NULL, CData(CData::TYPE_FILTERS), _T("Filters"));
 			_FilterGraphHelper::CFilterArray FilterArray;
@@ -1875,8 +1910,68 @@ public:
 			m_TreeView.Expand(FiltersItem);
 			m_FiltersItem.m_hTreeItem = FiltersItem;
 			m_FiltersItem.m_pTreeView = &m_TreeView;
+			LastItem = FiltersItem;
 			#pragma endregion
-			CTreeItem MemoryAllocatorItem = m_TreeView.InsertItem(NULL, FiltersItem, CData(CData::TYPE_MEMORYALLOCATOR), _T("Memory Allocators"));
+			#pragma region Services
+			_ATLTRY
+			{
+				CObjectPropertyPageArray ObjectPropertyPageArray;
+				const CComQIPtr<IServiceProvider> pServiceProvider = m_Owner.m_pFilterGraph;
+				if(pServiceProvider)
+				{
+					#pragma region RunPropertyBagAware
+					CComPtr<IRunPropertyBagAware> pRunPropertyBagAware;
+					if(SUCCEEDED(pServiceProvider->QueryService<IRunPropertyBagAware>(__uuidof(IRunPropertyBagAware), &pRunPropertyBagAware)))
+						_ATLTRY
+						{
+							_A(pRunPropertyBagAware);
+							CObjectPtr<CRunPropertyBagPropertyPage> pRunPropertyBagPropertyPage;
+							pRunPropertyBagPropertyPage.Construct();
+							ObjectPropertyPageArray.Add(CObjectPropertyPage(pRunPropertyBagAware, pRunPropertyBagPropertyPage));
+						}
+						_ATLCATCHALL()
+						{
+							_Z_EXCEPTION();
+						}
+					#pragma endregion
+					#pragma region RunEventAware
+					CComPtr<IRunEventAware> pRunEventAware;
+					if(SUCCEEDED(pServiceProvider->QueryService<IRunEventAware>(__uuidof(IRunEventAware), &pRunEventAware)))
+						_ATLTRY
+						{
+							_A(pRunEventAware);
+							CObjectPtr<CRunEventPropertyPage> pRunEventPropertyPage;
+							pRunEventPropertyPage.Construct();
+							ObjectPropertyPageArray.Add(CObjectPropertyPage(pRunEventAware, pRunEventPropertyPage));
+						}
+						_ATLCATCHALL()
+						{
+							_Z_EXCEPTION();
+						}
+					#pragma endregion
+				}
+				if(!ObjectPropertyPageArray.IsEmpty())
+				{
+					CTreeItem ServicesItem = m_TreeView.InsertItem(NULL, LastItem, CData(CData::TYPE_SERVICES), _T("Services"));
+					LastItem = ServicesItem;
+					CTreeItem PreviousServiceItem;
+					for(auto&& ObjectPropertyPage: ObjectPropertyPageArray)
+					{
+						CData Data(ObjectPropertyPage.m_pPropertyPage);
+						Data.m_pSite.Construct()->Initialize(this, ObjectPropertyPage.m_pUnknown, ObjectPropertyPage.m_pPropertyPage);
+						CTreeItem ServiceItem = m_TreeView.InsertItem(ServicesItem, PreviousServiceItem, Data, Data.GetPropertyPageTitle());
+						PreviousServiceItem = ServiceItem;
+					}
+					m_TreeView.Expand(ServicesItem);
+				}
+			}
+			_ATLCATCHALL()
+			{
+				_Z_EXCEPTION();
+			}
+			#pragma endregion
+			#pragma region Other
+			CTreeItem MemoryAllocatorItem = m_TreeView.InsertItem(NULL, LastItem, CData(CData::TYPE_MEMORYALLOCATOR), _T("Memory Allocators"));
 			m_MemoryAllocatorItem.m_hTreeItem = MemoryAllocatorItem;
 			m_MemoryAllocatorItem.m_pTreeView = &m_TreeView;
 			CTreeItem ActionItem = m_TreeView.InsertItem(NULL, MemoryAllocatorItem, CData(CData::TYPE_ACTION), _T("Action"));
@@ -1888,6 +1983,7 @@ public:
 			CTreeItem EmailLogItem = m_TreeView.InsertItem(EmailItem, NULL, CData(CData::TYPE_EMAIL_LOG), _T("Log Files"));
 			m_EmailLogItem.m_hTreeItem = EmailLogItem;
 			m_EmailLogItem.m_pTreeView = &m_TreeView;
+			#pragma endregion
 			m_TreeView.Expand(EmailItem);
 		}
 		VOID HideCurrentSite()
@@ -2056,6 +2152,7 @@ public:
 		LRESULT OnTreeViewSelChanged(NMTREEVIEW* pHeader)
 		{
 			_A(pHeader);
+			#pragma region Tree Item
 			CTreeItem TreeItem(pHeader->itemNew.hItem);
 			if(TreeItem)
 			{
@@ -2068,8 +2165,10 @@ public:
 					m_EmailDialog.ShowWindow(SW_HIDE);
 				if(Data.m_Type != CData::TYPE_EMAIL_LOG)
 					m_EmailLogDialog.ShowWindow(SW_HIDE);
+				#pragma region Filter
 				if(Data.m_pBaseFilter)
 				{
+					#pragma region Property Page
 					if(Data.m_pPropertyPage)
 					{
 						m_TextEdit.ShowWindow(SW_HIDE);
@@ -2085,6 +2184,8 @@ public:
 						m_pCurrentSite = Data.m_pSite;
 						HandleStatusChange(m_pCurrentSite);
 					} else
+					#pragma endregion
+					#pragma region Text
 					{
 						CWaitCursor WaitCursor;
 						HideCurrentSite();
@@ -2179,7 +2280,27 @@ public:
 						m_TextEdit.SetValue(sText);
 						m_ApplyButton.EnableWindow(FALSE);
 					}
+					#pragma endregion
 				} else
+				#pragma endregion
+				#pragma region Service Property Page 
+				if(Data.m_pPropertyPage)
+				{
+					m_TextEdit.ShowWindow(SW_HIDE);
+					if(Data.m_pSite != m_pCurrentSite)
+						HideCurrentSite();
+					if(!Data.m_bSiteActivated)
+					{
+						__C(Data.m_pPropertyPage->Activate(m_hWnd, GetTextEditPosition(), TRUE));
+						Data.m_bSiteActivated = TRUE;
+					} else
+						__C(Data.m_pPropertyPage->Move(GetTextEditPosition()));
+					__C(Data.m_pPropertyPage->Show(SW_SHOWNORMAL));
+					m_pCurrentSite = Data.m_pSite;
+					HandleStatusChange(m_pCurrentSite);
+				} else
+				#pragma endregion
+				#pragma region Other
 				{
 					CWaitCursor WaitCursor;
 					HideCurrentSite();
@@ -2219,7 +2340,10 @@ public:
 					}
 					m_ApplyButton.EnableWindow(FALSE);
 				}
+				#pragma endregion
 			} else
+			#pragma endregion
+			#pragma region No Tree Item
 			{
 				HideCurrentSite();
 				m_TextEdit.ShowWindow(SW_HIDE);
@@ -2229,6 +2353,7 @@ public:
 				m_EmailLogDialog.ShowWindow(SW_HIDE);
 				m_ApplyButton.EnableWindow(FALSE);
 			}
+			#pragma endregion
 			return 0;
 		}
 		LRESULT OnTreeViewItemExplanding(NMTREEVIEW* pHeader)
@@ -2929,6 +3054,7 @@ public:
 	{
 		if(!pFilterGraph)
 			return (LPCTSTR) NULL;
+		const CComQIPtr<IServiceProvider> pServiceProvider = pFilterGraph;
 		const CComQIPtr<ISpy> pSpy = pFilterGraph;
 		CString sText;
 		sText += AtlFormatString(_T("# ") _T("Filter Graph") _T("\r\n") _T("\r\n"));
@@ -3179,18 +3305,28 @@ public:
 				sText += _T("\r\n");
 			#pragma endregion 
 			#pragma region Runtime Property Bag
+			const CString sRunPropertyBagHeader = AtlFormatString(_T("## ") _T("Runtime Properties") _T("\r\n") _T("\r\n"));
 			BOOL bRunPropertyBagHeaderAdded = FALSE;
-			for(SIZE_T nIndex = 0; nIndex < FilterArray.GetCount(); nIndex++)
+			{
+				const CString sPropertyBagText = CRunPropertyBagHelper::GetPropertyBagText(pFilterGraph, pSpy);
+				if(!sPropertyBagText.IsEmpty())
+				{
+					sText += sRunPropertyBagHeader;
+					bRunPropertyBagHeaderAdded = TRUE;
+					sText += sPropertyBagText;
+					sText += _T("\r\n");
+				}
+			}
+			for(auto&& pBaseFilter: FilterArray)
+			{
 				_ATLTRY
 				{
-					const CComPtr<IBaseFilter>& pBaseFilter = FilterArray[nIndex];
-					//_Z4(atlTraceGeneral, 4, _T("pBaseFilter 0x%p \"%ls\"\n"), pBaseFilter, _FilterGraphHelper::GetFilterName(pBaseFilter));
 					const CString sPropertyBagText = CRunPropertyBagHelper::GetPropertyBagText(pBaseFilter, pSpy);
 					if(sPropertyBagText.IsEmpty())
 						continue;
 					if(!bRunPropertyBagHeaderAdded)
 					{
-						sText += AtlFormatString(_T("## ") _T("Runtime Properties") _T("\r\n") _T("\r\n"));
+						sText += sRunPropertyBagHeader;
 						bRunPropertyBagHeaderAdded = TRUE;
 					}
 					sText += AtlFormatString(_T("### ") _T("Filter: %ls") _T("\r\n") _T("\r\n"), _FilterGraphHelper::GetFilterName(pBaseFilter));
@@ -3201,6 +3337,7 @@ public:
 				{
 					_Z_EXCEPTION();
 				}
+			}
 			#pragma endregion 
 		}
 		#pragma endregion 
