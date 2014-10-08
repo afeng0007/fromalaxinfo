@@ -1,10 +1,10 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2008-2013
+// Copyright (C) Roman Ryltsov, 2008-2014
 // Created by Roman Ryltsov roman@alax.info
 
 #include "stdafx.h"
 #include "resource.h"
-#include "StressEvr_i.h"
+//#include "Module_i.h"
 #include "MainDialog.h"
 
 ////////////////////////////////////////////////////////////
