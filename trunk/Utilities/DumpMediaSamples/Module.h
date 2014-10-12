@@ -1,0 +1,471 @@
+////////////////////////////////////////////////////////////
+// Copyright (C) Roman Ryltsov, 2006-2014
+// Created by Roman Ryltsov roman@alax.info
+// 
+// A permission to use the source code is granted as long as reference to 
+// source website http://alax.info is retained.
+
+#include "stdafx.h"
+#include "rodshow.h"
+
+////////////////////////////////////////////////////////////
+// CFormatFlagHelper
+
+class CFormatFlagHelper
+{
+public:
+
+	////////////////////////////////////////////////////
+	// FLAGNAME
+
+	typedef struct _FLAGNAME
+	{
+		DWORD nValue;
+		LPCTSTR pszName;
+	} FLAGNAME;
+
+public:
+// CFormatFlagHelper
+	static CString StringFromFlags(DWORD nValue, const FLAGNAME* pFlagNames, SIZE_T nFlagNameCount)
+	{
+		CString sText;
+		DWORD nKnownValues = 0;
+		for(SIZE_T nIndex = 0; nIndex < nFlagNameCount; nIndex++)
+		{
+			nKnownValues |= pFlagNames[nIndex].nValue;
+			if(!(nValue & pFlagNames[nIndex].nValue))
+				continue;
+			if(!sText.IsEmpty())
+				sText.Append(_T(" | "));
+			sText.Append(pFlagNames[nIndex].pszName);
+		}
+		DWORD nUnnamedValue = nValue & ~nKnownValues;
+		if(nUnnamedValue)
+		{
+			if(!sText.IsEmpty())
+				sText.Append(_T(" | "));
+			sText.AppendFormat(_T("0x%08x"), nUnnamedValue);
+		}
+		return sText;
+	}
+	template <SIZE_T t_nCount>
+	static CString StringFromFlags(DWORD nValue, const FLAGNAME (&pFlagNames)[t_nCount])
+	{
+		return StringFromFlags(nValue, pFlagNames, t_nCount);
+	}
+	static CString StringFromTypeSpecificFlags(DWORD nValue)
+	{
+		static const FLAGNAME g_pNames[] =
+		{
+			//{ AM_VIDEO_FLAG_FIELD_MASK
+			//{ AM_VIDEO_FLAG_INTERLEAVED_FRAME
+			{ AM_VIDEO_FLAG_FIELD1, _T("AM_VIDEO_FLAG_FIELD1") },
+			{ AM_VIDEO_FLAG_FIELD2, _T("AM_VIDEO_FLAG_FIELD2") },
+			{ AM_VIDEO_FLAG_FIELD1FIRST, _T("AM_VIDEO_FLAG_FIELD1FIRST") },
+			{ AM_VIDEO_FLAG_WEAVE, _T("AM_VIDEO_FLAG_WEAVE") },
+			//{ AM_VIDEO_FLAG_IPB_MASK
+			//{ AM_VIDEO_FLAG_I_SAMPLE
+			{ AM_VIDEO_FLAG_P_SAMPLE, _T("AM_VIDEO_FLAG_P_SAMPLE") },
+			{ AM_VIDEO_FLAG_B_SAMPLE, _T("AM_VIDEO_FLAG_B_SAMPLE") },
+			{ AM_VIDEO_FLAG_REPEAT_FIELD, _T("AM_VIDEO_FLAG_REPEAT_FIELD") },
+		};
+		return StringFromFlags(nValue, g_pNames);
+	}
+	static CString StringFromSampleFlags(DWORD nValue)
+	{
+		static const FLAGNAME g_pNames[] =
+		{
+			{ AM_SAMPLE_SPLICEPOINT, _T("AM_SAMPLE_SPLICEPOINT") },
+			{ AM_SAMPLE_PREROLL, _T("AM_SAMPLE_PREROLL") },
+			{ AM_SAMPLE_DATADISCONTINUITY, _T("AM_SAMPLE_DATADISCONTINUITY") },
+			{ AM_SAMPLE_TYPECHANGED, _T("AM_SAMPLE_TYPECHANGED") },
+			{ AM_SAMPLE_TIMEVALID, _T("AM_SAMPLE_TIMEVALID") },
+			{ AM_SAMPLE_TIMEDISCONTINUITY, _T("AM_SAMPLE_TIMEDISCONTINUITY") },
+			{ AM_SAMPLE_FLUSH_ON_PAUSE, _T("AM_SAMPLE_FLUSH_ON_PAUSE") },
+			{ AM_SAMPLE_STOPVALID, _T("AM_SAMPLE_STOPVALID") },
+			{ AM_SAMPLE_ENDOFSTREAM, _T("AM_SAMPLE_ENDOFSTREAM") },
+			//{ AM_STREAM_MEDIA
+			//{ AM_STREAM_CONTROL
+		};
+		return StringFromFlags(nValue, g_pNames);
+	}
+};
+
+////////////////////////////////////////////////////////////
+// CModule
+
+class CModule :
+	public CAtlExeModuleT<CModule>
+{
+public:
+
+	////////////////////////////////////////////////////////
+	// CSampleGrabberCallback
+
+	class ATL_NO_VTABLE CSampleGrabberCallback :
+		public CComObjectRootEx<CComMultiThreadModel>,
+		public ISampleGrabberCB,
+		public CFormatFlagHelper
+	{
+	public:
+
+	BEGIN_COM_MAP(CSampleGrabberCallback)
+		COM_INTERFACE_ENTRY(ISampleGrabberCB)
+	END_COM_MAP()
+
+	private:
+		CModule* m_pModule;
+		CString m_sName;
+		CString m_sNamePrefix;
+		mutable CRoCriticalSection m_DataCriticalSection;
+		CMediaType m_pMediaType;
+		CComPtr<CAbstractHandler> m_pHandler;
+		DWORD m_nPreviousFlags;
+		REFERENCE_TIME m_nPreviousStartTime;
+		REFERENCE_TIME m_nPreviousStopTime;
+
+	public:
+	// CSampleGrabberCallback
+		CSampleGrabberCallback() :
+			m_pModule(NULL)
+		{
+			_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		}
+		~CSampleGrabberCallback()
+		{
+			_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		}
+		VOID Initialize(CModule* pModule)
+		{
+			_A(!m_pModule && pModule);
+			m_pModule = pModule;
+			m_nPreviousFlags = 0;
+		}
+		VOID SetName(const CString& sName)
+		{
+			_A(m_sName.IsEmpty());
+			m_sName = sName;
+			m_sNamePrefix = AtlFormatString(_T("[%s] "), sName);
+		}
+		VOID SetMediaType(const AM_MEDIA_TYPE* pMediaType)
+		{
+			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+			PrintMediaType(pMediaType);
+			m_pMediaType = pMediaType;
+		}
+		VOID PrintMediaType(const CMediaType& pMediaType)
+		{
+			_tprintf(_T("%s") _T("Media Type:\n\n"), m_sNamePrefix);
+			_tprintf(_T("majortype %ls, subtype %ls, pUnk 0x%08x\n"), _PersistHelper::StringFromIdentifier(pMediaType->majortype), _PersistHelper::StringFromIdentifier(pMediaType->subtype), (LONG) (LONG_PTR) pMediaType->pUnk);
+			_tprintf(_T("bFixedSizeSamples %d, bTemporalCompression %d, lSampleSize %d\n"), pMediaType->bFixedSizeSamples, pMediaType->bTemporalCompression, pMediaType->lSampleSize);
+			_tprintf(_T("formattype %ls, cbFormat %d, pbFormat 0x%08x\n"), _PersistHelper::StringFromIdentifier(pMediaType->formattype), pMediaType->cbFormat, (UINT) (UINT_PTR) pMediaType->pbFormat);
+			if(pMediaType->formattype == FORMAT_VideoInfo)
+			{
+				const VIDEOINFOHEADER* pVideoInfoHeader = (const VIDEOINFOHEADER*) (pMediaType->pbFormat ? pMediaType->pbFormat : (BYTE*) (pMediaType + 1));
+				_tprintf(_T("pbFormat as VIDEOINFOHEADER:\n"));
+				_tprintf(_T("  rcSource { %d, %d, %d, %d ), rcTarget { %d, %d, %d, %d }\n"), pVideoInfoHeader->rcSource.left, pVideoInfoHeader->rcSource.top, pVideoInfoHeader->rcSource.right, pVideoInfoHeader->rcSource.bottom, pVideoInfoHeader->rcTarget.left, pVideoInfoHeader->rcTarget.top, pVideoInfoHeader->rcTarget.right, pVideoInfoHeader->rcTarget.bottom);
+				_tprintf(_T("  dwBitRate %d, dwBitErrorRate %d, AvgTimePerFrame %s\n"), pVideoInfoHeader->dwBitRate, pVideoInfoHeader->dwBitErrorRate, _FilterGraphHelper::FormatReferenceTime(pVideoInfoHeader->AvgTimePerFrame));
+				_tprintf(_T("  bmiHeader.biSize %d, bmiHeader.biWidth %d, bmiHeader.biHeight %d, bmiHeader.biPlanes %d, bmiHeader.biBitCount %d, bmiHeader.biCompression %s\n"), pVideoInfoHeader->bmiHeader.biSize, pVideoInfoHeader->bmiHeader.biWidth, pVideoInfoHeader->bmiHeader.biHeight, pVideoInfoHeader->bmiHeader.biPlanes, pVideoInfoHeader->bmiHeader.biBitCount, _FilterGraphHelper::GetFourccCodeString(pVideoInfoHeader->bmiHeader.biCompression));
+				_tprintf(_T("  bmiHeader.biSizeImage %d, bmiHeader.biXPelsPerMeter %d, bmiHeader.biYPelsPerMeter %d, bmiHeader.biClrUsed %d, bmiHeader.biClrImportant %d\n"), pVideoInfoHeader->bmiHeader.biSizeImage, pVideoInfoHeader->bmiHeader.biXPelsPerMeter, pVideoInfoHeader->bmiHeader.biYPelsPerMeter, pVideoInfoHeader->bmiHeader.biClrUsed, pVideoInfoHeader->bmiHeader.biClrImportant);
+			} else
+			if(pMediaType->formattype == FORMAT_VideoInfo2)
+			{
+				const VIDEOINFOHEADER2* pVideoInfoHeader2 = (const VIDEOINFOHEADER2*) (pMediaType->pbFormat ? pMediaType->pbFormat : (BYTE*) (pMediaType + 1));
+				_tprintf(_T("pbFormat as VIDEOINFOHEADER2:\n"));
+				_tprintf(_T("  rcSource { %d, %d, %d, %d ), rcTarget { %d, %d, %d, %d }\n"), pVideoInfoHeader2->rcSource.left, pVideoInfoHeader2->rcSource.top, pVideoInfoHeader2->rcSource.right, pVideoInfoHeader2->rcSource.bottom, pVideoInfoHeader2->rcTarget.left, pVideoInfoHeader2->rcTarget.top, pVideoInfoHeader2->rcTarget.right, pVideoInfoHeader2->rcTarget.bottom);
+				_tprintf(_T("  dwBitRate %d, dwBitErrorRate %d, AvgTimePerFrame %s\n"), pVideoInfoHeader2->dwBitRate, pVideoInfoHeader2->dwBitErrorRate, _FilterGraphHelper::FormatReferenceTime(pVideoInfoHeader2->AvgTimePerFrame));
+				_tprintf(_T("  dwInterlaceFlags 0x%x, dwCopyProtectFlags 0x%x, dwPictAspectRatioX %d, dwPictAspectRatioY %d, dwControlFlags 0x%x\n"), pVideoInfoHeader2->dwInterlaceFlags, pVideoInfoHeader2->dwCopyProtectFlags, pVideoInfoHeader2->dwPictAspectRatioX, pVideoInfoHeader2->dwPictAspectRatioY, pVideoInfoHeader2->dwControlFlags);
+				_tprintf(_T("  bmiHeader.biSize %d, bmiHeader.biWidth %d, bmiHeader.biHeight %d, bmiHeader.biPlanes %d, bmiHeader.biBitCount %d, bmiHeader.biCompression %s\n"), pVideoInfoHeader2->bmiHeader.biSize, pVideoInfoHeader2->bmiHeader.biWidth, pVideoInfoHeader2->bmiHeader.biHeight, pVideoInfoHeader2->bmiHeader.biPlanes, pVideoInfoHeader2->bmiHeader.biBitCount, _FilterGraphHelper::GetFourccCodeString(pVideoInfoHeader2->bmiHeader.biCompression));
+				_tprintf(_T("  bmiHeader.biSizeImage %d, bmiHeader.biXPelsPerMeter %d, bmiHeader.biYPelsPerMeter %d, bmiHeader.biClrUsed %d, bmiHeader.biClrImportant %d\n"), pVideoInfoHeader2->bmiHeader.biSizeImage, pVideoInfoHeader2->bmiHeader.biXPelsPerMeter, pVideoInfoHeader2->bmiHeader.biYPelsPerMeter, pVideoInfoHeader2->bmiHeader.biClrUsed, pVideoInfoHeader2->bmiHeader.biClrImportant);
+			} else
+			if(pMediaType->formattype == FORMAT_WaveFormatEx)
+			{
+				const WAVEFORMATEX* pWaveFormatEx = (const WAVEFORMATEX*) (pMediaType->pbFormat ? pMediaType->pbFormat : (BYTE*) (pMediaType + 1));
+				_tprintf(_T("pbFormat as WAVEFORMATEX:\n"));
+				_tprintf(_T("  wFormatTag %d\n"), pWaveFormatEx->wFormatTag);
+				_tprintf(_T("  nChannels %d\n"), pWaveFormatEx->nChannels);
+				_tprintf(_T("  nSamplesPerSec %d\n"), pWaveFormatEx->nSamplesPerSec);
+				_tprintf(_T("  nAvgBytesPerSec %d\n"), pWaveFormatEx->nAvgBytesPerSec);
+				_tprintf(_T("  nBlockAlign %d\n"), pWaveFormatEx->nBlockAlign);
+				_tprintf(_T("  wBitsPerSample %d\n"), pWaveFormatEx->wBitsPerSample);
+				_tprintf(_T("  cbSize %d\n"), pWaveFormatEx->cbSize);
+				if(pWaveFormatEx->cbSize > 0)
+				{
+					const BYTE* pnExtraData = (const BYTE*) (pWaveFormatEx + 1);
+					const SIZE_T nExtraDataSize = pWaveFormatEx->cbSize;
+					for(SIZE_T nIndex1 = 0; nIndex1 < nExtraDataSize; nIndex1 += 0x10)
+					{
+						CString sText;
+						for(SIZE_T nIndex2 = nIndex1; nIndex2 < min(nIndex1 + 0x10, nExtraDataSize); nIndex2++)
+							sText.AppendFormat(_T("%02X "), pnExtraData[nIndex2]);
+						sText.TrimRight(_T(" "));
+						_tprintf(_T("  pnExtraData[0x%04x] %s\n"), nIndex1, sText);
+					}
+				}
+			} else
+				;
+			_tprintf(_T("\n"));
+		}
+		VOID SetHandler(CAbstractHandler* pHandler)
+		{
+			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+			m_pHandler = pHandler;
+		}
+
+	// ISampleGrabberCB
+        STDMETHOD(SampleCB)(DOUBLE fSampleTime, IMediaSample* pMediaSample)
+		{
+			_A(pMediaSample);
+			_ATLTRY
+			{
+				CMediaSampleProperties Properties(pMediaSample);
+				_A(!Properties.pMediaType);
+				CRoArrayT<CString> TimeArray;
+				if(Properties.dwSampleFlags & AM_SAMPLE_TIMEVALID)
+				{
+					CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+					TimeArray.Add(_FilterGraphHelper::FormatReferenceTime(Properties.tStart));
+					if(m_nPreviousFlags & AM_SAMPLE_TIMEVALID)
+						TimeArray.Add(_FilterGraphHelper::FormatReferenceTime(Properties.tStart - m_nPreviousStartTime));
+					else
+						TimeArray.Add(_T(""));
+					if(m_nPreviousFlags & AM_SAMPLE_STOPVALID)
+						TimeArray.Add(_FilterGraphHelper::FormatReferenceTime(Properties.tStart - m_nPreviousStopTime));
+					else
+						TimeArray.Add(_T(""));
+					if(Properties.dwSampleFlags & AM_SAMPLE_STOPVALID)
+					{
+						TimeArray.Add(_FilterGraphHelper::FormatReferenceTime(Properties.tStop));
+						TimeArray.Add(_FilterGraphHelper::FormatReferenceTime(Properties.tStop - Properties.tStart));
+					}
+				}
+				CRoCriticalSectionLock PrintLock(m_pModule->m_PrintCriticalSection);
+				_tprintf(_T("%s") _T("fSampleTime %s, .dwTypeSpecificFlags 0x%08x%s, .dwSampleFlags 0x%08x%s, .tStart %s, .tStop %s, .dwStreamId %d\n"), 
+					m_sNamePrefix,
+					_StringHelper::FormatNumber(fSampleTime, 3),
+					Properties.dwTypeSpecificFlags, Properties.dwTypeSpecificFlags ? (LPCTSTR) AtlFormatString(_T(" (%s)"), StringFromTypeSpecificFlags(Properties.dwTypeSpecificFlags)) : _T(""),
+					Properties.dwSampleFlags, Properties.dwSampleFlags ? (LPCTSTR) AtlFormatString(_T(" (%s)"), StringFromSampleFlags(Properties.dwSampleFlags)) : _T(""),
+					_FilterGraphHelper::FormatReferenceTime(Properties.tStart), 
+					_FilterGraphHelper::FormatReferenceTime(Properties.tStop), 
+					Properties.dwStreamId,
+					0);
+				CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+				BOOL bBufferHandled = FALSE;
+				if(TRUE && !bBufferHandled)
+				{
+					CString sBuffer;
+					static const SIZE_T g_nMaximalPrintSize = 48;
+					SIZE_T nIndex;
+					for(nIndex = 0; nIndex < (SIZE_T) Properties.lActual && nIndex < g_nMaximalPrintSize; nIndex++)
+						sBuffer.AppendFormat(_T("%02X "), Properties.pbBuffer[nIndex]);
+					UINT32 nBufferCheck = 0;
+					for(nIndex = 0; nIndex < (SIZE_T) Properties.lActual; nIndex++)
+						nBufferCheck += (UINT8) Properties.pbBuffer[nIndex];
+					if(nIndex > g_nMaximalPrintSize)
+						sBuffer.Append(_T("..."));
+					_tprintf(_T("%s") _T(".cbBuffer %d, .lActual %d, pbBuffer %s [0x%08X]\n"), 
+						m_sNamePrefix,
+						Properties.cbBuffer,
+						Properties.lActual,
+						sBuffer,
+						nBufferCheck,
+						0);
+				}
+				if(!TRUE && !bBufferHandled)
+				{
+					_tprintf(_T("%s") _T(".cbBuffer %d, .lActual %d\n"), 
+						m_sNamePrefix,
+						Properties.cbBuffer,
+						Properties.lActual,
+						0);
+					for(LONG nIndex = 0; nIndex < Properties.lActual; nIndex += 0x0010)
+					{
+						_tprintf(_T("%s") _T("%06X: %s\n"), 
+							m_sNamePrefix,
+							nIndex,
+							AtlFormatData(Properties.pbBuffer + nIndex, min(Properties.lActual - nIndex, 0x0010)),
+							0);
+					}
+				}
+				_tprintf(_T("%s") _T("Time, %s") _T("\n"),
+					m_sNamePrefix,
+					_StringHelper::Join(TimeArray, _T(", ")), 
+					0);
+				if(m_pHandler)
+					m_pHandler->HandleSample(Properties);
+				_tprintf(_T("\n"));
+				m_nPreviousFlags = Properties.dwSampleFlags;
+				m_nPreviousStartTime = Properties.tStart;
+				m_nPreviousStopTime = Properties.tStop;
+			}
+			_ATLCATCH(Exception)
+			{
+				_C(Exception);
+			}
+			return S_OK;
+		}
+        STDMETHOD(BufferCB)(DOUBLE fSampleTime, BYTE* pnBuffer, LONG nBufferSize)
+		{
+			return S_OK;
+		}
+	};
+
+private:
+
+public:
+	CPath m_sPath;
+	BOOL m_bNoReferenceClock;
+	BOOL m_bSuppressLoadFailure;
+	mutable CRoCriticalSection m_PrintCriticalSection;
+
+public:
+// CModule
+	static VOID LoadGraphBuilderFromFile(IGraphBuilder* pGraphBuilder, LPCTSTR pszPath)
+	{
+		_A(pGraphBuilder && pszPath);
+		CComQIPtr<IPersistStream> pPersistStream = pGraphBuilder;
+		__D(pPersistStream, E_NOINTERFACE);
+		CStringW sPathW(pszPath);
+		__C(StgIsStorageFile(sPathW));
+		CComPtr<IStorage> pStorage;
+		__C(StgOpenStorage(sPathW, 0, STGM_TRANSACTED | STGM_READ | STGM_SHARE_DENY_WRITE, 0, 0, &pStorage));
+		CComPtr<IStream> pStream;
+		__C(pStorage->OpenStream(L"ActiveMovieGraph", 0, STGM_READ | STGM_SHARE_EXCLUSIVE, 0, &pStream));
+		__C(pPersistStream->Load(pStream));
+	}
+	static CPath GetDefaultPath()
+	{
+		TCHAR pszPath[MAX_PATH] = { 0 };
+		_W(GetModuleFileName(_AtlBaseModule.GetModuleInstance(), pszPath, DIM(pszPath)));
+		_W(RemoveFileSpec(pszPath));
+		_W(RemoveFileSpec(pszPath));
+		_W(Combine(pszPath, pszPath, _T("Debug.grf")));
+		return pszPath;
+	}
+	CModule()
+	{
+		//m_sPath = GetDefaultPath();
+		m_bNoReferenceClock = FALSE;
+		m_bSuppressLoadFailure = FALSE;
+	}
+	~CModule()
+	{
+	}
+	HRESULT PreMessageLoop(INT nShowCommand)
+	{
+		__C(__super::PreMessageLoop(nShowCommand));
+		return S_OK;
+	}
+	VOID RunMessageLoop()
+	{
+		CGenericFilterGraph FilterGraph;
+		FilterGraph.CoCreateInstance();
+		_ATLTRY
+		{
+			LoadGraphBuilderFromFile(FilterGraph.m_pFilterGraph, m_sPath);
+		}
+		_ATLCATCH(Exception)
+		{
+			_tprintf(_T("Error loading filter graph: %s\n"), Ds::FormatResult(Exception));
+			if(!m_bSuppressLoadFailure)
+				_ATLRETHROW;
+		}
+		#pragma region Sample Grabbers
+		_FilterGraphHelper::CFilterArray FilterArray;
+		_FilterGraphHelper::GetGraphFilters(FilterGraph.m_pFilterGraph, FilterArray);
+		__D(!FilterArray.IsEmpty(), E_UNNAMED);
+		SIZE_T nSampleGrabberIndex = 0;
+		for(SIZE_T nIndex = 0; nIndex < FilterArray.GetCount(); nIndex++)
+		{
+			const CComQIPtr<ISampleGrabber> pSampleGrabber = FilterArray[nIndex];
+			if(!pSampleGrabber)
+				continue;
+			CObjectPtr<CSampleGrabberCallback> pSampleGrabberCallback;
+			pSampleGrabberCallback.Construct();
+			pSampleGrabberCallback->Initialize(this);
+			if(FilterArray.GetCount() > 1)
+				pSampleGrabberCallback->SetName(AtlFormatString(_T("%c"), 'A' + nSampleGrabberIndex));
+			__C(pSampleGrabber->SetCallback(pSampleGrabberCallback, 0));
+			nSampleGrabberIndex++;
+			const CMediaType pMediaType = _FilterGraphHelper::GetPinMediaType(_FilterGraphHelper::GetFilterPin(CComQIPtr<IBaseFilter>(pSampleGrabber), PINDIR_INPUT));
+			pSampleGrabberCallback->SetMediaType(pMediaType);
+			//typedef CHdycInterlacingHandler CHandler;
+			//CObjectPtr<CHandler> pHandler;
+			//pHandler.Construct()->Initialize(pMediaType);
+			//pSampleGrabberCallback->SetHandler(pHandler);
+		}
+		#pragma endregion 
+		if(m_bNoReferenceClock)
+			__C(FilterGraph.m_pMediaFilter->SetSyncSource(NULL));
+		_tprintf(_T("Media Samples:\n\n"));
+		__C(FilterGraph.m_pMediaControl->Run());
+		#pragma region Wait for Completion
+		#if TRUE
+			const CComPtr<IMediaEventEx>& pMediaEvent = FilterGraph.m_pMediaEventEx;
+			for(; ; )
+			{
+				// SUGG: Replace Sleep/GetMessage with MsgWaitForMultipleObjects/PeekMessage to wait for graph event and window messages
+				static const ULONG g_nTimeout = 10;
+				if(pMediaEvent)
+				{
+					LONG nCompletionEventCode = 0;
+					const HRESULT nWaitForCompletionResult = pMediaEvent->WaitForCompletion(g_nTimeout, &nCompletionEventCode);
+					for(; ; )
+					{
+						LONG nEventCode = 0;
+						LONG_PTR nParameter1 = 0, nParameter2 = 0;
+						const HRESULT nGetEventResult = pMediaEvent->GetEvent(&nEventCode, &nParameter1, &nParameter2, 0);
+						if(nGetEventResult == E_ABORT)
+							break;
+						__C(nGetEventResult);
+						_ATLTRY
+						{
+							switch(nEventCode)
+							{
+							case EC_COMPLETE:
+								_tprintf(_T("Event: EC_COMPLETE (0x%x), Error Code 0x%08x (%s), Parameter2 0x%08x\n"), nEventCode, (HRESULT) nParameter1, AtlFormatSystemMessage((HRESULT) nParameter1).TrimRight(_T("\t\n\r .")), nParameter2);
+								break;
+							case EC_USERABORT:
+								_tprintf(_T("Event: EC_USERABORT (0x%x), Parameter1 0x%08x, Parameter2 0x%08x\n"), nEventCode, nParameter1, nParameter2);
+								break;
+							case EC_ERRORABORT:
+								_tprintf(_T("Event: EC_ERRORABORT (0x%x), Error Code 0x%08x (%s), Parameter2 0x%08x\n"), nEventCode, nParameter1, AtlFormatSystemMessage((HRESULT) nParameter1).TrimRight(_T("\t\n\r .")), nParameter2);
+								break;
+							default:
+								_tprintf(_T("Event: Code %s, Parameter1 0x%08x, Parameter2 0x%08x\n"), _FilterGraphHelper::FormatEventCode(nEventCode), nParameter1, nParameter2);
+							}
+						}
+						_ATLCATCHALL()
+						{
+							_V(pMediaEvent->FreeEventParams(nEventCode, nParameter1, nParameter2));
+							_ATLRETHROW;
+						}
+						_V(pMediaEvent->FreeEventParams(nEventCode, nParameter1, nParameter2));
+					}
+					if(nWaitForCompletionResult != E_ABORT)
+					{
+						__C(nWaitForCompletionResult);
+						_tprintf(_T("\nCompleted: Event Code 0x%x\n"), nCompletionEventCode);
+						break;
+					}
+				} else
+					Sleep(g_nTimeout);
+				MSG Message;
+				while(PeekMessage(&Message, NULL, WM_NULL, WM_NULL, PM_REMOVE))
+				{
+					TranslateMessage(&Message);
+					DispatchMessage(&Message);
+				}
+			}
+		#else
+			MSG Message;
+			while(GetMessage(&Message, NULL, WM_NULL, WM_NULL) > 0)
+			{
+				TranslateMessage(&Message);
+				DispatchMessage(&Message);
+			}
+		#endif
+		#pragma endregion 
+	}
+};
+
