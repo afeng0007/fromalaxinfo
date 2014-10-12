@@ -11,11 +11,15 @@
 // Windows definitions
 
 //#define STRICT
-#define WINVER						0x0501	// Windows XP
-#define _WIN32_WINNT				0x0501	// Windows XP
-#define _WIN32_WINDOWS				0x0410	// Windows 98
-#define _WIN32_IE					0x0501	// Internet Explorer 5.01
-#define _RICHEDIT_VER				0x0200	// RichEdit 2.0
+
+//#define WINVER						0x0501	// Windows XP
+//#define _WIN32_WINNT				0x0501	// Windows XP
+//#define _WIN32_WINDOWS				0x0410	// Windows 98
+//#define _WIN32_IE					0x0501	// Internet Explorer 5.01
+//#define _RICHEDIT_VER				0x0200	// RichEdit 2.0
+
+#include <SDKDDKVer.h>
+
 #define INLINE_HRESULT_FROM_WIN32
 
 ////////////////////////////////////////////////////////////
@@ -51,7 +55,10 @@ using namespace ATL::ATLPath;
 #define _WTL_NO_UNION_CLASSES
 #define _WTL_NEW_PAGE_NOTIFY_HANDLERS
 
+#undef _SYSINFOAPI_H_
 #include <atlapp.h>
+#define _SYSINFOAPI_H_
+
 #include <atlgdi.h>
 #include <atluser.h>
 #include <atlcrack.h>
