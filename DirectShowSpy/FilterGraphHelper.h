@@ -26,7 +26,7 @@
 #define  BZ_NO_STDIO
 #include "..\..\Repository-Private\Utilities\DeflateTools\Bzip2Item.h"
 
-INT_PTR DoFilterGraphListPropertySheetModal(HWND hParentWindow);
+INT_PTR DoFilterGraphListPropertySheetModal(HWND hParentWindow = GetActiveWindow(), COptions* pOptions = NULL);
 
 HRESULT FilterGraphHelper_DoPropertyFrameModal(LONG nParentWindowHandle);
 HRESULT FilterGraphHelper_DoFilterGraphListModal(LONG nParentWindowHandle);
@@ -900,7 +900,7 @@ public:
 			}
 			LRESULT OnOpenList(UINT, INT, HWND)
 			{
-				DoFilterGraphListPropertySheetModal(m_hWnd);
+				DoFilterGraphListPropertySheetModal(m_hWnd, &m_pOwner->m_Owner.m_Options);
 				return 0;
 			}
 		};
@@ -2454,6 +2454,7 @@ private:
 	mutable CRoCriticalSection m_DataCriticalSection;
 	CProcessData m_ProcessData;
 	CComPtr<IFilterGraph> m_pFilterGraph;
+	COptions m_Options;
 
 public:
 // CFilterGraphHelper
@@ -3674,7 +3675,7 @@ public:
 			if(!ParentWindow)
 				ParentWindow = GetActiveWindow();
 			//__D(!ParentWindow || ParentWindow.IsWindow(), E_INVALIDARG);
-			DoFilterGraphListPropertySheetModal(ParentWindow);
+			DoFilterGraphListPropertySheetModal(ParentWindow, &m_Options);
 		}
 		_ATLCATCH(Exception)
 		{
@@ -3715,6 +3716,34 @@ public:
 			const BOOL bResult = OpenMonikerWithGe(sMonikerDisplayName, ParentWindow);
 			if(pbResult)
 				*pbResult = bResult ? ATL_VARIANT_TRUE : ATL_VARIANT_FALSE;
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return S_OK;
+	}
+	STDMETHOD(get_Options)(VARIANT* pvOptions)
+	{
+		_Z4(atlTraceCOM, 4, _T("...\n"));
+		_ATLTRY
+		{
+			__D(pvOptions, E_POINTER);
+			VariantInit(pvOptions);
+			__C(m_Options.GetVariant().Detach(pvOptions));
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return S_OK;
+	}
+	STDMETHOD(put_Options)(VARIANT vOptions)
+	{
+		_Z4(atlTraceCOM, 4, _T("vOptions.vt 0x%X\n"), vOptions.vt);
+		_ATLTRY
+		{
+			m_Options.SetVariant(vOptions);
 		}
 		_ATLCATCH(Exception)
 		{
