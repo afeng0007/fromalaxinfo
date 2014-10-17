@@ -100,25 +100,6 @@ interface ISystemDeviceEnumeratorSpy : IDispatch
 {
 };
 [
-	object,
-	uuid(3D1AF248-DEF1-4E26-A071-FEDF15FED6A8),
-	dual,
-	oleautomation,
-	nonextensible,
-	helpstring("IFilterGraphHelper Interface"),
-	pointer_default(unique)
-]
-interface IFilterGraphHelper : IDispatch
-{
-	[id(DISPID_VALUE), propget] HRESULT FilterGraph([out, retval] IUnknown** ppFilterGraphUnknown);
-	[id(DISPID_VALUE), propput] HRESULT FilterGraph([in] IUnknown* pFilterGraphUnknown);
-	[id(1), propget] HRESULT Text([out, retval] BSTR* psText);
-	[id(2)] HRESULT DoPropertyFrameModal([in] LONG nParentWindowHandle);
-	[id(3)] HRESULT DoFilterGraphListModal([in] LONG nParentWindowHandle);
-	[id(4)] HRESULT OpenGraphStudioNext([in] LONG nParentWindowHandle, [in] BSTR sMonikerDisplayName, [out, retval] VARIANT_BOOL* pbResult);
-	[id(5)] HRESULT OpenGraphEdit([in] LONG nParentWindowHandle, [in] BSTR sMonikerDisplayName, [out, retval] VARIANT_BOOL* pbResult);
-};
-[
 	uuid(B9EC374B-834B-4DA9-BFB5-C1872CE736FF),
 	version(1.0),
 	helpstring("Alax.Info Filter Graph Spy 1.0 Type Library")
@@ -205,6 +186,27 @@ library AlaxInfoDirectShowSpy
 	coclass SystemDeviceEnumeratorSpy
 	{
 		[default] interface ISystemDeviceEnumeratorSpy;
+	};
+	[
+		object,
+		uuid(3D1AF248-DEF1-4E26-A071-FEDF15FED6A8),
+		dual,
+		oleautomation,
+		nonextensible,
+		helpstring("IFilterGraphHelper Interface"),
+		pointer_default(unique)
+	]
+	interface IFilterGraphHelper : IDispatch
+	{
+		[id(DISPID_VALUE), propget] HRESULT FilterGraph([out, retval] IUnknown** ppFilterGraphUnknown);
+		[id(DISPID_VALUE), propput] HRESULT FilterGraph([in] IUnknown* pFilterGraphUnknown);
+		[id(1), propget] HRESULT Text([out, retval] BSTR* psText);
+		[id(2)] HRESULT DoPropertyFrameModal([in] LONG nParentWindowHandle);
+		[id(3)] HRESULT DoFilterGraphListModal([in] LONG nParentWindowHandle);
+		[id(4)] HRESULT OpenGraphStudioNext([in] LONG nParentWindowHandle, [in] BSTR sMonikerDisplayName, [out, retval] VARIANT_BOOL* pbResult);
+		[id(5)] HRESULT OpenGraphEdit([in] LONG nParentWindowHandle, [in] BSTR sMonikerDisplayName, [out, retval] VARIANT_BOOL* pbResult);
+		[id(6), propget] HRESULT Options([out, retval] VARIANT* pvOptions);
+		[id(6), propput] HRESULT Options([in] VARIANT vOptions);
 	};
 	[
 		uuid(5A9A684C-A891-4032-8D31-FF6EAB5A0C1E),

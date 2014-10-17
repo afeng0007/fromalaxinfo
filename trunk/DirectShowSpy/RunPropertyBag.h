@@ -283,22 +283,22 @@ public:
 	{
 		static CString GetPropertyBagText(IRunPropertyBagAware* pRunPropertyBagAware, ISpy* pSpy = NULL)
 		{
-			if(pSpy)
-			{
-				CComVariantArray vValue;
-				__C(pSpy->ReadRunPropertyBag(pRunPropertyBagAware, ATL_VARIANT_TRUE, &vValue));
-				return GetPropertyBagText(vValue);
-			}
 			if(!pRunPropertyBagAware)
 				return _T("");
 			return GetPropertyBagText(ReadRunPropertyBag(pRunPropertyBagAware));
 		}
 		static CString GetPropertyBagText(IUnknown* pBaseFilterUnknown, ISpy* pSpy = NULL)
 		{
-			const CComQIPtr<IRunPropertyBagAware> pRunPropertyBagAware = pBaseFilterUnknown;
 			CComQIPtr<ISpy> pEffectiveSpy = pSpy;
-			if(!pEffectiveSpy && pRunPropertyBagAware)
+			if(!pEffectiveSpy && pBaseFilterUnknown)
 				pEffectiveSpy = _FilterGraphHelper::GetFilterGraph(CComQIPtr<IBaseFilter>(pBaseFilterUnknown));
+			if(pEffectiveSpy && pBaseFilterUnknown)
+			{
+				CComVariantArray vValue;
+				__C(pEffectiveSpy->ReadRunPropertyBag(pBaseFilterUnknown, ATL_VARIANT_TRUE, &vValue));
+				return GetPropertyBagText(vValue);
+			}
+			const CComQIPtr<IRunPropertyBagAware> pRunPropertyBagAware = pBaseFilterUnknown;
 			return GetPropertyBagText(pRunPropertyBagAware, pEffectiveSpy);
 		}
 		static CString GetPropertyBagText(IFilterGraph* pFilterGraph, ISpy* pSpy = NULL)

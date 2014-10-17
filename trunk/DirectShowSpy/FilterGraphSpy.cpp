@@ -56,7 +56,7 @@ HRESULT STDMETHODCALLTYPE DoGraphBuilderCallbackPropertySheetModal() throw()
 	extern "C" // __declspec(dllexport) 
 #endif // defined(_WIN64)
 
-HRESULT STDMETHODCALLTYPE DoFilterGraphListPropertySheetModal() throw()
+HRESULT STDMETHODCALLTYPE DoFilterGraphListPropertySheetModal()
 {
 	_ATLTRY
 	{

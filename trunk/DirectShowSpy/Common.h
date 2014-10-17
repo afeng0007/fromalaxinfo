@@ -421,6 +421,109 @@ public:
 		_Z_EXCEPTION(); \
 	}
 
+////////////////////////////////////////////////////////////
+// COptions
+
+class COptions
+{
+public:
+
+	////////////////////////////////////////////////////////
+	// CNameValue
+
+	class CNameValue
+	{
+	public:
+		CString m_sName;
+		CComVariantArray m_vValue;
+
+	public:
+	// CNameValue
+	};
+
+private:
+	mutable CRoCriticalSection m_DataCriticalSection;
+	CRoMapT<CString, CNameValue, CStringElementTraitsI<CString>> m_ValueMap;
+
+public:
+// COptions
+	CComVariantArray GetVariant() const
+	{
+		CComVariantArray vValues;
+		CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+		CRoArrayT<CComVariantArray> Array;
+		for(auto&& NameValue: m_ValueMap.GetValues())
+		{
+			CComVariantArray vValue;
+			Array.Add(vValue.FromElements(2, CComVariant(NameValue.m_sName), NameValue.m_vValue));
+		}
+		return vValues.FromElementArray(Array);
+	}
+	VOID SetVariant(CComVariantArray& vValue)
+	{
+		CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+		m_ValueMap.RemoveAll();
+		if(vValue.vt > VT_NULL)
+		{
+			__D(vValue.IsPlainVariantArray(), E_INVALIDARG);
+			CRoArrayT<CComVariantArray> ElementArray;
+			vValue.ToElementArray(ElementArray);
+			for(auto&& vItem: ElementArray)
+			{
+				__D(vItem.IsPlainVariantArray(), E_INVALIDARG);
+				CRoArrayT<CComVariantArray> ValueArray;
+				__D(vItem.ToElementArray(ValueArray) >= 2, E_INVALIDARG);
+				__C(ValueArray[0].ChangeType(VT_BSTR));
+				CString sName(ValueArray[0].bstrVal);
+				CNameValue NameValue;
+				NameValue.m_sName = sName;
+				NameValue.m_vValue = ValueArray[1];
+				_W(m_ValueMap.SetAt(sName, NameValue));
+			}
+		}
+	}
+	VOID SetVariant(VARIANT vValue)
+	{
+		SetVariant(reinterpret_cast<CComVariantArray&>(vValue));
+	}
+	COptions& operator = (const COptions& Value)
+	{
+		CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+		CRoCriticalSectionLock ValueDataLock(Value.m_DataCriticalSection);
+		m_ValueMap.RemoveAll();
+		for(auto&& NameValue: Value.m_ValueMap.GetValues())
+			_W(m_ValueMap.SetAt(NameValue.m_sName, NameValue));
+		return *this;
+	}
+	BOOL TryGetLongValue(const LPCTSTR pszName, LONG& nValue) //const
+	{
+		CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+		const POSITION Position = m_ValueMap.Lookup(pszName);
+		if(!Position)
+			return FALSE; // No Value
+		CComVariant vLongValue;
+		if(FAILED(vLongValue.ChangeType(VT_I4, &m_ValueMap.GetValueAt(Position).m_vValue)))
+			return FALSE; // Wrong Value Type
+		nValue = vLongValue.lVal;
+		return TRUE;
+	}
+	BOOL TryGetBoolValue(const LPCTSTR pszName, BOOL& bValue) //const
+	{
+		CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+		const POSITION Position = m_ValueMap.Lookup(pszName);
+		if(!Position)
+			return FALSE; // No Value
+		CComVariant vBoolValue;
+		if(FAILED(vBoolValue.ChangeType(VT_BOOL, &m_ValueMap.GetValueAt(Position).m_vValue)))
+			return FALSE; // Wrong Value Type
+		bValue = vBoolValue.boolVal != ATL_VARIANT_FALSE;
+		return TRUE;
+	}
+};
+
+////////////////////////////////////////////////////////////
+// DIRECTSHOWSPY_NAMESPACE_PREFIX
+
 #if !defined(DIRECTSHOWSPY_NAMESPACE_PREFIX) 
 	#if defined(DIRECTSHOWSPY) 
 		#define DIRECTSHOWSPY_NAMESPACE_PREFIX

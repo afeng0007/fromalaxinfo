@@ -28,7 +28,8 @@
 ////////////////////////////////////////////////////////////
 // CFilterGraphListPropertySheet
 
-INT_PTR DoFilterGraphListPropertySheetModal(HWND hParentWindow = GetActiveWindow());
+//INT_PTR DoFilterGraphListPropertySheetModal(HWND hParentWindow = GetActiveWindow(), COptions* pOptions = NULL);
+INT_PTR DoFilterGraphListPropertySheetModal(HWND hParentWindow, COptions* pOptions);
 
 class CFilterGraphListPropertySheet :
 	public CSizablePropertySheetT<CFilterGraphListPropertySheet>,
@@ -253,15 +254,19 @@ public:
 			#pragma region Enumerate
 			_ATLTRY
 			{
+				LONG nProcessIdentifier;
+				const BOOL bProcessIdentifierAvailable = m_PropertySheet.m_Options.TryGetLongValue(_T("FilterGraphListPropertySheet.ProcessIdentifier"), nProcessIdentifier);
 				if(!m_pRunningObjectTable)
 					__C(GetRunningObjectTable(0, &m_pRunningObjectTable));
 				CComPtr<IEnumMoniker> pEnumMoniker;
 				__C(m_pRunningObjectTable->EnumRunning(&pEnumMoniker));
 				CComPtr<IMalloc> pMalloc;
 				__C(CoGetMalloc(1, &pMalloc));
-				CComPtr<IMoniker> pMoniker;
-				while(pEnumMoniker->Next(1, &pMoniker, NULL) == S_OK)
+				for(; ; )
 				{
+					CComPtr<IMoniker> pMoniker;
+					if(pEnumMoniker->Next(1, &pMoniker, NULL) != S_OK)
+						break;
 					_ATLTRY
 					{
 						CComPtr<IBindCtx> pBindCtx;
@@ -282,6 +287,8 @@ public:
 							_W(StrToIntExW(CStringW(L"0x") + MatchContext.GetMatchString(1), STIF_SUPPORT_HEX, &reinterpret_cast<INT&>(Item.m_nProcessIdentifier)));
 							Item.m_sTime = CString(MatchContext.GetMatchString(3));
 							Item.m_sTime.Replace(_T("-"), _T(":"));
+							if(bProcessIdentifierAvailable && Item.m_nProcessIdentifier != (DWORD) nProcessIdentifier)
+								continue; // Skip
 							_W(ItemMap.SetAt(sDisplayName, Item) >= 0);
 						}
 					}
@@ -289,7 +296,6 @@ public:
 					{
 						_Z_EXCEPTION();
 					}
-					pMoniker.Release();
 				}
 			}
 			_ATLCATCHALL()
@@ -395,6 +401,10 @@ public:
 				_W(m_PropertySheet.CenterWindow());
 				#pragma endregion
 				CancelToClose();
+				BOOL bAutomaticInitialCheck = FALSE;
+				m_PropertySheet.m_Options.TryGetBoolValue(_T("FilterGraphListPropertySheet.AutomaticInitialCheck"), bAutomaticInitialCheck);
+				if(bAutomaticInitialCheck)
+					PostMessage(WM_COMMAND, MAKEWPARAM(IDC_FILTERGRAPHLIST_LIST_CHECK, BN_CLICKED));
 			}
 			_ATLCATCHALL()
 			{
@@ -600,14 +610,17 @@ public:
 	};
 
 private:
+	COptions m_Options;
 	CListPropertyPage m_ListPropertyPage;
 
 public:
 // CFilterGraphListPropertySheet
-	CFilterGraphListPropertySheet() :
+	CFilterGraphListPropertySheet(COptions* pOptions = NULL) :
 		CSizablePropertySheetT<CFilterGraphListPropertySheet>(IDS_FILTERGRAPHLIST_LIST_PROPERTYSHEETCAPTION),
 		m_ListPropertyPage(this)
 	{
+		if(pOptions)
+			m_Options = *pOptions;
 		AddPage(m_ListPropertyPage);
 	}
 	BOOL SetInitialPosition()
@@ -639,7 +652,7 @@ public:
 		return CPropertySheetWithAccelerators::DoModal(hParentWindow);
 	}
 
-// Window message handelrs
+// Window Message Handelr
 	LRESULT OnSysCommand(UINT nCommand, CPoint)
 	{
 		switch(nCommand)
@@ -657,8 +670,8 @@ public:
 	}
 };
 
-inline INT_PTR DoFilterGraphListPropertySheetModal(HWND hParentWindow)
+inline INT_PTR DoFilterGraphListPropertySheetModal(HWND hParentWindow, COptions* pOptions)
 {
-	CFilterGraphListPropertySheet PropertySheet;
+	CFilterGraphListPropertySheet PropertySheet(pOptions);
 	return PropertySheet.DoModal(hParentWindow);
 }
