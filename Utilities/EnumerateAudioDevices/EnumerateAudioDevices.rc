@@ -115,7 +115,7 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION  1, 0, 0, 37
+ FILEVERSION  1, 0, 0, 50
  PRODUCTVERSION 1,0,0,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
@@ -134,7 +134,7 @@ BEGIN
             VALUE "CompanyName", "Alax.Info"
             VALUE "Created By", "Roman Ryltsov <roman@alax.info>"
             VALUE "FileDescription", "Enumerate WASAPI Audio Devices Utility"
-            VALUE "FileVersion",  "1, 0, 0, 37\0"
+            VALUE "FileVersion",  "1, 0, 0, 50\0"
             VALUE "InternalName", "EnumerateAudioDevices"
             VALUE "LegalCopyright", "Copyright © Alax.Info, Roman Ryltsov, 2008-2011"
             VALUE "OriginalFilename", "EnumerateAudioDevices.exe"

@@ -1,8 +1,6 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2008-2011
+// Copyright (C) Roman Ryltsov, 2008-2014
 // Created by Roman Ryltsov roman@alax.info
-// 
-// $Id$
 
 #include "stdafx.h"
 #include "resource.h"
@@ -22,15 +20,13 @@ public:
 // CAtlExeModuleT
 	CEnumerateAudioDevicesModule() throw()
 	{
-#if _DEVELOPMENT
-		AtlTraceLoadSettings(NULL);
-#endif // _DEVELOPMENT
+		AtlTraceSetDefaultSettings();
 		_W(CExceptionFilter::Initialize());
-		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		_Z4_THIS();
 	}
 	~CEnumerateAudioDevicesModule() throw()
 	{
-		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		_Z4_THIS();
 		CExceptionFilter::Terminate();
 	}
 	HRESULT RegisterServer(BOOL bRegisterTypeLibrary = FALSE, const CLSID* pClassIdentifier = NULL) throw()

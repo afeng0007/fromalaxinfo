@@ -1,8 +1,6 @@
 ////////////////////////////////////////////////////////////
 // Copyright (C) Roman Ryltsov, 2008-2011
 // Created by Roman Ryltsov roman@alax.info
-// 
-// $Id$
 
 #pragma once
 
@@ -67,7 +65,7 @@ public:
 				__C(pMmDeviceCollection->GetCount(&nDeviceCount));
 				for(UINT nDeviceIndex = 0; nDeviceIndex < nDeviceCount; nDeviceIndex++)
 					_ATLTRY
-					{
+			 		{
 						sText.AppendFormat(_T("Device %d:\r\n"), nDeviceIndex);
 						CComPtr<IMMDevice> pMmDevice;
 						__C(pMmDeviceCollection->Item(nDeviceIndex, &pMmDevice));
@@ -1156,6 +1154,7 @@ public:
 										}
 									if(sKeyName.IsEmpty())
 										sKeyName = AtlFormatString(_T("%ls, %d"), _PersistHelper::StringFromIdentifier(Key.fmtid), Key.pid);
+									#pragma region String Value
 									CString sValue;
 									HRESULT nChangeTypeResult = E_FAIL;
 									// NOTE: See http://msdn.microsoft.com/en-us/library/cc235506%28v=prot.10%29.aspx
@@ -1175,13 +1174,14 @@ public:
 										{
 											sValue += _T(", ");
 											CRoArrayT<CString> Array;
-											if(Value.blob.cbSize <= 16)
+											static const SIZE_T g_nMaximalSize = 128;
+											if(Value.blob.cbSize <= g_nMaximalSize)
 											{
 												for(ULONG nIndex = 0; nIndex < Value.blob.cbSize; nIndex++)
 													_W(Array.Add(AtlFormatString(_T("%02X"), Value.blob.pBlobData[nIndex])) >= 0);
 											} else
 											{
-												for(ULONG nIndex = 0; nIndex < 8; nIndex++)
+												for(ULONG nIndex = 0; nIndex < g_nMaximalSize - 8; nIndex++)
 													_W(Array.Add(AtlFormatString(_T("%02X"), Value.blob.pBlobData[nIndex])) >= 0);
 												_W(Array.Add(_T("...")) >= 0);
 												for(ULONG nIndex = 0; nIndex < 4; nIndex++)
@@ -1196,6 +1196,7 @@ public:
 										nChangeTypeResult = S_OK;
 										break;
 									}
+									#pragma region Variant as String 
 									CComVariant vValue;
 									if(FAILED(nChangeTypeResult))
 									{
@@ -1205,7 +1206,64 @@ public:
 										else
 											sValue = _T("???");
 									}
-									sText.AppendFormat(_T("\t\t") _T("%s\t%s\t%d\r\n"), sKeyName, sValue, Value.vt);
+									#pragma endregion 
+									#pragma endregion 
+									static const CEnumerationNameT<VARTYPE> g_pVarTypeMap[] = 
+									{
+										#define A(x) { x, #x },
+										A(VT_EMPTY)
+										A(VT_NULL)
+										A(VT_I2)
+										A(VT_I4)
+										A(VT_R4)
+										A(VT_R8)
+										A(VT_CY)
+										A(VT_DATE)
+										A(VT_BSTR)
+										A(VT_DISPATCH)
+										A(VT_ERROR)
+										A(VT_BOOL)
+										A(VT_VARIANT)
+										A(VT_UNKNOWN)
+										A(VT_DECIMAL)
+										A(VT_I1)
+										A(VT_UI1)
+										A(VT_UI2)
+										A(VT_UI4)
+										A(VT_I8)
+										A(VT_UI8)
+										A(VT_INT)
+										A(VT_UINT)
+										A(VT_VOID)
+										A(VT_HRESULT)
+										A(VT_PTR)
+										A(VT_SAFEARRAY)
+										A(VT_CARRAY)
+										A(VT_USERDEFINED)
+										A(VT_LPSTR)
+										A(VT_LPWSTR)
+										A(VT_RECORD)
+										A(VT_INT_PTR)
+										A(VT_UINT_PTR)
+										A(VT_FILETIME)
+										A(VT_BLOB)
+										A(VT_STREAM)
+										A(VT_STORAGE)
+										A(VT_STREAMED_OBJECT)
+										A(VT_STORED_OBJECT)
+										A(VT_BLOB_OBJECT)
+										A(VT_CF)
+										A(VT_CLSID)
+										A(VT_VERSIONED_STREAM)
+										#undef A
+									};
+									sText.Append(_StringHelper::Join<CString>(5, _T("\t"), 
+										_T(""),
+										_T(""),
+										sKeyName, 
+										sValue,
+										FormatEnumerationT(g_pVarTypeMap, Value.vt),
+										0) + _T("\r\n"));
 								}
 								_ATLCATCHALL()
 								{
