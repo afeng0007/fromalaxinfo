@@ -404,7 +404,7 @@ public:
 				BOOL bAutomaticInitialCheck = FALSE;
 				m_PropertySheet.m_Options.TryGetBoolValue(_T("FilterGraphListPropertySheet.AutomaticInitialCheck"), bAutomaticInitialCheck);
 				if(bAutomaticInitialCheck)
-					PostMessage(WM_COMMAND, MAKEWPARAM(IDC_FILTERGRAPHLIST_LIST_CHECK, BN_CLICKED));
+					PostMessage(WM_COMMAND, MAKEWPARAM(IDC_FILTERGRAPHLIST_LIST_CHECKALL, BN_CLICKED));
 			}
 			_ATLCATCHALL()
 			{

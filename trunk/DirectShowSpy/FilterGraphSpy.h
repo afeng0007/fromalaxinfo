@@ -1004,7 +1004,7 @@ public:
 		if(pOutputPin && pInputPin)
 			_ATLTRY
 			{
-				_Z4(atlTraceGeneral, 4, _T("pOutputPin \"%ls\", pInputPin \"%ls\"\n"), _FilterGraphHelper::GetPinFullName(pOutputPin), _FilterGraphHelper::GetPinFullName(pInputPin));
+				_Z4(atlTraceGeneral, 4, _T("pOutputPin \"%ls\", pInputPin \"%ls\", pMediaType 0x%p\n"), _FilterGraphHelper::GetPinFullName(pOutputPin), _FilterGraphHelper::GetPinFullName(pInputPin), pMediaType);
 				if(pMediaType)
 					_FilterGraphHelper::TraceMediaType(pMediaType);
 			}
@@ -1015,7 +1015,9 @@ public:
 		HOOK_PROLOG(CFilterGraphConnectHookHost)
 			OnConnectDirect(pT, pOutputPin, pInputPin, (const BYTE*) pMediaType, &bDefault);
 		HOOK_EPILOG()
-		return m_pInnerFilterGraph2->ConnectDirect(pOutputPin, pInputPin, pMediaType);
+		const HRESULT nConnectDirectResult = m_pInnerFilterGraph2->ConnectDirect(pOutputPin, pInputPin, pMediaType);
+		_Z4(atlTraceGeneral, 4, _T("this 0x%p, nConnectDirectResult 0x%08X\n"), this, nConnectDirectResult);
+		return nConnectDirectResult;
 	}
     STDMETHOD(Reconnect)(IPin* pPin)
 	{
@@ -1058,7 +1060,9 @@ public:
 		HOOK_PROLOG(CFilterGraphConnectHookHost)
 			OnConnect(pT, pOutputPin, pInputPin, &bDefault);
 		HOOK_EPILOG()
-		return m_pInnerFilterGraph2->Connect(pOutputPin, pInputPin);
+		const HRESULT nConnectResult = m_pInnerFilterGraph2->Connect(pOutputPin, pInputPin);
+		_Z4(atlTraceGeneral, 4, _T("this 0x%p, nConnectResult 0x%08X\n"), this, nConnectResult);
+		return nConnectResult;
 	}
     STDMETHOD(Render)(IPin* pOutputPin)
 	{
