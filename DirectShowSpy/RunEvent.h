@@ -83,6 +83,35 @@ public:
 		BOOL m_bTrace;
 		SIZE_T m_nTraceItemCount;
 
+		VOID InternalAddItem(ULONGLONG nTime, LPCSTR pszText)
+		{
+			CRoLightCriticalSectionLock DataLock(m_DataCriticalSection);
+			if(!m_bCapture)
+				return;
+			CItem& Item = m_pItems[m_nItemIndex];
+			Item.m_nTime = nTime;
+			strncpy_s(Item.m_pszText, pszText, _TRUNCATE);
+			if(m_nItemCount < t_nItemCapacity)
+				m_nItemCount++;
+			++m_nItemIndex %= t_nItemCapacity;
+			if(m_bTrace && m_nTraceItemCount)
+				m_nTraceItemCount--;
+		}
+		VOID InternalAddItemV(ULONGLONG nTime, LPCSTR pszFormat, va_list Arguments)
+		{
+			CRoLightCriticalSectionLock DataLock(m_DataCriticalSection);
+			if(!m_bCapture)
+				return;
+			CItem& Item = m_pItems[m_nItemIndex];
+			Item.m_nTime = nTime;
+			vsprintf_s(Item.m_pszText, pszFormat, Arguments);
+			if(m_nItemCount < t_nItemCapacity)
+				m_nItemCount++;
+			++m_nItemIndex %= t_nItemCapacity;
+			if(m_bTrace && m_nTraceItemCount)
+				m_nTraceItemCount--;
+		}
+
 	public:
 	// CEventsT
 		CEventsT() :
@@ -113,17 +142,7 @@ public:
 		}
 		VOID AddItemV(ULONGLONG nTime, LPCSTR pszFormat, va_list Arguments)
 		{
-			CRoLightCriticalSectionLock DataLock(m_DataCriticalSection);
-			if(!m_bCapture)
-				return;
-			CItem& Item = m_pItems[m_nItemIndex];
-			Item.m_nTime = nTime;
-			vsprintf_s(Item.m_pszText, pszFormat, Arguments);
-			if(m_nItemCount < t_nItemCapacity)
-				m_nItemCount++;
-			++m_nItemIndex %= t_nItemCapacity;
-			if(m_bTrace && m_nTraceItemCount)
-				m_nTraceItemCount--;
+			InternalAddItemV(nTime, pszFormat, Arguments);
 		}
 		VOID AddItem(ULONGLONG nTime, LPCSTR pszFormat, ...)
 		{
@@ -138,6 +157,10 @@ public:
 			va_start(Arguments, pszFormat);
 			AddItemV(CMsAccurateFileTime::GetTime(), pszFormat, Arguments);
 			va_end(Arguments);
+		}
+		VOID AddItem(const CRoArrayT<CStringA>& Array)
+		{
+			InternalAddItem(CMsAccurateFileTime::GetTime(), _StringHelper::Join(Array, "\t"));
 		}
 		CComVariantArray GetAsVariant() const
 		{
