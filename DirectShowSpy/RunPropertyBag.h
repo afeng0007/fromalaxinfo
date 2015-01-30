@@ -65,19 +65,24 @@ public:
 				_ATLTRY
 				{
 					INT nFramesDroppedInRenderer, nFramesDrawn, nAvgFrameRate, nJitter, nAvgSyncOffset, nDevSyncOffset;
-					__C(pQualProp->get_FramesDroppedInRenderer(&nFramesDroppedInRenderer));
-					__C(pQualProp->get_FramesDrawn(&nFramesDrawn));
-					__C(pQualProp->get_AvgFrameRate(&nAvgFrameRate));
-					__C(pQualProp->get_Jitter(&nJitter));
-					__C(pQualProp->get_AvgSyncOffset(&nAvgSyncOffset));
-					__C(pQualProp->get_DevSyncOffset(&nDevSyncOffset));
-					PropertyBagNeeded(pPropertyBag);
-					pPropertyBag->WriteValue(_T("FramesDroppedInRenderer"), CComVariant((LONG) nFramesDroppedInRenderer));
-					pPropertyBag->WriteValue(_T("FramesDrawn"), CComVariant((LONG) nFramesDrawn));
-					pPropertyBag->WriteValue(_T("AvgFrameRate"), CComVariant((DOUBLE) nAvgFrameRate / 100));
-					pPropertyBag->WriteValue(_T("Jitter"), CComVariant((LONG) nJitter));
-					pPropertyBag->WriteValue(_T("AvgSyncOffset"), CComVariant((LONG) nAvgSyncOffset));
-					pPropertyBag->WriteValue(_T("DevSyncOffset"), CComVariant((LONG) nDevSyncOffset));
+					// NOTE: IQualProp methods are not implemented on EVR even though the interface itself is exposed
+					const HRESULT nGetAvgFrameRateResult = pQualProp->get_AvgFrameRate(&nAvgFrameRate);
+					if(SUCCEEDED(nGetAvgFrameRateResult))
+					{
+						__C(pQualProp->get_FramesDroppedInRenderer(&nFramesDroppedInRenderer));
+						__C(pQualProp->get_FramesDrawn(&nFramesDrawn));
+						//__C(pQualProp->get_AvgFrameRate(&nAvgFrameRate));
+						__C(pQualProp->get_Jitter(&nJitter));
+						__C(pQualProp->get_AvgSyncOffset(&nAvgSyncOffset));
+						__C(pQualProp->get_DevSyncOffset(&nDevSyncOffset));
+						PropertyBagNeeded(pPropertyBag);
+						pPropertyBag->WriteValue(_T("FramesDroppedInRenderer"), CComVariant((LONG) nFramesDroppedInRenderer));
+						pPropertyBag->WriteValue(_T("FramesDrawn"), CComVariant((LONG) nFramesDrawn));
+						pPropertyBag->WriteValue(_T("AvgFrameRate"), CComVariant((DOUBLE) nAvgFrameRate / 100));
+						pPropertyBag->WriteValue(_T("Jitter"), CComVariant((LONG) nJitter));
+						pPropertyBag->WriteValue(_T("AvgSyncOffset"), CComVariant((LONG) nAvgSyncOffset));
+						pPropertyBag->WriteValue(_T("DevSyncOffset"), CComVariant((LONG) nDevSyncOffset));
+					}
 				}
 				_ATLCATCHALL()
 				{

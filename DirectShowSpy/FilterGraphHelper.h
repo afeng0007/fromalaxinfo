@@ -1884,11 +1884,15 @@ public:
 					{
 						const CLSID& ClassIdentifier = pClassIdentifiers[nPageIndex];
 						if(ClassIdentifier == CLSID_NULL)
-							continue;
+							continue; // Fake
 						_ATLTRY
 						{
 							CComPtr<IPropertyPage> pPropertyPage;
-							__C(pPropertyPage.CoCreateInstance(ClassIdentifier));
+							const HRESULT nCoCreateInstanceResult = pPropertyPage.CoCreateInstance(ClassIdentifier);
+							_A(SUCCEEDED(nCoCreateInstanceResult) || nCoCreateInstanceResult == REGDB_E_CLASSNOTREG);
+							if(nCoCreateInstanceResult == REGDB_E_CLASSNOTREG)
+								continue; // Missing [Optional] Page
+							__C(nCoCreateInstanceResult);
 							CData Data(pBaseFilter, ClassIdentifier, pPropertyPage);
 							Data.m_pSite.Construct()->Initialize(this, pBaseFilter, pPropertyPage);
 							CTreeItem PageItem = m_TreeView.InsertItem(FilterItem, PreviousPageItem, Data, Data.GetPropertyPageTitle());
