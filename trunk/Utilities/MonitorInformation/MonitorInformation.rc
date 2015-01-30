@@ -123,7 +123,7 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION  1, 0, 0, 50
+ FILEVERSION  1, 0, 0, 59
  PRODUCTVERSION 1,0,0,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
@@ -142,7 +142,7 @@ BEGIN
             VALUE "Comments", "Created by Roman Ryltsov roman@alax.info"
             VALUE "CompanyName", "Alax.Info"
             VALUE "FileDescription", "MonitorInformation Module"
-            VALUE "FileVersion",  "1, 0, 0, 50\0"
+            VALUE "FileVersion",  "1, 0, 0, 59\0"
             VALUE "InternalName", "MonitorInformation"
             VALUE "LegalCopyright", "Copyright (C) Alax.Info, 2006-2008"
             VALUE "OriginalFilename", "MonitorInformation.exe"

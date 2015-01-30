@@ -1,15 +1,11 @@
 ////////////////////////////////////////////////////////////
-// stdafx.h
-//
-// Copyright (C) Alax.Info, 2006-2008
+// Copyright (C) Alax.Info, 2006-2015
 // http://alax.info
 //
 // A permission to use the source code is granted as long as reference to 
 // source website http://alax.info is retained.
 // 
 // Created by Roman Ryltsov roman@alax.info
-// 
-// $Id: stdafx.h 21 2008-11-22 20:52:51Z alax $
 
 #pragma once
 
@@ -63,7 +59,10 @@ CExeModule
 #define _WTL_NO_UNION_CLASSES
 #define _WTL_NEW_PAGE_NOTIFY_HANDLERS
 
+#undef _SYSINFOAPI_H_
 #include <atlapp.h>
+#define _SYSINFOAPI_H_
+
 #include <atlgdi.h>
 #include <atluser.h>
 #include <atlcrack.h>
