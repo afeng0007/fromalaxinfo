@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2008-2014
+// Copyright (C) Roman Ryltsov, 2008-2015
 // Created by Roman Ryltsov roman@alax.info, http://alax.info
 //
 // This source code is published to complement DirectShowSpy developer powertoy 
@@ -57,6 +57,8 @@ BEGIN_MSG_MAP_EX(CRunPropertyBagPropertyPage)
 	MSG_WM_INITDIALOG(OnInitDialog)
 	MSG_WM_DESTROY(OnDestroy)
 	COMMAND_ID_HANDLER_EX(IDC_GENERIC_RUNPROPERTYBAG_REFRESH, OnRefresh)
+	COMMAND_ID_HANDLER_EX(IDC_GENERIC_RUNPROPERTYBAG_COPY, OnCopy)
+	COMMAND_ID_HANDLER_EX(IDC_GENERIC_RUNPROPERTYBAG_SAVEAS, OnSaveAs)
 	REFLECT_NOTIFICATIONS()
 END_MSG_MAP()
 
@@ -64,12 +66,16 @@ BEGIN_DLGRESIZE_MAP(CRunPropertyBagPropertyPage)
 	DLGRESIZE_CONTROL(IDC_GENERIC_RUNPROPERTYBAG_INTRODUCTION, DLSZ_SIZE_X)
 	DLGRESIZE_CONTROL(IDC_GENERIC_RUNPROPERTYBAG_TEXT, DLSZ_SIZE_X | DLSZ_SIZE_Y)
 	DLGRESIZE_CONTROL(IDC_GENERIC_RUNPROPERTYBAG_REFRESH, DLSZ_MOVE_Y)
+	DLGRESIZE_CONTROL(IDC_GENERIC_RUNPROPERTYBAG_COPY, DLSZ_MOVE_Y)
+	DLGRESIZE_CONTROL(IDC_GENERIC_RUNPROPERTYBAG_SAVEAS, DLSZ_MOVE_Y)
 END_DLGRESIZE_MAP()
 
 private:
 	BOOL m_bActivating;
 	CRoEdit m_TextEdit;
 	CFont m_TextFont;
+	CButton m_CopyButton;
+	CButton m_SaveAsButton;
 	CRoMapT<INT_PTR, BOOL> m_ChangeMap;
 
 public:
@@ -93,6 +99,9 @@ public:
 	}
 	VOID UpdateControls()
 	{
+		const INT nLextLength = m_TextEdit.GetWindowTextLength();
+		m_CopyButton.EnableWindow(nLextLength > 0);
+		m_SaveAsButton.EnableWindow(nLextLength > 0);
 	}
 	VOID UpdateText()
 	{
@@ -101,7 +110,7 @@ public:
 		m_TextEdit.SetValue(CRunPropertyBagHelper::GetPropertyBagText(GetObject(0)));
 	}
 
-// Window message handlers
+// Window Message Handler
 	LRESULT OnInitDialog(HWND, LPARAM)
 	{
 		m_bActivating = TRUE;
@@ -115,6 +124,9 @@ public:
 			TextFont.SetHeight(8);
 			m_TextFont = TextFont.CreateFontIndirect();
 			m_TextEdit.SetFont(m_TextFont);
+			//m_RefreshButton = GetDlgItem(IDC_GENERIC_RUNEVENT_REFRESH);
+			m_CopyButton = GetDlgItem(IDC_GENERIC_RUNPROPERTYBAG_COPY);
+			m_SaveAsButton = GetDlgItem(IDC_GENERIC_RUNPROPERTYBAG_SAVEAS);
 			DlgResize_Init(FALSE);
 			_A(GetObjectCount() >= 1);
 			//const CComQIPtr<IRunPropertyBagAware> pRunPropertyBagAware = GetObject(0);
@@ -141,6 +153,50 @@ public:
 		CWaitCursor WaitCursor;
 		UpdateText();
 		UpdateControls();
+		return 0;
+	}
+	LRESULT OnCopy(UINT, INT, HWND)
+	{
+		SetClipboardText(m_hWnd, m_TextEdit.GetValue());
+		MessageBeep(MB_OK);	
+		return 0;
+	}
+	LRESULT OnSaveAs(UINT, INT, HWND)
+	{
+		static const COMDLG_FILTERSPEC g_pFilter[] = 
+		{
+			{ _T("Text Files"), _T("*.txt") },
+			{ _T("BZip2 Compressed Text Files"), _T("*.txt.bz2") },
+			{ _T("All Files"), _T("*.*") },
+		};
+		CPath sPath = _CommonDialogHelper::QuerySavePath(m_hWnd, g_pFilter, _T("txt"));
+		if(!_tcslen(sPath))
+			return 0;
+		CAtlFile File;
+		__C(File.Create(sPath, GENERIC_WRITE, FILE_SHARE_READ, CREATE_ALWAYS));
+		_ATLTRY
+		{
+			CStringA sText = Utf8StringFromString(CStringW(m_TextEdit.GetValue()));
+			static const BYTE g_pnByteOrderMark[] = { 0xEF, 0xBB, 0xBF, 0x00 };
+			sText.Insert(0, (LPCSTR) g_pnByteOrderMark);
+			if(_tcsicmp(GetPathExtension(sPath), _T(".bz2")) == 0)
+			{
+				CLocalObjectPtr<CBzip2Item> pItem;
+				pItem->SetRawData((const BYTE*) (LPCSTR) sText, sText.GetLength());
+				CHeapPtr<BYTE> pnData;
+				SIZE_T nDataSize = 0;
+				pItem->GetData(pnData, nDataSize);
+				__C(File.Write(pnData, (DWORD) nDataSize));
+			} else
+				__C(File.Write(sText, (DWORD) sText.GetLength()));
+		}
+		_ATLCATCHALL()
+		{
+			File.Close();
+			_W(DeleteFile(sPath));
+			_ATLRETHROW;
+		}
+		MessageBeep(MB_OK);	
 		return 0;
 	}
 
@@ -192,6 +248,8 @@ BEGIN_MSG_MAP_EX(CRunEventPropertyPage)
 	MSG_WM_DESTROY(OnDestroy)
 	COMMAND_HANDLER_EX(IDC_GENERIC_RUNEVENT_CAPTURE, BN_CLICKED, OnCaptureButtonClicked)
 	COMMAND_ID_HANDLER_EX(IDC_GENERIC_RUNEVENT_REFRESH, OnRefresh)
+	COMMAND_ID_HANDLER_EX(IDC_GENERIC_RUNEVENT_COPY, OnCopy)
+	COMMAND_ID_HANDLER_EX(IDC_GENERIC_RUNEVENT_SAVEAS, OnSaveAs)
 	REFLECT_NOTIFICATIONS()
 END_MSG_MAP()
 
@@ -199,6 +257,8 @@ BEGIN_DLGRESIZE_MAP(CRunEventPropertyPage)
 	DLGRESIZE_CONTROL(IDC_GENERIC_RUNEVENT_CAPTURE, DLSZ_SIZE_X)
 	DLGRESIZE_CONTROL(IDC_GENERIC_RUNEVENT_TEXT, DLSZ_SIZE_X | DLSZ_SIZE_Y)
 	DLGRESIZE_CONTROL(IDC_GENERIC_RUNEVENT_REFRESH, DLSZ_MOVE_Y)
+	DLGRESIZE_CONTROL(IDC_GENERIC_RUNEVENT_COPY, DLSZ_MOVE_Y)
+	DLGRESIZE_CONTROL(IDC_GENERIC_RUNEVENT_SAVEAS, DLSZ_MOVE_Y)
 END_DLGRESIZE_MAP()
 
 public:
@@ -208,6 +268,8 @@ private:
 	CButton m_CaptureButton;
 	CRoEdit m_TextEdit;
 	CButton m_RefreshButton;
+	CButton m_CopyButton;
+	CButton m_SaveAsButton;
 	CRoMapT<INT_PTR, BOOL> m_ChangeMap;
 
 public:
@@ -234,6 +296,9 @@ public:
 		const BOOL bCapture = m_CaptureButton.GetCheck();
 		//m_TextEdit.EnableWindow(bCapture);
 		m_RefreshButton.EnableWindow(bCapture);
+		const INT nLextLength = m_TextEdit.GetWindowTextLength();
+		m_CopyButton.EnableWindow(nLextLength > 0);
+		m_SaveAsButton.EnableWindow(nLextLength > 0);
 	}
 	VOID Refresh()
 	{
@@ -266,7 +331,7 @@ public:
 		m_TextEdit.SetValue(sText);
 	}
 
-// Window message handlers
+// Window Message Handler
 	LRESULT OnInitDialog(HWND, LPARAM)
 	{
 		m_bActivating = TRUE;
@@ -275,6 +340,8 @@ public:
 			m_CaptureButton = GetDlgItem(IDC_GENERIC_RUNEVENT_CAPTURE);
 			m_TextEdit = GetDlgItem(IDC_GENERIC_RUNEVENT_TEXT);
 			m_RefreshButton = GetDlgItem(IDC_GENERIC_RUNEVENT_REFRESH);
+			m_CopyButton = GetDlgItem(IDC_GENERIC_RUNEVENT_COPY);
+			m_SaveAsButton = GetDlgItem(IDC_GENERIC_RUNEVENT_SAVEAS);
 			DlgResize_Init(FALSE);
 			//m_OutputSampleTimeEdit = GetDlgItem(IDC_SUSPENSIONFILTER_SAMPLE_OUTPUTTIME);
 			_A(GetObjectCount() >= 1);
@@ -323,6 +390,50 @@ public:
 		CWaitCursor WaitCursor;
 		Refresh();
 		UpdateControls();
+		return 0;
+	}
+	LRESULT OnCopy(UINT, INT, HWND)
+	{
+		SetClipboardText(m_hWnd, m_TextEdit.GetValue());
+		MessageBeep(MB_OK);	
+		return 0;
+	}
+	LRESULT OnSaveAs(UINT, INT, HWND)
+	{
+		static const COMDLG_FILTERSPEC g_pFilter[] = 
+		{
+			{ _T("Text Files"), _T("*.txt") },
+			{ _T("BZip2 Compressed Text Files"), _T("*.txt.bz2") },
+			{ _T("All Files"), _T("*.*") },
+		};
+		CPath sPath = _CommonDialogHelper::QuerySavePath(m_hWnd, g_pFilter, _T("txt"));
+		if(!_tcslen(sPath))
+			return 0;
+		CAtlFile File;
+		__C(File.Create(sPath, GENERIC_WRITE, FILE_SHARE_READ, CREATE_ALWAYS));
+		_ATLTRY
+		{
+			CStringA sText = Utf8StringFromString(CStringW(m_TextEdit.GetValue()));
+			static const BYTE g_pnByteOrderMark[] = { 0xEF, 0xBB, 0xBF, 0x00 };
+			sText.Insert(0, (LPCSTR) g_pnByteOrderMark);
+			if(_tcsicmp(GetPathExtension(sPath), _T(".bz2")) == 0)
+			{
+				CLocalObjectPtr<CBzip2Item> pItem;
+				pItem->SetRawData((const BYTE*) (LPCSTR) sText, sText.GetLength());
+				CHeapPtr<BYTE> pnData;
+				SIZE_T nDataSize = 0;
+				pItem->GetData(pnData, nDataSize);
+				__C(File.Write(pnData, (DWORD) nDataSize));
+			} else
+				__C(File.Write(sText, (DWORD) sText.GetLength()));
+		}
+		_ATLCATCHALL()
+		{
+			File.Close();
+			_W(DeleteFile(sPath));
+			_ATLRETHROW;
+		}
+		MessageBeep(MB_OK);	
 		return 0;
 	}
 
@@ -410,6 +521,9 @@ public:
 		MSG_TVN_SELCHANGED(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_TREE, OnTreeViewSelChanged)
 		MSG_TVN_ITEMEXPANDING(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_TREE, OnTreeViewItemExplanding)
 		MSG_TVN_DBLCLK(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_TREE, OnTreeViewDblClk)
+		NOTIFY_HANDLER_EX(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_REFRESH, CRoHyperStatic::NC_ANCHORCLICKED, OnRefreshAnchorClicked)
+		NOTIFY_HANDLER_EX(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_COPY, CRoHyperStatic::NC_ANCHORCLICKED, OnCopyAnchorClicked)
+		NOTIFY_HANDLER_EX(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_SAVEAS, CRoHyperStatic::NC_ANCHORCLICKED, OnSaveAsAnchorClicked)
 		MSG_WM_SYSCOMMAND(OnSysCommand)
 		COMMAND_ID_HANDLER_EX(IDOK, OnOk)
 		COMMAND_ID_HANDLER_EX(IDCANCEL, OnCancel)
@@ -424,6 +538,9 @@ public:
 	BEGIN_DLGRESIZE_MAP(CPropertyFrameDialog)
 		DLGRESIZE_CONTROL(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_TREE, DLSZ_SIZE_Y)
 		DLGRESIZE_CONTROL(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_TEXT, DLSZ_SIZE_X | DLSZ_SIZE_Y)
+		DLGRESIZE_CONTROL(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_REFRESH, DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_COPY, DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_SAVEAS, DLSZ_MOVE_Y)
 		DLGRESIZE_CONTROL(IDOK, DLSZ_MOVE_X | DLSZ_MOVE_Y)
 		DLGRESIZE_CONTROL(IDCANCEL, DLSZ_MOVE_X | DLSZ_MOVE_Y)
 		DLGRESIZE_CONTROL(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_APPLY, DLSZ_MOVE_X | DLSZ_MOVE_Y)
@@ -850,28 +967,14 @@ public:
 			}
 			LRESULT OnSaveAs(UINT, INT, HWND)
 			{
-				CPath sPath;
 				static const COMDLG_FILTERSPEC g_pFilter[] = 
 				{
 					{ _T("GraphEdit Files"), _T("*.grf") },
 					{ _T("All Files"), _T("*.*") },
 				};
-				if(GetOsVersion() >= GetWinVistaOsVersion())
-				{
-					CShellFileSaveDialog Dialog(NULL, FOS_OVERWRITEPROMPT | FOS_FORCEFILESYSTEM | FOS_PATHMUSTEXIST, _T("grf"), g_pFilter, DIM(g_pFilter));
-					if(Dialog.DoModal(m_hWnd) != IDOK)
-						return 0;
-					CString sPathString;
-					__C(Dialog.GetFilePath(sPathString));
-					sPath = (LPCTSTR) sPathString;
-				} else
-				{
-					CString sFilter;
-					CFileDialog Dialog(FALSE, _T("grf"), NULL, OFN_OVERWRITEPROMPT | OFN_HIDEREADONLY | OFN_PATHMUSTEXIST | OFN_EXPLORER | OFN_ENABLESIZING, GetLegacyFilter(g_pFilter, sFilter));
-					if(Dialog.DoModal(m_hWnd) != IDOK)
-						return 0;
-					sPath = Dialog.m_szFileName;
-				}
+				CPath sPath = _CommonDialogHelper::QuerySavePath(m_hWnd, g_pFilter, _T("grf"));
+				if(_tcslen(sPath) == 0)
+					return 0;
 				#pragma region Save
 				// NOTE: See http://msdn.microsoft.com/en-us/library/windows/desktop/dd377551
 				const CComQIPtr<IPersistStream> pPersistStream = m_pOwner->m_Owner.GetFilterGraph();
@@ -1815,6 +1918,9 @@ public:
 		CRoEdit m_TextEdit;
 		CRect m_TextPosition;
 		CFont m_TextFont;
+		CRoHyperStatic m_RefreshStatic;
+		CRoHyperStatic m_CopyStatic;
+		CRoHyperStatic m_SaveAsStatic;
 		CButton m_OkButton;
 		CButton m_CancelButton;
 		CButton m_ApplyButton;
@@ -1834,6 +1940,14 @@ public:
 			_W(Font.CreateFontIndirect(&LogFont));
 			if(hStaticWindow)
 				CStatic(hStaticWindow).SetFont(Font);
+		}
+		VOID ShowText(BOOL bVisible, BOOL bStaticVisible = FALSE)
+		{
+			m_TextEdit.ShowWindow(bVisible ? SW_SHOW : SW_HIDE);
+			bStaticVisible &= bVisible;
+			m_RefreshStatic.ShowWindow(bStaticVisible ? SW_SHOW : SW_HIDE);
+			m_CopyStatic.ShowWindow(bStaticVisible ? SW_SHOW : SW_HIDE);
+			m_SaveAsStatic.ShowWindow(bStaticVisible ? SW_SHOW : SW_HIDE);
 		}
 
 	public:
@@ -2028,6 +2142,23 @@ public:
 			_W(m_EmailLogDialog.SetWindowPos(NULL, Position, SWP_NOZORDER | SWP_NOACTIVATE));
 		}
 
+	// CDialogWithAcceleratorsT
+		BOOL TranslateAccelerator(MSG* pMessage)
+		{
+			CTreeItem TreeItem = m_TreeView.GetSelectedItem();
+			if(TreeItem)
+			{
+				CData& Data = m_TreeView.GetItemData(TreeItem);
+				if(Data.m_Type == CData::TYPE_FILTERPROPERTYPAGE)
+				{
+					if(Data.m_pPropertyPage)
+						if(Data.m_pPropertyPage->TranslateAccelerator(pMessage) == S_OK)
+							return TRUE;
+				}
+			}
+			return __super::TranslateAccelerator(pMessage);
+		}
+
 	// Window Message Handler
 		LRESULT OnInitDialog(HWND, LPARAM)
 		{
@@ -2067,6 +2198,10 @@ public:
 				TextFont.SetHeight(8);
 				m_TextFont = TextFont.CreateFontIndirect();
 				m_TextEdit.SetFont(m_TextFont);
+				m_RefreshStatic.SubclassWindow(GetDlgItem(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_REFRESH));
+				m_CopyStatic.SubclassWindow(GetDlgItem(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_COPY));
+				m_SaveAsStatic.SubclassWindow(GetDlgItem(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_SAVEAS));
+				CRoHyperStatic::ArrangeHorizontally(&m_RefreshStatic, &m_CopyStatic, &m_SaveAsStatic, NULL);
 				m_OkButton = GetDlgItem(IDOK);
 				m_CancelButton = GetDlgItem(IDCANCEL);
 				m_ApplyButton = GetDlgItem(IDC_FILTERGRAPHHELPER_PROPERTYFRAME_APPLY);
@@ -2175,7 +2310,7 @@ public:
 					#pragma region Property Page
 					if(Data.m_pPropertyPage)
 					{
-						m_TextEdit.ShowWindow(SW_HIDE);
+						ShowText(FALSE);
 						if(Data.m_pSite != m_pCurrentSite)
 							HideCurrentSite();
 						if(!Data.m_bSiteActivated)
@@ -2193,7 +2328,7 @@ public:
 					{
 						CWaitCursor WaitCursor;
 						HideCurrentSite();
-						m_TextEdit.ShowWindow(SW_SHOW);
+						ShowText(TRUE, FALSE);
 						CString sText;
 						sText += AtlFormatString(_T("## ") _T("Filter %ls") _T("\r\n") _T("\r\n"), _FilterGraphHelper::GetFilterName(Data.m_pBaseFilter));
 						sText += m_Owner.GetFilterText(Data.m_pBaseFilter);
@@ -2312,31 +2447,31 @@ public:
 					{
 					#pragma region TYPE_MEMORYALLOCATOR
 					case CData::TYPE_MEMORYALLOCATOR:
-						m_TextEdit.ShowWindow(SW_HIDE);
+						ShowText(FALSE);
 						_W(m_MemoryAllocatorDialog.SetWindowPos(NULL, GetTextEditPosition(), SWP_NOZORDER | SWP_SHOWWINDOW));
 						break;
 					#pragma endregion
 					#pragma region TYPE_ACTION
 					case CData::TYPE_ACTION:
-						m_TextEdit.ShowWindow(SW_HIDE);
+						ShowText(FALSE);
 						_W(m_ActionDialog.SetWindowPos(NULL, GetTextEditPosition(), SWP_NOZORDER | SWP_SHOWWINDOW));
 						break;
 					#pragma endregion
 					#pragma region TYPE_EMAIL
 					case CData::TYPE_EMAIL:
-						m_TextEdit.ShowWindow(SW_HIDE);
+						ShowText(FALSE);
 						_W(m_EmailDialog.SetWindowPos(NULL, GetTextEditPosition(), SWP_NOZORDER | SWP_SHOWWINDOW));
 						break;
 					#pragma endregion
 					#pragma region TYPE_EMAIL_LOG
 					case CData::TYPE_EMAIL_LOG:
-						m_TextEdit.ShowWindow(SW_HIDE);
+						ShowText(FALSE);
 						_W(m_EmailLogDialog.SetWindowPos(NULL, GetTextEditPosition(), SWP_NOZORDER | SWP_SHOWWINDOW));
 						break;
 					#pragma endregion
 					default:
-						m_TextEdit.ShowWindow(SW_SHOW);
-						m_TextEdit.SetValue(m_Owner.GetText());
+						UpdateText();
+						ShowText(TRUE, TRUE);
 						m_MemoryAllocatorDialog.ShowWindow(SW_HIDE);
 						m_ActionDialog.ShowWindow(SW_HIDE);
 						m_EmailDialog.ShowWindow(SW_HIDE);
@@ -2350,7 +2485,7 @@ public:
 			#pragma region No Tree Item
 			{
 				HideCurrentSite();
-				m_TextEdit.ShowWindow(SW_HIDE);
+				ShowText(FALSE);
 				m_MemoryAllocatorDialog.ShowWindow(SW_HIDE);
 				m_ActionDialog.ShowWindow(SW_HIDE);
 				m_EmailDialog.ShowWindow(SW_HIDE);
@@ -2378,6 +2513,65 @@ public:
 			if(!Dialog.SetObjectPages())
 				return 0;
 			Dialog.DoModal(m_hWnd);
+			return 0;
+		}
+		VOID UpdateText()
+		{
+			m_TextEdit.SetValue(m_Owner.GetText());
+			const INT nTextLength = m_TextEdit.GetWindowTextLength();
+			//m_RefreshStatic.EnableWindow(TRUE);
+			m_CopyStatic.EnableWindow(nTextLength > 0);
+			m_SaveAsStatic.EnableWindow(nTextLength > 0);
+		}
+		LRESULT OnRefreshAnchorClicked(NMHDR*)
+		{
+			UpdateText();
+			MessageBeep(MB_OK);
+			return 0;
+		}
+		LRESULT OnCopyAnchorClicked(NMHDR*)
+		{
+			SetClipboardText(m_hWnd, m_TextEdit.GetValue());
+			MessageBeep(MB_OK);
+			return 0;
+		}
+		LRESULT OnSaveAsAnchorClicked(NMHDR*)
+		{
+			static const COMDLG_FILTERSPEC g_pFilter[] = 
+			{
+				{ _T("Markdown Files"), _T("*.md") },
+				{ _T("Text Files"), _T("*.txt") },
+				{ _T("BZip2 Compressed Markdown Files"), _T("*.md.bz2") },
+				{ _T("All Files"), _T("*.*") },
+			};
+			CPath sPath = _CommonDialogHelper::QuerySavePath(m_hWnd, g_pFilter, _T("md"));
+			if(!_tcslen(sPath))
+				return 0;
+			CAtlFile File;
+			__C(File.Create(sPath, GENERIC_WRITE, FILE_SHARE_READ, CREATE_ALWAYS));
+			_ATLTRY
+			{
+				CStringA sText = Utf8StringFromString(CStringW(m_TextEdit.GetValue()));
+				static const BYTE g_pnByteOrderMark[] = { 0xEF, 0xBB, 0xBF, 0x00 };
+				sText.Insert(0, (LPCSTR) g_pnByteOrderMark);
+				if(_tcsicmp(GetPathExtension(sPath), _T(".bz2")) == 0)
+				{
+					CLocalObjectPtr<CBzip2Item> pItem;
+					pItem->SetRawData((const BYTE*) (LPCSTR) sText, sText.GetLength());
+					CHeapPtr<BYTE> pnData;
+					SIZE_T nDataSize = 0;
+					pItem->GetData(pnData, nDataSize);
+					__C(File.Write(pnData, (DWORD) nDataSize));
+				} else
+					__C(File.Write(sText, (DWORD) sText.GetLength()));
+			}
+			_ATLCATCHALL()
+			{
+				File.Close();
+				_W(DeleteFile(sPath));
+				_ATLRETHROW;
+			}
+			MessageBeep(MB_OK);	
 			return 0;
 		}
 		LRESULT OnSysCommand(UINT nCommand, CPoint)
@@ -3470,18 +3664,6 @@ public:
 			return _T("Win32");
 		#endif // defined(_WIN64)
 	}
-	template <SIZE_T t_nItemCount>
-	static CString& GetLegacyFilter(const COMDLG_FILTERSPEC (&pItems)[t_nItemCount], CString& sFilter)
-	{
-		_A(sFilter.IsEmpty());
-		for(SIZE_T nIndex = 0; nIndex < t_nItemCount; nIndex++)
-		{
-			const COMDLG_FILTERSPEC& Item = pItems[nIndex];
-			sFilter += AtlFormatString(_T("%s (%s)|%s|"), Item.pszName, Item.pszSpec, Item.pszSpec);
-		}
-		sFilter.Replace(_T('|'), 0);
-		return sFilter;
-	}
 	static BOOL OpenMonikerWithGsn(LPCWSTR pszMonikerDisplayName, HWND hParentWindow = GetActiveWindow())
 	{
 		_A(pszMonikerDisplayName);
@@ -3514,27 +3696,14 @@ public:
 		#pragma endregion 
 		if(sPath.IsEmpty())
 		{
-			#pragma region Prompt
 			static const COMDLG_FILTERSPEC g_pFilter[] = 
 			{
 				{ _T("Executable Files"), _T("*.exe") },
 				{ _T("All Files"), _T("*.*") },
 			};
-			if(GetOsVersion() >= GetWinVistaOsVersion())
-			{
-				CShellFileOpenDialog Dialog(g_pszFileName, FOS_FORCEFILESYSTEM | FOS_FILEMUSTEXIST, _T("exe"), g_pFilter, DIM(g_pFilter));
-				if(Dialog.DoModal(hParentWindow) != IDOK)
-					return FALSE;
-				__C(Dialog.GetFilePath(sPath));
-			} else
-			{
-				CString sFilter;
-				CFileDialog Dialog(TRUE, _T("exe"), NULL, OFN_HIDEREADONLY | OFN_FILEMUSTEXIST | OFN_EXPLORER | OFN_ENABLESIZING, GetLegacyFilter(g_pFilter, sFilter));
-				if(Dialog.DoModal(hParentWindow) != IDOK)
-					return FALSE;
-				sPath = Dialog.m_szFileName;
-			}
-			#pragma endregion 
+			sPath = (LPCTSTR) _CommonDialogHelper::QueryOpenPath(hParentWindow, g_pFilter, _T("exe"), g_pszFileName);
+			if(sPath.IsEmpty())
+				return FALSE;
 			_RegKeyHelper::SetStringValue(HKEY_CURRENT_USER, REGISTRY_ROOT, sValueName, sPath);
 		}
 		CWaitCursor WaitCursor;
@@ -3567,27 +3736,14 @@ public:
 		// SUGG: Look for Windows SDK
 		if(sPath.IsEmpty())
 		{
-			#pragma region Prompt
 			static const COMDLG_FILTERSPEC g_pFilter[] = 
 			{
 				{ _T("Executable Files"), _T("*.exe") },
 				{ _T("All Files"), _T("*.*") },
 			};
-			if(GetOsVersion() >= GetWinVistaOsVersion())
-			{
-				CShellFileOpenDialog Dialog(g_pszFileName, FOS_FORCEFILESYSTEM | FOS_FILEMUSTEXIST, _T("exe"), g_pFilter, DIM(g_pFilter));
-				if(Dialog.DoModal(hParentWindow) != IDOK)
-					return FALSE;
-				__C(Dialog.GetFilePath(sPath));
-			} else
-			{
-				CString sFilter;
-				CFileDialog Dialog(TRUE, _T("exe"), NULL, OFN_HIDEREADONLY | OFN_FILEMUSTEXIST | OFN_EXPLORER | OFN_ENABLESIZING, GetLegacyFilter(g_pFilter, sFilter));
-				if(Dialog.DoModal(hParentWindow) != IDOK)
-					return FALSE;
-				sPath = Dialog.m_szFileName;
-			}
-			#pragma endregion 
+			sPath = (LPCTSTR) _CommonDialogHelper::QueryOpenPath(hParentWindow, g_pFilter, _T("exe"), g_pszFileName);
+			if(sPath.IsEmpty())
+				return FALSE;
 			_RegKeyHelper::SetStringValue(HKEY_CURRENT_USER, REGISTRY_ROOT, sValueName, sPath);
 		}
 		CStringW sFilterGraphMonikerDisplayName = pszMonikerDisplayName;
