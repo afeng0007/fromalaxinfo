@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2008-2014
+// Copyright (C) Roman Ryltsov, 2008-2015
 // Created by Roman Ryltsov roman@alax.info, http://alax.info
 //
 // This source code is published to complement DirectShowSpy developer powertoy 
