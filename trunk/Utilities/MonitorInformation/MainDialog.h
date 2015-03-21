@@ -203,8 +203,8 @@ public:
 			m_ModeComboBox.SetItemData(m_ModeComboBox.AddString(sText), (DWORD_PTR) nMonitorIndex);
 		}
 		m_ModeComboBox.SetCurSel(0);
-		SetIcon(AtlLoadIconImage(IDR_MAINFRAME, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON), LR_DEFAULTCOLOR), TRUE);
-		//SetIcon(AtlLoadIconImage(IDR_MAINFRAME, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR), FALSE);
+		SetIcon(AtlLoadIconImage(IDR_MAINFRAME, LR_DEFAULTCOLOR, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON)), TRUE);
+		SetIcon(AtlLoadIconImage(IDR_MAINFRAME, LR_DEFAULTCOLOR, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON)), FALSE);
 		ATLVERIFY(CenterWindow());
 		return TRUE;
 	}
