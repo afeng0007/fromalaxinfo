@@ -677,8 +677,8 @@ public:
 		_W(m_Control.SubclassWindow(GetDlgItem(IDC_CONTROL)));
 		//m_PropertySheetButton = GetDlgItem(OnPropertySheet);
 		//DlgResize_Init();
-		SetIcon(AtlLoadIconImage(IDI_MODULE, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON), LR_DEFAULTCOLOR), TRUE);
-		//SetIcon(AtlLoadIconImage(IDI_MODULE, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR), FALSE);
+		SetIcon(AtlLoadIconImage(IDI_MODULE, LR_DEFAULTCOLOR, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON)), TRUE);
+		SetIcon(AtlLoadIconImage(IDI_MODULE, LR_DEFAULTCOLOR, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON)), FALSE);
 		CMenuHandle Menu = GetSystemMenu(FALSE);
 		_W(Menu.AppendMenu(MF_SEPARATOR));
 		_W(Menu.AppendMenu(MF_STRING, ID_APP_ABOUT, _T("&About...")));
