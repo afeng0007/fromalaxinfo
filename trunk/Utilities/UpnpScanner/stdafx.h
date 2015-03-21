@@ -7,9 +7,7 @@
 
 #pragma once
 
-#define WINVER			0x0501
-#define _WIN32_WINNT	0x0501
-#define _WIN32_IE		0x0500
+#include <winsdkver.h>
 
 #define INLINE_HRESULT_FROM_WIN32
 #define _INC_WINDOWSX
@@ -32,7 +30,9 @@ using namespace ATL;
 #define _WTL_NO_UNION_CLASSES
 #define _WTL_NEW_PAGE_NOTIFY_HANDLERS
 
+#undef _SYSINFOAPI_H_
 #include <atlapp.h>
+#define _SYSINFOAPI_H_
 
 extern CAppModule _Module;
 

@@ -97,7 +97,7 @@ END
 //
 
 VS_VERSION_INFO VERSIONINFO
- FILEVERSION  1, 0, 0, 260
+ FILEVERSION  1, 0, 0, 268
  PRODUCTVERSION 1,0,0,1
  FILEFLAGSMASK 0x3fL
 #ifdef _DEBUG
@@ -116,7 +116,7 @@ BEGIN
             VALUE "Comments", "Created by Roman Ryltsov roman@alax.info"
             VALUE "CompanyName", "Roman Ryltsov"
             VALUE "FileDescription", "Alax.Info UPnP Scanner Module"
-            VALUE "FileVersion",  "1, 0, 0, 260\0"
+            VALUE "FileVersion",  "1, 0, 0, 268\0"
             VALUE "InternalName", "UpnpScanner.exe"
             VALUE "LegalCopyright", "Copyright © Alax.Info, Roman Ryltsov, 2006-2009"
             VALUE "OriginalFilename", "UpnpScanner.exe"
