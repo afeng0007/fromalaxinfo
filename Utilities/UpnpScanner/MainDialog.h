@@ -532,10 +532,8 @@ public:
 		m_SubmitButton = GetDlgItem(IDC_SUBMIT);
 		m_TextEdit = GetDlgItem(IDC_TEXT);
 		m_TextEdit.SetLimitText(0);
-		SetIcon(AtlLoadIconImage(IDR_MAINFRAME, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON), LR_DEFAULTCOLOR), TRUE);
-		#if !defined(_DEBUG)
-			//SetIcon(AtlLoadIconImage(IDR_MAINFRAME, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR), FALSE);
-		#endif // !defined(_DEBUG)
+		SetIcon(AtlLoadIconImage(IDR_MAINFRAME, LR_DEFAULTCOLOR, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON)), TRUE);
+		SetIcon(AtlLoadIconImage(IDR_MAINFRAME, LR_DEFAULTCOLOR, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON)), FALSE);
 		_W(CenterWindow());
 		#if _DEVELOPMENT && FALSE
 			m_TextEdit.SetValue(_T("Test"));
