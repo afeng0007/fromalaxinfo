@@ -125,8 +125,8 @@ public:
 		m_pExplorers[0] = GetDlgItem(IDC_EXPLORER1);
 		m_pExplorers[1] = GetDlgItem(IDC_EXPLORER2);
 		//ATLENSURE_SUCCEEDED(AdviseSinkMap(TRUE));
-		//SetIcon(AtlLoadIconImage(IDR_MAINFRAME, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON), LR_DEFAULTCOLOR), TRUE);
-		//SetIcon(AtlLoadIconImage(IDR_MAINFRAME, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON), LR_DEFAULTCOLOR), FALSE);
+		//SetIcon(AtlLoadIconImage(IDR_MAINFRAME, LR_DEFAULTCOLOR, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON)), TRUE);
+		//SetIcon(AtlLoadIconImage(IDR_MAINFRAME, LR_DEFAULTCOLOR, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON)), FALSE);
 		ATLVERIFY(CenterWindow());
 		DlgResize_Init(TRUE);
 		for(SIZE_T nIndex = 0; nIndex < _countof(m_pExplorers); nIndex++)
