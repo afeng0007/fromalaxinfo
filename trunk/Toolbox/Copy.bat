@@ -25,6 +25,11 @@ copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.%C%" ".\Hardware Specific"
 copy /b /y "%A%\Utilities\%B%\_Bin\%B%-Win32.%C%" ".\Hardware Specific"
 copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.%C%" ".\Hardware Specific"
 
+@set B=DeckLinkTools
+@set C=dll
+copy /b /y "%A%\Utilities\%B%\_Bin\%B%-Win32.%C%" ".\Hardware Specific"
+copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.%C%" ".\Hardware Specific"
+
 @set B=MatroxDsxCapabilities
 @set C=exe
 copy /b /y "%A%\Utilities\%B%\_Bin\%B%-Win32.%C%" ".\Hardware Specific"
@@ -34,6 +39,11 @@ copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.%C%" ".\Hardware Specific"
 @set C=exe
 copy /b /y "%A%\Utilities\%B%\_Bin\%B%-Win32.%C%" .
 copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.%C%" .
+
+@set B=DirectShowTools
+@set C=dll
+copy /b /y "%A%\%B%\_Bin\%B%-Win32.%C%" .
+copy /b /y "%A%\%B%\_Bin\%B%-x64.%C%" .
 
 @set B=FilePropertyStore
 @set C=exe
@@ -87,9 +97,6 @@ copy /b /y "%A%\%B%\_Bin\%B%-*.bat" .
 @set B=StressEvr
 copy /b /y "%A%\Utilities\%B%\_Bin\%B%-Win32.exe" .
 copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.exe" .
-
-rem SupportTools
-rem DirectShowTools
 
 copy /b /y "D:\Projects\_Miscellanous\graph-studio-next.googlecode.com\bin\graphstudionext.exe" .
 copy /b /y "D:\Projects\_Miscellanous\graph-studio-next.googlecode.com\bin\graphstudionext64.exe" .
