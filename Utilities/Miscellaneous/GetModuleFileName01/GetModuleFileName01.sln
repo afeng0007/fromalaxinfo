@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GetModuleFileName01", "GetModuleFileName01.vcxproj", "{2890BFE5-E617-4A03-AB3D-DAB56592CB22}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Launch", "Launch\Launch.vcxproj", "{D1AFB657-936A-4429-BA89-AF45854B5968}"
+	ProjectSection(ProjectDependencies) = postProject
+		{2890BFE5-E617-4A03-AB3D-DAB56592CB22} = {2890BFE5-E617-4A03-AB3D-DAB56592CB22}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2890BFE5-E617-4A03-AB3D-DAB56592CB22}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2890BFE5-E617-4A03-AB3D-DAB56592CB22}.Debug|Win32.Build.0 = Debug|Win32
+		{2890BFE5-E617-4A03-AB3D-DAB56592CB22}.Release|Win32.ActiveCfg = Release|Win32
+		{2890BFE5-E617-4A03-AB3D-DAB56592CB22}.Release|Win32.Build.0 = Release|Win32
+		{D1AFB657-936A-4429-BA89-AF45854B5968}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D1AFB657-936A-4429-BA89-AF45854B5968}.Debug|Win32.Build.0 = Debug|Win32
+		{D1AFB657-936A-4429-BA89-AF45854B5968}.Release|Win32.ActiveCfg = Release|Win32
+		{D1AFB657-936A-4429-BA89-AF45854B5968}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
