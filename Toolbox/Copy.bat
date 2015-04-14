@@ -55,6 +55,11 @@ copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.%C%" .
 copy /b /y "%A%\Utilities\%B%\_Bin\%B%-Win32.%C%" .
 rem copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.%C%" .
 
+@set B=ManifestComDependency
+@set C=exe
+copy /b /y "%A%\Utilities\SxsTools\_Bin\%B%-Win32.%C%" .
+copy /b /y "%A%\Utilities\SxsTools\_Bin\%B%-x64.%C%" .
+
 @set B=BuildOutputHelper
 copy /b /y "%A%\Utilities\%B%\_Bin\Win32\Development Release Trace\%B%.exe" .
 
@@ -69,6 +74,8 @@ copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.%C%" .
 @set B=StressD2d
 copy /b /y "%A%\Utilities\%B%\_Bin\%B%-Win32.exe" .
 rem copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.exe" .
+
+@rem **** Public ***
 
 @set A=..\..\Repository-Public
 
