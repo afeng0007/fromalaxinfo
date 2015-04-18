@@ -105,5 +105,5 @@ copy /b /y "%A%\%B%\_Bin\%B%-*.bat" .
 copy /b /y "%A%\Utilities\%B%\_Bin\%B%-Win32.exe" .
 copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.exe" .
 
-copy /b /y "D:\Projects\_Miscellanous\graph-studio-next.googlecode.com\bin\graphstudionext.exe" .
-copy /b /y "D:\Projects\_Miscellanous\graph-studio-next.googlecode.com\bin\graphstudionext64.exe" .
+copy /b /y "D:\Projects\_Miscellanous\github.com-cplusharp-graph-studio-next\bin\graphstudionext.exe" .
+copy /b /y "D:\Projects\_Miscellanous\github.com-cplusharp-graph-studio-next\bin\graphstudionext64.exe" .
