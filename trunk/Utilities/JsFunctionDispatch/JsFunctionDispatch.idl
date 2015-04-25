@@ -1,0 +1,34 @@
+////////////////////////////////////////////////////////////
+// Copyright (C) Roman Ryltsov, 2008-2015
+// Created by Roman Ryltsov roman@alax.info
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	uuid(1D2C7F8A-FCB2-4111-8DB2-0BB32A19C3D6),
+	version(1.0),
+]
+library JsFunctionDispatchLib
+{
+	importlib("stdole2.tlb");
+	[
+		object,
+		uuid(2FCEAA3E-6DC2-44C9-AAF6-9D96221F94AA),
+		dual,
+		nonextensible,
+		pointer_default(unique)
+	]
+	interface IFoo : IDispatch
+	{
+		[id(1)] HRESULT Bar([in] IDispatch* pFunction);
+	};
+	[
+		uuid(8D24DE5C-611A-4223-ACC3-241457288B35)
+	]
+	coclass Foo
+	{
+		[default] interface IFoo;
+	};
+};
+
