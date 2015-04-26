@@ -43,18 +43,25 @@ int _tmain(int argc, _TCHAR* argv[])
 	SetBkMode(hDc, OPAQUE);
 	SetBkColor(hDc, RGB(0x00, 0x00, 0x00));
 	SetTextColor(hDc, RGB(0x44, 0xFF, 0x44));
-	Do(L"Мама мыла раму");
-	Position.y += Extent.cy;
-	Do(L"Mother washed window");
-	Position.y += Extent.cy;
-	Do(L"ママソープフレーム");
-	Position.y -= 2 * Extent.cy;
+	static LPCTSTR g_ppszTexts[] = 
+	{
+		L"Мама мыла раму", // Russian
+		L"Mother washed window",
+		L"ママソープフレーム", // Japanese
+		L"დედა საპნის კარკასი", // Georgean
+	};
+	for(auto&& pszText: g_ppszTexts)
+	{
+		Do(pszText);
+		Position.y += Extent.cy;
+	}
+	Position.y -= _countof(g_ppszTexts) * Extent.cy;
 	Position.x += Extent.cx;
-	Do(L"Мама мыла раму", TRUE);
-	Position.y += Extent.cy;
-	Do(L"Mother washed window", TRUE);
-	Position.y += Extent.cy;
-	Do(L"ママソープフレーム", TRUE);
+	for(auto&& pszText: g_ppszTexts)
+	{
+		Do(pszText, TRUE);
+		Position.y += Extent.cy;
+	}
 	// NOTE: Resource disposal ignored
 	ReleaseDC(NULL, hDc);
 	return 0;
