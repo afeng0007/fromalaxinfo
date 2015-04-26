@@ -17,11 +17,11 @@ VOID Do(LPCTSTR pszText, BOOL bExtTextOut = FALSE)
 	POLYTEXT pPolyTexts[1];
 	pPolyTexts[0].x = Position.x;
 	pPolyTexts[0].y = Position.y;
-    pPolyTexts[0].n = (INT) _tcslen(pszText);
-    pPolyTexts[0].lpstr = pszText;
-    pPolyTexts[0].uiFlags = 0;
+	pPolyTexts[0].n = (INT) _tcslen(pszText);
+	pPolyTexts[0].lpstr = pszText;
+	pPolyTexts[0].uiFlags = 0;
 	SetRect(&pPolyTexts[0].rcl, Position.x, Position.y, Extent.cx, Extent.cy);
-    pPolyTexts[0].pdx = NULL;
+	pPolyTexts[0].pdx = NULL;
 	if(bExtTextOut)
 		for(auto&& PolyText: pPolyTexts)
 			ExtTextOut(hDc, PolyText.x, PolyText.y, PolyText.uiFlags, &PolyText.rcl, PolyText.lpstr, PolyText.n, PolyText.pdx);
@@ -33,9 +33,9 @@ int _tmain(int argc, _TCHAR* argv[])
 {
 	LOGFONT FontFormat;
 	ZeroMemory(&FontFormat, sizeof FontFormat);
-    FontFormat.lfHeight = -28;
+	FontFormat.lfHeight = -28;
 	FontFormat.lfWeight = FW_SEMIBOLD;
-    FontFormat.lfCharSet = DEFAULT_CHARSET;
+	FontFormat.lfCharSet = DEFAULT_CHARSET;
 	_tcscpy_s(FontFormat.lfFaceName, _T("Arial"));
 	HFONT hFont = CreateFontIndirect(&FontFormat);
 	hDc = GetDC(NULL);
@@ -48,7 +48,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		L"Мама мыла раму", // Russian
 		L"Mother washed window",
 		L"ママソープフレーム", // Japanese
-		L"დედა საპნის კარკასი", // Georgean
+		L"დედა საპნის კარკასი", // Georgian
 	};
 	for(auto&& pszText: g_ppszTexts)
 	{
