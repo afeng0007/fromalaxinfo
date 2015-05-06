@@ -68,13 +68,7 @@ private:
 	}
 
 public:
-	// CDebugTrace
-	CDebugTrace() :
-		m_pszFileName(NULL),
-		m_nLineNumber(0),
-		m_pszFunctionName(NULL)
-	{
-	}
+// CDebugTrace
 	CDebugTrace(LPCSTR pszFileName, INT nLineNumber, LPCSTR pszFunctionName) :
 		m_pszFileName(pszFileName),
 		m_nLineNumber(nLineNumber),
@@ -176,3 +170,61 @@ public:
 #define _Z4			ATLTRACE
 #define _Z5			ATLTRACE
 #define _Z6			ATLTRACE
+
+class CDebugTraceContext :
+	public CDebugTraceBase
+{
+private:
+	LPCSTR m_pszFileName;
+	INT m_nLineNumber;
+	LPCSTR m_pszFunctionName;
+	CString m_sText;
+	BOOL m_bTerminated;
+
+public:
+// CDebugTraceContext
+	CDebugTraceContext(LPCSTR pszFileName, INT nLineNumber, LPCSTR pszFunctionName) :
+		m_pszFileName(pszFileName),
+		m_nLineNumber(nLineNumber),
+		m_pszFunctionName(pszFunctionName),
+		m_bTerminated(FALSE)
+	{
+	}
+	~CDebugTraceContext()
+	{
+		if(!m_bTerminated)
+		{
+			CString sText;
+			sText.Format(_T("%hs(%d): %hs: Context not terminated"), ShortFileNameFromFileName(m_pszFileName), m_nLineNumber, m_pszFunctionName);
+			if(!m_sText.IsEmpty())
+				sText.AppendFormat(_T(", %s"), m_sText);
+			sText.Append(_T("\r\n"));
+			OutputDebugString(sText);
+		}
+	}
+	VOID Terminate()
+	{
+		m_bTerminated = TRUE;
+	}
+	__forceinline VOID __cdecl operator () (LPCSTR pszFormat, ...)
+	{
+		va_list Arguments;
+		va_start(Arguments, pszFormat);
+		CStringA sText;
+		sText.FormatV(pszFormat, Arguments);
+		m_sText.Append(CString(sText));
+		va_end(Arguments);
+	}
+	__forceinline VOID __cdecl operator () (LPCWSTR pszFormat, ...)
+	{
+		va_list Arguments;
+		va_start(Arguments, pszFormat);
+		CStringW sText;
+		sText.FormatV(pszFormat, Arguments);
+		m_sText.Append(CString(sText));
+		va_end(Arguments);
+	}
+};
+
+#define _Y1	CDebugTraceContext DebugTraceContext(__FILE__, __LINE__, __FUNCTION__); DebugTraceContext
+#define _Y2 DebugTraceContext.Terminate
