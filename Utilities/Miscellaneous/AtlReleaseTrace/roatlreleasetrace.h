@@ -171,6 +171,20 @@ public:
 #define _Z5			ATLTRACE
 #define _Z6			ATLTRACE
 
+////////////////////////////////////////////////////////////
+// ATLASSERT, ATLVERIFY
+
+#undef ATLASSERT
+#undef ATLVERIFY
+#define ATLASSERT(x)	{ const BOOL bAssertValue = (x) != 0; if(!bAssertValue) { _ATLTRY { _Z1(atlTraceException, 1, _T("Assertion failed: %hs\n"), #x); AtlThrow(E_FAIL); } _ATLCATCHALL() { } } }
+#define ATLVERIFY(x)	ATLASSERT(x)
+
+#define _A		ATLASSERT
+#define _W		ATLVERIFY
+
+////////////////////////////////////////////////////////////
+// CDebugTraceContext
+
 class CDebugTraceContext :
 	public CDebugTraceBase
 {
