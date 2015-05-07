@@ -7,12 +7,21 @@
 
 #pragma once
 
+#include <atlstr.h>
+
 ////////////////////////////////////////////////////////////
 // CDebugTrace, ATLTRACE, ATLTRACE2
 
 #if !defined(_TRACELEVEL)
 	#define _TRACELEVEL 4
 #endif // !defined(_TRACELEVEL)
+
+#define _TRACESUFFIX_PROCESSIDENTIFIER 0x01
+#define _TRACESUFFIX_THREADIDENTIFIER  0x02
+
+#if !defined(_TRACESUFFIX)
+	#define _TRACESUFFIX _TRACESUFFIX_THREADIDENTIFIER
+#endif // !defined(_TRACESUFFIX)
 
 class CDebugTraceBase
 {
@@ -27,6 +36,22 @@ public:
 				return pszShortFileName + 1;
 		}
 		return pszFileName;
+	}
+	static CString ApplyTraceSuffix(CString sText)
+	{
+		#if defined(_TRACESUFFIX) && _TRACESUFFIX > 0
+			sText.TrimRight(_T("\t\n\r ."));
+			sText.Append(_T(" ["));
+			#if _TRACESUFFIX & _TRACESUFFIX_PROCESSIDENTIFIER
+				sText.AppendFormat(_T("P %d, "), GetCurrentProcessId());
+			#endif
+			#if _TRACESUFFIX & _TRACESUFFIX_THREADIDENTIFIER
+				sText.AppendFormat(_T("T %d, "), GetCurrentThreadId());
+			#endif
+			sText.TrimRight(_T(" ,"));
+			sText.Append(_T("]\n"));
+		#endif // !defined(_TRACESUFFIX)
+		return sText;
 	}
 };
 
@@ -51,7 +76,12 @@ private:
 		if(pszFileName)
 			nTextLength += sprintf_s(pszText + nTextLength, _countof(pszText) - nTextLength, "%hs(%d): %hs: ", pszFileName, nLineNumber, pszFunctionName);
 		nTextLength += vsprintf_s(pszText + nTextLength, _countof(pszText) - nTextLength, pszFormat, Arguments);
-		OutputDebugStringA(pszText);
+		#if defined(_TRACESUFFIX) && _TRACESUFFIX > 0
+			CString sText(pszText);
+			OutputDebugString(ApplyTraceSuffix(sText));
+		#else
+			OutputDebugStringA(pszText);
+		#endif // defined(_TRACESUFFIX)
 	}
 	static VOID TraceV(LPCSTR pszFileName, INT nLineNumber, LPCSTR pszFunctionName, DWORD_PTR nCategory, UINT nLevel, LPCWSTR pszFormat, va_list& Arguments)
 	{
@@ -64,7 +94,12 @@ private:
 		if(pszFileName)
 			nTextLength += swprintf_s(pszText + nTextLength, _countof(pszText) - nTextLength, L"%hs(%d): %hs: ", pszFileName, nLineNumber, pszFunctionName);
 		nTextLength += vswprintf_s(pszText + nTextLength, _countof(pszText) - nTextLength, pszFormat, Arguments);
-		OutputDebugStringW(pszText);
+		#if defined(_TRACESUFFIX) && _TRACESUFFIX > 0
+			CString sText(pszText);
+			OutputDebugString(ApplyTraceSuffix(sText));
+		#else
+			OutputDebugStringA(pszText);
+		#endif // defined(_TRACESUFFIX)
 	}
 
 public:
@@ -212,7 +247,7 @@ public:
 			sText.Format(_T("%hs(%d): %hs: Context not terminated"), ShortFileNameFromFileName(m_pszFileName), m_nLineNumber, m_pszFunctionName);
 			if(!m_sText.IsEmpty())
 				sText.AppendFormat(_T(", %s"), m_sText);
-			OutputDebugString(sText);
+			OutputDebugString(ApplyTraceSuffix(sText));
 		}
 	}
 	VOID Terminate()
