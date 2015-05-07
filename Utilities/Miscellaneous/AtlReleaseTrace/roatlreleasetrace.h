@@ -212,7 +212,6 @@ public:
 			sText.Format(_T("%hs(%d): %hs: Context not terminated"), ShortFileNameFromFileName(m_pszFileName), m_nLineNumber, m_pszFunctionName);
 			if(!m_sText.IsEmpty())
 				sText.AppendFormat(_T(", %s"), m_sText);
-			sText.Append(_T("\r\n"));
 			OutputDebugString(sText);
 		}
 	}

@@ -16,7 +16,7 @@ int _tmain(int argc, _TCHAR* argv[])
 	ATLTRACE(atlTraceGeneral, 4, L"Line %d\n", __LINE__);
 	for(; ; )
 	{
-		_Y1(_T("Line %d"), __LINE__);
+		_Y1(_T("Line %d\n"), __LINE__);
 		break;
 		_Y2();
 	}
