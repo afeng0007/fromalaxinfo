@@ -83,6 +83,9 @@ public:
 
 int _tmain(int argc, _TCHAR* argv[])
 {
+	// NOTE: See better implementation at
+	//       http://www.alax.info/trac/public/browser/trunk/Utilities/Miscellaneous/AtlReleaseTrace
+
 	ATLTRACE("First: %d\n", __LINE__);
 	ATLTRACE(L"Second: %d\n", __LINE__);
 	ATLTRACE2(atlTraceGeneral, 2, "Third: %d\n", __LINE__);
