@@ -1,0 +1,61 @@
+Windows version 6.2, Build 9200
+
+CSIDL paths:
+CSIDL_DESKTOP: C:\Users\Roman\Desktop
+CSIDL_INTERNET not found
+CSIDL_PROGRAMS: C:\Users\Roman\AppData\Roaming\Microsoft\Windows\Start Menu\Programs
+CSIDL_CONTROLS not found
+CSIDL_PRINTERS not found
+CSIDL_PERSONAL: C:\Users\Roman\Documents
+CSIDL_FAVORITES: C:\Users\Roman\Favorites
+CSIDL_STARTUP: C:\Users\Roman\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup
+CSIDL_RECENT: C:\Users\Roman\AppData\Roaming\Microsoft\Windows\Recent
+CSIDL_SENDTO: C:\Users\Roman\AppData\Roaming\Microsoft\Windows\SendTo
+CSIDL_BITBUCKET not found
+CSIDL_STARTMENU: C:\Users\Roman\AppData\Roaming\Microsoft\Windows\Start Menu
+CSIDL_MYDOCUMENTS: C:\Users\Roman\Documents
+CSIDL_MYMUSIC: C:\Users\Roman\Music
+CSIDL_MYVIDEO: C:\Users\Roman\Videos
+CSIDL_DESKTOPDIRECTORY: C:\Users\Roman\Desktop
+CSIDL_DRIVES not found
+CSIDL_NETWORK not found
+CSIDL_NETHOOD: C:\Users\Roman\AppData\Roaming\Microsoft\Windows\Network Shortcuts
+CSIDL_FONTS: C:\Windows\Fonts
+CSIDL_TEMPLATES: C:\Users\Roman\AppData\Roaming\Microsoft\Windows\Templates
+CSIDL_COMMON_STARTMENU: C:\ProgramData\Microsoft\Windows\Start Menu
+CSIDL_COMMON_PROGRAMS: C:\ProgramData\Microsoft\Windows\Start Menu\Programs
+CSIDL_COMMON_STARTUP: C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup
+CSIDL_COMMON_DESKTOPDIRECTORY: C:\Users\Public\Desktop
+CSIDL_APPDATA: C:\Users\Roman\AppData\Roaming
+CSIDL_PRINTHOOD: C:\Users\Roman\AppData\Roaming\Microsoft\Windows\Printer Shortcuts
+CSIDL_LOCAL_APPDATA: C:\Users\Roman\AppData\Local
+CSIDL_ALTSTARTUP: C:\Users\Roman\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Startup
+CSIDL_COMMON_ALTSTARTUP: C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Startup
+CSIDL_COMMON_FAVORITES: C:\Users\Roman\Favorites
+CSIDL_INTERNET_CACHE: C:\Users\Roman\AppData\Local\Microsoft\Windows\INetCache
+CSIDL_COOKIES: C:\Users\Roman\AppData\Local\Microsoft\Windows\INetCookies
+CSIDL_HISTORY: C:\Users\Roman\AppData\Local\Microsoft\Windows\History
+CSIDL_COMMON_APPDATA: C:\ProgramData
+CSIDL_WINDOWS: C:\Windows
+CSIDL_SYSTEM: C:\Windows\system32
+CSIDL_PROGRAM_FILES: C:\Program Files (x86)
+CSIDL_MYPICTURES: C:\Users\Roman\Pictures
+CSIDL_PROFILE: C:\Users\Roman
+CSIDL_SYSTEMX86: C:\Windows\SysWOW64
+CSIDL_PROGRAM_FILESX86: C:\Program Files (x86)
+CSIDL_PROGRAM_FILES_COMMON: C:\Program Files (x86)\Common Files
+CSIDL_PROGRAM_FILES_COMMONX86: C:\Program Files (x86)\Common Files
+CSIDL_COMMON_TEMPLATES: C:\ProgramData\Microsoft\Windows\Templates
+CSIDL_COMMON_DOCUMENTS: C:\Users\Public\Documents
+CSIDL_COMMON_ADMINTOOLS: C:\ProgramData\Microsoft\Windows\Start Menu\Programs\Administrative Tools
+CSIDL_ADMINTOOLS: C:\Users\Roman\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Administrative Tools
+CSIDL_CONNECTIONS not found
+CSIDL_COMMON_MUSIC: C:\Users\Public\Music
+CSIDL_COMMON_PICTURES: C:\Users\Public\Pictures
+CSIDL_COMMON_VIDEO: C:\Users\Public\Videos
+CSIDL_RESOURCES: C:\Windows\resources
+CSIDL_RESOURCES_LOCALIZED not found
+CSIDL_COMMON_OEM_LINKS not found
+CSIDL_CDBURN_AREA: C:\Users\Roman\AppData\Local\Microsoft\Windows\Burn\Burn
+CSIDL_COMPUTERSNEARME not found
+
