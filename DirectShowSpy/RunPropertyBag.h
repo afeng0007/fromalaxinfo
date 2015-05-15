@@ -336,7 +336,7 @@ public:
 // AlaxInfoDirectShowSpy::IRunPropertyBagAware
 	STDMETHOD(get_Value)(IUnknown** ppPropertyBagUnknown)
 	{
-		_Z4(atlTraceCOM, 4, _T("...\n"));
+		_Z5(atlTraceCOM, 5, _T("...\n"));
 		_ATLTRY
 		{
 			__D(ppPropertyBagUnknown, E_POINTER);
