@@ -44,7 +44,7 @@ public:
 			CComVariantArray GetAsVariant(ULONGLONG nTime) const
 			{
 				CComVariantArray vValue;
-				vValue.FromElements(2, CComVariant((LONG) (nTime - m_nTime) / 10000), CComVariant(m_pszText));
+				vValue.FromElements(2, CComVariant((LONG) ((nTime - m_nTime) / 10000)), CComVariant(m_pszText));
 				return vValue;
 			}
 			BOOL SetAsVariant(CComVariantArray& vValue)
