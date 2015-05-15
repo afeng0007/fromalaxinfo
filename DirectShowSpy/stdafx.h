@@ -21,6 +21,7 @@
 #define STRICT
 #define INLINE_HRESULT_FROM_WIN32
 #define _INC_WINDOWSX
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
 
 #include "targetver.h"
 
@@ -58,10 +59,7 @@ using namespace ATL::ATLPath;
 #define _WTL_NO_UNION_CLASSES
 #define _WTL_NEW_PAGE_NOTIFY_HANDLERS
 
-#undef _SYSINFOAPI_H_
 #include <atlapp.h>
-#define _SYSINFOAPI_H_
-
 #include <atlgdi.h>
 #include <atluser.h>
 #include <atlcrack.h>

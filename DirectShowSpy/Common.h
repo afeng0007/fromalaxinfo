@@ -140,11 +140,11 @@ template <typename T>
 inline VOID TreatAsUpdateRegistryFromResource(const CLSID& TreatAsClassIdentifier, BOOL bRegister)
 {
 	_Z2(atlTraceRegistrar, 2, _T("TreatAsClassIdentifier %ls, bRegister %d\n"), _PersistHelper::StringFromIdentifier(TreatAsClassIdentifier), bRegister);
-	// NOTE: Registration is much more sophisticated starting Vista operating system
-	const ULONG nOsVersion = GetOsVersion();
-	_Z4(atlTraceRegistrar, 4, _T("nOsVersion 0x%08x\n"), nOsVersion);
+	// NOTE: Registration is more sophisticated starting Vista operating system
+	const BOOL bAdjustProcessTokenPrivileges = IsWindowsVistaOrGreater();
+	_Z4(atlTraceRegistrar, 4, _T("bAdjustProcessTokenPrivileges %d\n"), bAdjustProcessTokenPrivileges);
 	CProcessTokenPrivileges ProcessTokenPrivileges;
-	if(nOsVersion >= 0x060000) // Win Vista+
+	if(bAdjustProcessTokenPrivileges)
 		_ATLTRY
 		{
 			ProcessTokenPrivileges.Adjust();
@@ -156,12 +156,12 @@ inline VOID TreatAsUpdateRegistryFromResource(const CLSID& TreatAsClassIdentifie
 	CLSID CurrentTreatAsClassIdentifier = CLSID_NULL;
 	const HRESULT nCoGetTreatAsClassResult = CoGetTreatAsClass(TreatAsClassIdentifier, &CurrentTreatAsClassIdentifier);
 	__C(nCoGetTreatAsClassResult);
-	_Z4(atlTraceRegistrar, 4, _T("bRegister %d, nCoGetTreatAsClassResult 0x%08x, CurrentTreatAsClassIdentifier %ls\n"), bRegister, nCoGetTreatAsClassResult, _PersistHelper::StringFromIdentifier(CurrentTreatAsClassIdentifier));
+	_Z4(atlTraceRegistrar, 4, _T("bRegister %d, nCoGetTreatAsClassResult 0x%08X, CurrentTreatAsClassIdentifier %ls\n"), bRegister, nCoGetTreatAsClassResult, _PersistHelper::StringFromIdentifier(CurrentTreatAsClassIdentifier));
 	__D(!bRegister || nCoGetTreatAsClassResult != S_OK || CurrentTreatAsClassIdentifier == T::GetObjectCLSID(), E_UNNAMED);
 	CClassIdentifierRegKeySecurity ClassIdentifierRegKeySecurity(TreatAsClassIdentifier);
 	if(!bRegister && nCoGetTreatAsClassResult == S_OK)
 	{
-		if(nOsVersion >= 0x060000) // Win Vista+
+		if(bAdjustProcessTokenPrivileges)
 			ClassIdentifierRegKeySecurity.Adjust();
 		__C(CoTreatAsClass(TreatAsClassIdentifier, CLSID_NULL));
 	}
@@ -169,14 +169,14 @@ inline VOID TreatAsUpdateRegistryFromResource(const CLSID& TreatAsClassIdentifie
 	UpdateRegistryFromResource<T>(bRegister);
 	if(bRegister)
 	{
-		if(nOsVersion >= 0x060000) // Win Vista+
+		if(bAdjustProcessTokenPrivileges)
 			ClassIdentifierRegKeySecurity.Adjust();
 		#if _DEVELOPMENT
 			const HRESULT nCoTreatAsClassResult = CoTreatAsClass(TreatAsClassIdentifier, T::GetObjectCLSID());
-			_Z2(atlTraceRegistrar, SUCCEEDED(nCoTreatAsClassResult) ? 4 : 2, _T("nCoTreatAsClassResult 0x%08x\n"), nCoTreatAsClassResult);
+			_Z2(atlTraceRegistrar, SUCCEEDED(nCoTreatAsClassResult) ? 4 : 2, _T("nCoTreatAsClassResult 0x%08X\n"), nCoTreatAsClassResult);
 			__C(nCoTreatAsClassResult);
 			const HRESULT nCoGetTreatAsClassResult = CoGetTreatAsClass(TreatAsClassIdentifier, &CurrentTreatAsClassIdentifier);
-			_Z4(atlTraceRegistrar, 4, _T("nCoGetTreatAsClassResult 0x%08x, CurrentTreatAsClassIdentifier %ls\n"), nCoGetTreatAsClassResult, _PersistHelper::StringFromIdentifier(CurrentTreatAsClassIdentifier));
+			_Z4(atlTraceRegistrar, 4, _T("nCoGetTreatAsClassResult 0x%08X, CurrentTreatAsClassIdentifier %ls\n"), nCoGetTreatAsClassResult, _PersistHelper::StringFromIdentifier(CurrentTreatAsClassIdentifier));
 			_A(CurrentTreatAsClassIdentifier == T::GetObjectCLSID());
 		#else
 			__C(CoTreatAsClass(TreatAsClassIdentifier, T::GetObjectCLSID()));
