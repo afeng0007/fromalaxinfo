@@ -1445,7 +1445,9 @@ public:
 					OSVERSIONINFOEX Version;
 					ZeroMemory(&Version, sizeof Version);
 					Version.dwOSVersionInfoSize = sizeof Version;
+					#pragma warning(disable: 4996) // 'GetVersionExW': was declared deprecated
 					GetVersionEx((OSVERSIONINFO*) &Version);
+					#pragma warning(default: 4996)
 					#pragma region Version
 					CRoArrayT<CString> VersionArray;
 					VersionArray.Add(AtlFormatString(_T("%s Build %s"), I(AtlFormatString(_T("%d.%d"), Version.dwMajorVersion, Version.dwMinorVersion)), I(Version.dwBuildNumber)));
@@ -2166,17 +2168,7 @@ public:
 			_ATLTRY
 			{
 				CWaitCursor WaitCursor;
-				#pragma region Bitness Indication
-				CString sCaption;
-				_W(GetWindowText(sCaption));
-				#if defined(_WIN64)
-					sCaption.Append(_T(" (64-bit)"));
-				#else
-					if(SafeIsWow64Process())
-						sCaption.Append(_T(" (32-bit)"));
-				#endif // defined(_WIN64)
-				_W(SetWindowText(sCaption));
-				#pragma endregion
+				CAboutDialog::UpdateCaption(*this);
 				#pragma region System Menu
 				CMenuHandle Menu = GetSystemMenu(FALSE);
 				_W(Menu.AppendMenu(MF_SEPARATOR));

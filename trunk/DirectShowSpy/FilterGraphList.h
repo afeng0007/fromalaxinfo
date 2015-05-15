@@ -629,17 +629,7 @@ public:
 			return FALSE;
 		SetIcon(AtlLoadIconImage(IDI_MODULE, LR_DEFAULTCOLOR, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON)), TRUE);
 		SetIcon(AtlLoadIconImage(IDI_MODULE, LR_DEFAULTCOLOR, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON)), FALSE);
-		#pragma region Bitness Indication
-		CString sCaption;
-		_W(GetWindowText(sCaption));
-		#if defined(_WIN64)
-			sCaption.Append(_T(" (64-bit)"));
-		#else
-			if(SafeIsWow64Process())
-				sCaption.Append(_T(" (32-bit)"));
-		#endif // defined(_WIN64)
-		_W(SetWindowText(sCaption));
-		#pragma endregion
+		CAboutDialog::UpdateCaption(*this);
 		#pragma region System Menu
 		CMenuHandle Menu = GetSystemMenu(FALSE);
 		_W(Menu.AppendMenu(MF_SEPARATOR));

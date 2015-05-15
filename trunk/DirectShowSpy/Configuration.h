@@ -109,7 +109,7 @@ public:
 
 	// CDialogResize				
 			
-	// Window message handlers
+	// Window Message Handler
 		LRESULT OnInitDialog(HWND, LPARAM)
 		{
 			_ATLTRY
@@ -125,16 +125,13 @@ public:
 				m_UserUnregisterButton = GetDlgItem(IDC_REGISTRATION_REGISTRATION_USERUNREGISTER);
 				//_W(m_UserNoteStatic.SubclassWindow(GetDlgItem(IDC_REGISTRATION_REGISTRATION_USERNOTE)));
 				//m_UserNoteStatic.SetIdealHeight();
-				if(GetOsVersion() >= 0x00060000) // Windows Vista or Windows Server 2008
+				if(IsWindowsVistaOrGreater() && !IsAdministrator())
 				{
-					if(!IsAdministrator())
-					{
-						m_RegisterButton.SetElevationRequiredState(TRUE);
-						m_UnregisterButton.SetElevationRequiredState(TRUE);
-						// NOTE: Even per-user registration needs elevation, since we are hooking COM classes
-						m_UserRegisterButton.SetElevationRequiredState(TRUE);
-						m_UserUnregisterButton.SetElevationRequiredState(TRUE);
-					}
+					m_RegisterButton.SetElevationRequiredState(TRUE);
+					m_UnregisterButton.SetElevationRequiredState(TRUE);
+					// NOTE: Even per-user registration needs elevation, since we are hooking COM classes
+					m_UserRegisterButton.SetElevationRequiredState(TRUE);
+					m_UserUnregisterButton.SetElevationRequiredState(TRUE);
 				}
 				_StringHelper::GetCommaSeparatedItems(AtlLoadString(IDC_REGISTRATION_REGISTRATION_STATUS), m_StatusArray);
 				_A(m_StatusArray.GetCount() == 2);
@@ -349,7 +346,7 @@ public:
 
 	// CDialogResize				
 			
-	// Window message handlers
+	// Window Message Handler
 		LRESULT OnInitDialog(HWND, LPARAM)
 		{
 			_ATLTRY
@@ -365,13 +362,10 @@ public:
 				m_UserUnregisterButton = GetDlgItem(T::IDD + IDC_USERUNREGISTER);
 				//_W(m_UserNoteStatic.SubclassWindow(GetDlgItem(T::IDD + IDC_USERNOTE)));
 				//m_UserNoteStatic.SetIdealHeight();
-				if(GetOsVersion() >= 0x00060000) // Windows Vista or Windows Server 2008
+				if(IsWindowsVistaOrGreater() && !IsAdministrator())
 				{
-					if(!IsAdministrator())
-					{
-						m_RegisterButton.SetElevationRequiredState(TRUE);
-						m_UnregisterButton.SetElevationRequiredState(TRUE);
-					}
+					m_RegisterButton.SetElevationRequiredState(TRUE);
+					m_UnregisterButton.SetElevationRequiredState(TRUE);
 				}
 				_StringHelper::GetCommaSeparatedItems(AtlLoadString(T::IDD + IDC_STATUS), m_StatusArray);
 				_A(m_StatusArray.GetCount() == 2);
@@ -503,7 +497,7 @@ public:
 			return __uuidof(PSFactoryBuffer);
 		}
 
-	// Window message handlers
+	// Window Message Handler
 	};
 
 	////////////////////////////////////////////////////////
@@ -531,7 +525,7 @@ public:
 			return __uuidof(EvrMixerControl);
 		}
 
-	// Window message handlers
+	// Window Message Handler
 	};
 
 private:
@@ -571,17 +565,7 @@ public:
 			return FALSE;
 		SetIcon(AtlLoadIconImage(IDI_MODULE, LR_DEFAULTCOLOR, GetSystemMetrics(SM_CXICON), GetSystemMetrics(SM_CYICON)), TRUE);
 		SetIcon(AtlLoadIconImage(IDI_MODULE, LR_DEFAULTCOLOR, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON)), FALSE);
-		#pragma region Indication of Bitness
-		CString sCaption;
-		_W(GetWindowText(sCaption));
-		#if defined(_WIN64)
-			sCaption.Append(_T(" (64-bit)"));
-		#else
-			if(SafeIsWow64Process())
-				sCaption.Append(_T(" (32-bit)"));
-		#endif // defined(_WIN64)
-		_W(SetWindowText(sCaption));
-		#pragma endregion
+		CAboutDialog::UpdateCaption(*this);
 		#pragma region System Menu
 		CMenuHandle Menu = GetSystemMenu(FALSE);
 		_W(Menu.AppendMenu(MF_SEPARATOR));
@@ -633,7 +617,7 @@ public:
 		ZeroMemory(&Information, sizeof Information);
 		Information.cbSize = sizeof Information;
 		Information.fMask = SEE_MASK_NOCLOSEPROCESS;  
-		if(bAsAdministrator && GetOsVersion() >= 0x00060000) // Windows Vista or Windows Server 2008
+		if(bAsAdministrator && IsWindowsVistaOrGreater())
 			Information.lpVerb = _T("runas");
 		Information.lpFile = _T("regsvr32.exe");
 		Information.nShow = SW_SHOWNORMAL;  

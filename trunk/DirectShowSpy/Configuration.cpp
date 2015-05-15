@@ -40,8 +40,6 @@ HRESULT STDMETHODCALLTYPE UnregisterTreatAsClasses() throw()
 			&CLSID_FilterGraph, // CLSID_Spy
 			&CLSID_FilterGraphNoThread, // CLSID_NoThreadSpy
 		};
-		const ULONG nOsVersion = GetOsVersion();
-		_Z4(atlTraceGeneral, 4, _T("nOsVersion 0x%08x\n"), nOsVersion);
 		CProcessTokenPrivileges ProcessTokenPrivileges;
 		BOOL bProcessTokenPrivilegesAdjustNeeded = TRUE;
 		for(SIZE_T nIndex = 0; nIndex < DIM(g_ppClassIdentifiers); nIndex++)
@@ -61,7 +59,7 @@ HRESULT STDMETHODCALLTYPE UnregisterTreatAsClasses() throw()
 				if(bProcessTokenPrivilegesAdjustNeeded)
 				{
 					bProcessTokenPrivilegesAdjustNeeded = FALSE;
-					if(nOsVersion >= 0x060000) // Win Vista+
+					if(IsWindowsVistaOrGreater())
 						_ATLTRY
 						{
 							ProcessTokenPrivileges.Adjust();
@@ -73,7 +71,7 @@ HRESULT STDMETHODCALLTYPE UnregisterTreatAsClasses() throw()
 				}
 				#pragma endregion 
 				CClassIdentifierRegKeySecurity ClassIdentifierRegKeySecurity(ClassIdentifier);
-				if(nOsVersion >= 0x060000) // Win Vista+
+				if(IsWindowsVistaOrGreater())
 					ClassIdentifierRegKeySecurity.Adjust();
 				const HRESULT nCoTreatAsClassResult = CoTreatAsClass(ClassIdentifier, CLSID_NULL);
 				_Z4_HRESULT(nCoTreatAsClassResult);
