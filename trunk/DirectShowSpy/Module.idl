@@ -18,85 +18,12 @@ import "ocidl.idl";
 
 [
 	object,
-	uuid(968E0597-E713-4EF5-A6F3-780B816204C2),
-	dual,
-	oleautomation,
-	nonextensible,
-	helpstring("IModuleVersionInformation Interface"),
-	pointer_default(unique)
-]
-interface IModuleVersionInformation : IDispatch
-{
-	[id(1), propget] HRESULT Path([out, retval] BSTR* psPath);
-	[id(2), propget] HRESULT FileVersion([out, retval] LONGLONG* pnFileVersion);
-	[id(3), propget] HRESULT FileVersionString([out, retval] BSTR* psFileVersionString);
-};
-[
-	object,
-	uuid(6945711B-FE0F-4C54-965F-5B67969C28B7),
-	dual,
-	oleautomation,
-	nonextensible,
-	helpstring("ISpy Interface"),
-	pointer_default(unique)
-]
-interface ISpy : IDispatch
-{
-	[id(1), propget] HRESULT MonikerDisplayName([out, retval] BSTR* psMonikerDisplayName);
-	[id(2), propget] HRESULT CreationTime([out, retval] DATE* pfTime);
-	[id(3), propget] HRESULT FriendlyName([out, retval] BSTR* psFriendlyName);
-	[id(3), propput] HRESULT FriendlyName([in] BSTR sFriendlyName);
-	[id(4)] HRESULT DoPropertyFrameModal([in] LONG nParentWindowHandle);
-	[id(5)] HRESULT DoFilterGraphListModal([in] LONG nParentWindowHandle);
-	[id(6)] HRESULT OpenGraphStudioNext([in] LONG nParentWindowHandle, [out, retval] VARIANT_BOOL* pbResult);
-	[id(7)] HRESULT OpenGraphEdit([in] LONG nParentWindowHandle, [out, retval] VARIANT_BOOL* pbResult);
-	[id(8)] HRESULT ReadRunPropertyBag([in] IUnknown* pBaseFilterUnknown, [in] VARIANT_BOOL bAllowExtension, [out, retval] VARIANT* pvValue);
-};
-[
-	object,
-	uuid(E59EED72-E94A-44D9-8C1F-6535A4C1D6C9),
-	dual,
-	oleautomation,
-	nonextensible,
-	helpstring("IFilterGraphMemoryAllocatorData Interface"),
-	pointer_default(unique)
-]
-interface IFilterGraphMemoryAllocatorData : IDispatch
-{
-	[id(DISPID_VALUE), propget] HRESULT Value([out, retval] VARIANT* pvValue);
-};
-[
-	object,
 	uuid(A7490000-3A5D-455D-9B81-2025B74CD4CD),
 	nonextensible,
 	helpstring("ISpyEx Interface"),
 	pointer_default(unique)
 ]
 interface ISpyEx : IUnknown
-{
-};
-[
-	object,
-	uuid(34B280D7-A144-4a64-BCB9-3616896F6877),
-	dual,
-	oleautomation,
-	nonextensible,
-	helpstring("IFilterMapperSpy Interface"),
-	pointer_default(unique)
-]
-interface IFilterMapperSpy : IDispatch
-{
-};
-[
-	object,
-	uuid(14EB119F-25CE-4654-ABE1-E6742AF03F2D),
-	dual,
-	oleautomation,
-	nonextensible,
-	helpstring("ISystemDeviceEnumeratorSpy Interface"),
-	pointer_default(unique)
-]
-interface ISystemDeviceEnumeratorSpy : IDispatch
 {
 };
 [
@@ -107,6 +34,66 @@ interface ISystemDeviceEnumeratorSpy : IDispatch
 library AlaxInfoDirectShowSpy
 {
 	importlib("stdole2.tlb");
+	[
+		object,
+		uuid(968E0597-E713-4EF5-A6F3-780B816204C2),
+		dual,
+		oleautomation,
+		nonextensible,
+		helpstring("IModuleVersionInformation Interface"),
+		pointer_default(unique)
+	]
+	interface IModuleVersionInformation : IDispatch
+	{
+		[id(1), propget] HRESULT Path([out, retval] BSTR* psPath);
+		[id(2), propget] HRESULT FileVersion([out, retval] LONGLONG* pnFileVersion);
+		[id(3), propget] HRESULT FileVersionString([out, retval] BSTR* psFileVersionString);
+	};
+	[
+		object,
+		uuid(6945711B-FE0F-4C54-965F-5B67969C28B7),
+		dual,
+		oleautomation,
+		nonextensible,
+		helpstring("ISpy Interface"),
+		pointer_default(unique)
+	]
+	interface ISpy : IDispatch
+	{
+		[id(1), propget] HRESULT MonikerDisplayName([out, retval] BSTR* psMonikerDisplayName);
+		[id(2), propget] HRESULT CreationTime([out, retval] DATE* pfTime);
+		[id(3), propget] HRESULT FriendlyName([out, retval] BSTR* psFriendlyName);
+		[id(3), propput] HRESULT FriendlyName([in] BSTR sFriendlyName);
+		[id(4)] HRESULT DoPropertyFrameModal([in] LONG nParentWindowHandle);
+		[id(5)] HRESULT DoFilterGraphListModal([in] LONG nParentWindowHandle);
+		[id(6)] HRESULT OpenGraphStudioNext([in] LONG nParentWindowHandle, [out, retval] VARIANT_BOOL* pbResult);
+		[id(7)] HRESULT OpenGraphEdit([in] LONG nParentWindowHandle, [out, retval] VARIANT_BOOL* pbResult);
+		[id(8)] HRESULT ReadRunPropertyBag([in] IUnknown* pBaseFilterUnknown, [in] VARIANT_BOOL bAllowExtension, [out, retval] VARIANT* pvValue);
+	};
+	[
+		object,
+		uuid(E59EED72-E94A-44D9-8C1F-6535A4C1D6C9),
+		dual,
+		oleautomation,
+		nonextensible,
+		helpstring("IFilterGraphMemoryAllocatorData Interface"),
+		pointer_default(unique)
+	]
+	interface IFilterGraphMemoryAllocatorData : IDispatch
+	{
+		[id(DISPID_VALUE), propget] HRESULT Value([out, retval] VARIANT* pvValue);
+	};
+	[
+		uuid(F552C23D-F088-41C3-A080-8464D7BB9BAD),
+		helpstring("Spy Class")
+	]
+	coclass Spy
+	{
+		[default] interface ISpy;
+		//interface ISpyEx;
+		interface IModuleVersionInformation;
+		interface IFilterGraphMemoryAllocatorData;
+	};
 	[
 		object,
 		uuid(ACBECDFD-D8CA-49c8-B799-D23225D5BFAD),
@@ -150,17 +137,6 @@ library AlaxInfoDirectShowSpy
 		HRESULT OnStop([in] ISpy* pSpy, [in, out] BOOL* pbDefault);
 	};
 	[
-		uuid(F552C23D-F088-41C3-A080-8464D7BB9BAD),
-		helpstring("Spy Class")
-	]
-	coclass Spy
-	{
-		[default] interface ISpy;
-		//interface ISpyEx;
-		interface IModuleVersionInformation;
-		interface IFilterGraphMemoryAllocatorData;
-	};
-	[
 		uuid(2C281C40-8853-4a30-99D3-9DCFF2C015C9),
 		helpstring("NoThreadSpy Class")
 	]
@@ -172,12 +148,36 @@ library AlaxInfoDirectShowSpy
 		interface IFilterGraphMemoryAllocatorData;
 	};
 	[
+		object,
+		uuid(34B280D7-A144-4a64-BCB9-3616896F6877),
+		dual,
+		oleautomation,
+		nonextensible,
+		helpstring("IFilterMapperSpy Interface"),
+		pointer_default(unique)
+	]
+	interface IFilterMapperSpy : IDispatch
+	{
+	};
+	[
 		uuid(B6274D9B-1AD3-4c32-83C5-35DC33CAFF47),
 		helpstring("FilterMapperSpy Class")
 	]
 	coclass FilterMapperSpy
 	{
 		[default] interface IFilterMapperSpy;
+	};
+	[
+		object,
+		uuid(14EB119F-25CE-4654-ABE1-E6742AF03F2D),
+		dual,
+		oleautomation,
+		nonextensible,
+		helpstring("ISystemDeviceEnumeratorSpy Interface"),
+		pointer_default(unique)
+	]
+	interface ISystemDeviceEnumeratorSpy : IDispatch
+	{
 	};
 	[
 		uuid(AD42E3BD-7B9B-4783-9DA2-61A9ACD0D4D2),
