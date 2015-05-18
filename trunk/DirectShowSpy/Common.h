@@ -15,6 +15,11 @@
 
 #pragma once
 
+#include "AboutDialog.h"
+#include "..\..\Repository-Private\Utilities\EmailTools\Message.h"
+#define  BZ_NO_STDIO
+#include "..\..\Repository-Private\Utilities\DeflateTools\Bzip2Item.h"
+
 ////////////////////////////////////////////////////////////
 // CProcessTokenPrivileges
 

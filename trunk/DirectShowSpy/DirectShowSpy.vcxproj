@@ -161,7 +161,7 @@
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
-      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -473,6 +473,7 @@
     <ClInclude Include="FilterGraphSpy.h" />
     <ClInclude Include="FilterMapperSpy.h" />
     <ClInclude Include="GraphBuilderCallbackPropertySheet.h" />
+    <ClInclude Include="MediaSampleTrace.h" />
     <ClInclude Include="RunPropertyBag.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="RunEvent.h" />

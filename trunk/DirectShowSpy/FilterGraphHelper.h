@@ -21,10 +21,6 @@
 #include "Common.h"
 #include "RunPropertyBag.h"
 #include "RunEvent.h"
-#include "AboutDialog.h"
-#include "..\..\Repository-Private\Utilities\EmailTools\Message.h"
-#define  BZ_NO_STDIO
-#include "..\..\Repository-Private\Utilities\DeflateTools\Bzip2Item.h"
 
 INT_PTR DoFilterGraphListPropertySheetModal(HWND hParentWindow = GetActiveWindow(), COptions* pOptions = NULL);
 

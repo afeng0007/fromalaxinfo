@@ -51,6 +51,20 @@ library AlaxInfoDirectShowSpy
 	};
 	[
 		object,
+		uuid(B8270A07-1A10-41B1-B5A6-D8D9397020A8),
+		nonextensible,
+		helpstring("IMediaSampleTrace Interface"),
+		pointer_default(unique)
+	]
+	interface IMediaSampleTrace : IUnknown
+	{
+		HRESULT RegisterNewSegment([in] IUnknown* pBaseFilterUnknown, [in] const WCHAR* pszStreamName, [in] LONGLONG nStartTime, [in] LONGLONG nStopTime, [in] DOUBLE fRate, [in] const WCHAR* pszComment);
+		HRESULT RegisterMediaSample([in] IUnknown* pBaseFilterUnknown, [in] const WCHAR* pszStreamName, [in] const BYTE* pnSamplePropertiesData, [in] const WCHAR* pszComment);
+		HRESULT RegisterEndOfStream([in] IUnknown* pBaseFilterUnknown, [in] const WCHAR* pszStreamName, [in] const WCHAR* pszComment);
+		HRESULT RegisterComment([in] IUnknown* pBaseFilterUnknown, [in] const WCHAR* pszStreamName, [in] const WCHAR* pszComment);
+	};
+	[
+		object,
 		uuid(6945711B-FE0F-4C54-965F-5B67969C28B7),
 		dual,
 		oleautomation,
@@ -69,6 +83,7 @@ library AlaxInfoDirectShowSpy
 		[id(6)] HRESULT OpenGraphStudioNext([in] LONG nParentWindowHandle, [out, retval] VARIANT_BOOL* pbResult);
 		[id(7)] HRESULT OpenGraphEdit([in] LONG nParentWindowHandle, [out, retval] VARIANT_BOOL* pbResult);
 		[id(8)] HRESULT ReadRunPropertyBag([in] IUnknown* pBaseFilterUnknown, [in] VARIANT_BOOL bAllowExtension, [out, retval] VARIANT* pvValue);
+		[id(9)] HRESULT CreateMediaSampleTrace([out, retval] IMediaSampleTrace** ppMediaSampleTrace);
 	};
 	[
 		object,

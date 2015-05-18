@@ -19,6 +19,7 @@
 #include "Module_i.h"
 #include "Common.h"
 #include "RunPropertyBag.h"
+#include "MediaSampleTrace.h"
 
 HRESULT FilterGraphHelper_OpenGraphStudioNext(LONG nParentWindowHandle, LPCWSTR pszMonikerDisplayName, VARIANT_BOOL* pbResult);
 HRESULT FilterGraphHelper_OpenGraphEdit(LONG nParentWindowHandle, LPCWSTR pszMonikerDisplayName, VARIANT_BOOL* pbResult);
@@ -939,6 +940,23 @@ public:
 			__D(pvValue, E_POINTER);
 			VariantInit(pvValue);
 			_V(CRunPropertyBagHelper::ReadRunPropertyBag(pBaseFilterUnknown, bAllowExtension != ATL_VARIANT_FALSE).Detach(pvValue));
+		}
+		_ATLCATCHALL()
+		{
+			_Z_EXCEPTION();
+		}
+		return S_OK;
+	}
+	STDMETHOD(CreateMediaSampleTrace)(IMediaSampleTrace** ppMediaSampleTrace)
+	{
+		_Z4(atlTraceCOM, 4, _T("this 0x%p\n"), this);
+		_ATLTRY
+		{
+			__D(ppMediaSampleTrace, E_POINTER);
+			*ppMediaSampleTrace = NULL;
+			CObjectPtr<CMediaSampleTrace> pMediaSampleTrace;
+			pMediaSampleTrace.Construct()->Initialize(this);
+			*ppMediaSampleTrace = pMediaSampleTrace.Detach();
 		}
 		_ATLCATCHALL()
 		{
