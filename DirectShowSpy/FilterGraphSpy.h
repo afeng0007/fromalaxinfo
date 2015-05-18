@@ -229,9 +229,13 @@ public:
 ////////////////////////////////////////////////////////////
 // CSpyT
 
-LPCTSTR g_pszAddRemoveHookName = _T("Add/Remove Hooks");
-LPCTSTR g_pszConnectHookName = _T("Connect Hooks");
-LPCTSTR g_pszStateControlHookName = _T("State Control Hooks");
+extern LPCTSTR g_pszAddRemoveHookName;
+extern LPCTSTR g_pszConnectHookName;
+extern LPCTSTR g_pszStateControlHookName;
+
+__declspec(selectany) LPCTSTR g_pszAddRemoveHookName = _T("Add/Remove Hooks");
+__declspec(selectany) LPCTSTR g_pszConnectHookName = _T("Connect Hooks");
+__declspec(selectany) LPCTSTR g_pszStateControlHookName = _T("State Control Hooks");
 
 template <typename T, const CLSID* t_pFilterGraphClassIdentifier>
 class ATL_NO_VTABLE CSpyT :

@@ -248,18 +248,14 @@ public:
 		{
 			return ((CListPropertyPage*) nParameter)->SortGraphListViewItems(nItemParameter1, nItemParameter2);
 		}
-		VOID Refresh()
+		static VOID EnumerateItems(IRunningObjectTable* pRunningObjectTable, CRoMapT<CStringW, CItem>& ItemMap, const LONG* pnProcessIdentifier = NULL)
 		{
-			CRoMapT<CStringW, CItem> ItemMap;
-			#pragma region Enumerate
+			_A(pRunningObjectTable);
+			_A(ItemMap.IsEmpty());
 			_ATLTRY
 			{
-				LONG nProcessIdentifier;
-				const BOOL bProcessIdentifierAvailable = m_PropertySheet.m_Options.TryGetLongValue(_T("FilterGraphListPropertySheet.ProcessIdentifier"), nProcessIdentifier);
-				if(!m_pRunningObjectTable)
-					__C(GetRunningObjectTable(0, &m_pRunningObjectTable));
 				CComPtr<IEnumMoniker> pEnumMoniker;
-				__C(m_pRunningObjectTable->EnumRunning(&pEnumMoniker));
+				__C(pRunningObjectTable->EnumRunning(&pEnumMoniker));
 				CComPtr<IMalloc> pMalloc;
 				__C(CoGetMalloc(1, &pMalloc));
 				for(; ; )
@@ -287,7 +283,7 @@ public:
 							_W(StrToIntExW(CStringW(L"0x") + MatchContext.GetMatchString(1), STIF_SUPPORT_HEX, &reinterpret_cast<INT&>(Item.m_nProcessIdentifier)));
 							Item.m_sTime = CString(MatchContext.GetMatchString(3));
 							Item.m_sTime.Replace(_T("-"), _T(":"));
-							if(bProcessIdentifierAvailable && Item.m_nProcessIdentifier != (DWORD) nProcessIdentifier)
+							if(pnProcessIdentifier && Item.m_nProcessIdentifier != (DWORD) *pnProcessIdentifier)
 								continue; // Skip
 							_W(ItemMap.SetAt(sDisplayName, Item) >= 0);
 						}
@@ -302,7 +298,15 @@ public:
 			{
 				_Z_EXCEPTION();
 			}
-			#pragma endregion
+		}
+		VOID Refresh()
+		{
+			if(!m_pRunningObjectTable)
+				__C(GetRunningObjectTable(0, &m_pRunningObjectTable));
+			LONG nProcessIdentifier;
+			const BOOL bProcessIdentifierAvailable = m_PropertySheet.m_Options.TryGetLongValue(_T("FilterGraphListPropertySheet.ProcessIdentifier"), nProcessIdentifier);
+			CRoMapT<CStringW, CItem> ItemMap;
+			EnumerateItems(m_pRunningObjectTable, ItemMap, bProcessIdentifierAvailable ? &nProcessIdentifier : NULL);
 			CWindowRedraw GraphListViewRedraw(m_GraphListView);
 			BOOL bSortNeeded = FALSE;
 			#pragma region Remove

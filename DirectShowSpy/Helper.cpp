@@ -231,11 +231,11 @@ HRESULT STDMETHODCALLTYPE Test()
 		CGenericFilterGraph FilterGraph;
 		FilterGraph.CoCreateInstance();
 		const CComPtr<IBaseFilter> pSourceBaseFilter = FilterGraph.AddSourceFilter(
-			//_T("E:\\Media\\Robotica_1080.wmv")
-			_T("E:\\Media\\Windows Phone - Design for Developers.mp4")
+			_T("E:\\Media\\Robotica_1080.wmv")
+			//_T("E:\\Media\\Windows Phone - Design for Developers.mp4")
 			);
 		CComPtr<IPin> pOutputPin = _FilterGraphHelper::GetFilterPin(pSourceBaseFilter, PINDIR_OUTPUT);
-		if(TRUE)
+		if(FALSE)
 		{
 			class __declspec(uuid("{025BE2E4-1787-4DA4-A585-C5B2B9EEB57C}")) Demultiplexer;
 			CComPtr<IBaseFilter> pBaseFilter;

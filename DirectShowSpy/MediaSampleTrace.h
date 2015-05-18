@@ -19,6 +19,7 @@
 #include "Module_i.h"
 #include "Common.h"
 #include "FilterGraphHelper.h"
+#include "FilterGraphList.h"
 
 ////////////////////////////////////////////////////////////
 // CMediaSampleTraceBase
@@ -185,6 +186,43 @@ public:
 	};
 
 	////////////////////////////////////////////////////////
+	// CHandleMap
+
+	class CHandleMap :
+		protected CRoMapT<CString, HANDLE>
+	{
+	protected:
+		mutable CRoCriticalSection m_DataCriticalSection;
+
+	public:
+	// CHandleMap
+		CHandleMap()
+		{
+		}
+		~CHandleMap()
+		{
+			RemoveAll();
+		}
+		VOID Add(const CString& sName, HANDLE hValue)
+		{
+			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+			if(Lookup(sName))
+				return;
+			CHandle PrivateValue;
+			if(!DuplicateHandle(GetCurrentProcess(), hValue, GetCurrentProcess(), &PrivateValue.m_h, 0, FALSE, DUPLICATE_SAME_ACCESS))
+				return;
+			_W(SetAt(sName, PrivateValue.Detach()));
+		}
+		VOID RemoveAll()
+		{
+			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+			for(auto&& hValue: GetValues())
+				reinterpret_cast<CHandle&>(hValue).Close();
+			__super::RemoveAll();
+		}
+	};
+
+	////////////////////////////////////////////////////////
 	// CPages
 
 	class CPages
@@ -221,6 +259,14 @@ public:
 		{
 			return AtlFormatString(_T("DirectShowSpy.MediaSamplePage.%08X.%08X"), nProcessIdentifier, nPageIdentifier);
 		}
+		static VOID InitializeFileMapping(CAtlFileMapping<HEADER>& FileMapping)
+		{
+			HEADER* pHeader = FileMapping;
+			pHeader->nCapacity = (UINT32) GetFileMappingCapacity();
+			pHeader->nFlags = HEADERFLAGS_NONE;
+			pHeader->nVersion = 0;
+			pHeader->nItemCount = 0;
+		}
 		BOOL Initialize(BOOL bCreate = FALSE)
 		{
 			_A(!m_Mutex && !m_FileMapping);
@@ -243,12 +289,20 @@ public:
 				__E(m_Mutex.Create(NULL, FALSE, GetMutexName()));
 				//CMutexLock MutexLock(m_Mutex);
 				__C(m_FileMapping.MapSharedMem(GetFileMappingCapacity(), GetFileMappingName()));
+				HEADER* pHeader = m_FileMapping;
+				if(!pHeader->nCapacity)
+					InitializeFileMapping(m_FileMapping);
 			}
 			return TRUE;
 		}
-		VOID GetData(CData& Data)
+		VOID GetData(CData& Data, CHandleMap* pHandleMap = NULL)
 		{
 			_A(m_Mutex && m_FileMapping);
+			if(pHandleMap)
+			{
+				pHandleMap->Add(GetMutexName(), m_Mutex);
+				pHandleMap->Add(GetFileMappingName(), m_FileMapping.GetHandle());
+			}
 			Data.Initialize();
 			CMutexLock MutexLock(m_Mutex);
 			HEADER* pHeader = m_FileMapping;
@@ -261,9 +315,16 @@ public:
 				_ATLTRY
 				{
 					CMutex PageMutex;
-					__E(PageMutex.Open(MUTEX_ALL_ACCESS, FALSE, GetPageMutexName(pItem->nProcessIdentifier, pItem->nPageIdentifier)));
+					const CString sMutexName = GetPageMutexName(pItem->nProcessIdentifier, pItem->nPageIdentifier);
+					__E(PageMutex.Open(MUTEX_ALL_ACCESS, FALSE, sMutexName));
 					CAtlFileMapping<PAGEHEADER> PageFileMapping;
-					__C(PageFileMapping.OpenMapping(GetPageFileMappingName(pItem->nProcessIdentifier, pItem->nPageIdentifier), GetPageFileMappingCapacity()));
+					const CString sFileMappingName = GetPageFileMappingName(pItem->nProcessIdentifier, pItem->nPageIdentifier);
+					__C(PageFileMapping.OpenMapping(sFileMappingName, GetPageFileMappingCapacity()));
+					if(pHandleMap)
+					{
+						pHandleMap->Add(sMutexName, PageMutex);
+						pHandleMap->Add(sFileMappingName, PageFileMapping.GetHandle());
+					}
 					PAGEHEADER* pPageHeader = PageFileMapping;
 					CMutexLock MutexLock(PageMutex);
 					#pragma region Bitness
@@ -309,14 +370,7 @@ public:
 			__C(m_FileMapping.MapSharedMem(GetFileMappingCapacity(), GetFileMappingName(), &bOpen));
 			HEADER* pHeader = m_FileMapping;
 			if(!pHeader->nCapacity)
-			{
-				_A(!bOpen);
-				pHeader->nCapacity = (UINT32) GetFileMappingCapacity();
-				pHeader->nFlags = HEADERFLAGS_NONE;
-				pHeader->nVersion = 0;
-				pHeader->nItemCount = 0;
-			} else
-				_A(bOpen);
+				InitializeFileMapping(m_FileMapping);
 			#if defined(_DEBUG)
 				_Z4(atlTraceGeneral, 4, _T("File mapping size %d, item size %d, item capacity %d\n"), GetFileMappingCapacity(), sizeof (ITEM), (GetFileMappingCapacity() - sizeof (HEADER)) / sizeof (ITEM));
 				_Z4(atlTraceGeneral, 4, _T("Page file mapping size %d, page item size %d, page item capacity %d\n"), GetPageFileMappingCapacity(), sizeof (PAGEITEM), (GetPageFileMappingCapacity() - sizeof (PAGEHEADER)) / sizeof (PAGEITEM));
@@ -415,6 +469,10 @@ public:
 
 	public:
 	// CPage
+		BOOL IsEmpty() const
+		{
+			return m_ItemList.IsEmpty();
+		}
 		VOID Register(CPages& Pages, UINT64 nFilterIdentifier, const CStringW& sFilterName, LPCWSTR pszStreamName, const PAGEITEM& PageItem, LPCWSTR pszComment)
 		{
 			const UINT64 nTime = (UINT64) CUsAccurateFileTime::GetTime();
@@ -479,7 +537,7 @@ class ATL_NO_VTABLE CMediaSampleTrace :
 	public CMediaSampleTraceBase
 {
 public:
-	//enum { IDR = IDR_MediaSampleTrace };
+	//enum { IDR = IDR_MEDIASAMPLETRACE };
 
 DECLARE_NO_REGISTRY() //DECLARE_REGISTRY_RESOURCEID(IDR)
 
@@ -492,7 +550,7 @@ END_COM_MAP()
 public:
 
 private:
-	//mutable CRoCriticalSection m_DataCriticalSection;
+	mutable CRoCriticalSection m_DataCriticalSection;
 	UINT_PTR m_nFilterGraphIdentifier;
 	CStringW m_sFilterGraphName;
 	CPages m_Pages;
@@ -507,6 +565,27 @@ public:
 	~CMediaSampleTrace()
 	{
 		_Z4_THIS();
+		#pragma region Transfer Ownership
+		if(!m_Page.IsEmpty())
+		{
+			CEvent RequestEvent, ResponseEvent;
+			if(RequestEvent.Open(EVENT_ALL_ACCESS, FALSE, CString(CPages::GetFileMappingName()) + _T(".TransferRequest")))
+			{
+				ResponseEvent.Open(EVENT_ALL_ACCESS, FALSE, CString(CPages::GetFileMappingName()) + _T(".TransferResponse"));
+				if(RequestEvent.Set())
+				{
+					// NOTE: The event creator (UI) has some time to grap mapping handles and store a private copy 
+					static const ULONG g_nTimeoutTime = 500; // 500 ms
+					if(ResponseEvent)
+					{
+						const DWORD nWaitResult = WaitForSingleObject(ResponseEvent, g_nTimeoutTime);
+						_Z5_WAITRESULT(nWaitResult);
+					} else
+						Sleep(g_nTimeoutTime);
+				}
+			}
+		}
+		#pragma endregion 
 	}
 	VOID Initialize(ISpy* pSpy)
 	{
@@ -515,12 +594,10 @@ public:
 		__C(pSpy->get_FriendlyName(&sName));
 		const CComQIPtr<IFilterGraph2> pFilterGraph2 = pSpy;
 		_A(pFilterGraph2);
-		//CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+		CRoCriticalSectionLock DataLock(m_DataCriticalSection);
 		m_nFilterGraphIdentifier = (UINT_PTR) (IFilterGraph2*) pFilterGraph2;
 		m_sFilterGraphName = CStringW(sName);
 		m_Pages.Initialize((UINT64) m_nFilterGraphIdentifier, m_sFilterGraphName);
-		// NOTE: We might prefer to let the pages leak away to outlive the filter graph itself...
-		AddRef();
 	}
 	static CStringW GetFilterName(IUnknown* pBaseFilterUnknown)
 	{
@@ -542,6 +619,7 @@ public:
 			PageItem.Data.NewSegment.nStartTime = nStartTime;
 			PageItem.Data.NewSegment.nStopTime = nStopTime;
 			PageItem.Data.NewSegment.fRate = fRate;
+			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
 			m_Page.Register(m_Pages, (UINT_PTR) pBaseFilterUnknown, GetFilterName(pBaseFilterUnknown), pszStreamName, PageItem, pszComment);
 		}
 		_ATLCATCH(Exception)
@@ -559,6 +637,7 @@ public:
 			PAGEITEM PageItem;
 			PageItem.nFlags = PAGEITEMFLAG_MEDIASAMPLE;
 			PageItem.Data.MediaSample.Properties = *((const AM_SAMPLE2_PROPERTIES*) pnSamplePropertiesData);
+			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
 			m_Page.Register(m_Pages, (UINT_PTR) pBaseFilterUnknown, GetFilterName(pBaseFilterUnknown), pszStreamName, PageItem, pszComment);
 		}
 		_ATLCATCH(Exception)
@@ -574,6 +653,7 @@ public:
 		{
 			PAGEITEM PageItem;
 			PageItem.nFlags = PAGEITEMFLAG_ENDOFSTREAM;
+			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
 			m_Page.Register(m_Pages, (UINT_PTR) pBaseFilterUnknown, GetFilterName(pBaseFilterUnknown), pszStreamName, PageItem, pszComment);
 		}
 		_ATLCATCH(Exception)
@@ -589,6 +669,7 @@ public:
 		{
 			PAGEITEM PageItem;
 			PageItem.nFlags = PAGEITEMFLAG_COMMENT;
+			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
 			m_Page.Register(m_Pages, (UINT_PTR) pBaseFilterUnknown, GetFilterName(pBaseFilterUnknown), pszStreamName, PageItem, pszComment);
 		}
 		_ATLCATCH(Exception)
@@ -625,6 +706,8 @@ public:
 		public CPropertyPageWithAcceleratorsT<CMediaSamplePropertyPage>,
 		public CDialogResize<CMediaSamplePropertyPage>
 	{
+		typedef CThreadT<CMediaSamplePropertyPage> CThread;
+
 	public:
 		enum { IDD = IDD_MEDIASAMPLETRACE_MEDIASAMPLE_PROPERTYPAGE };
 
@@ -633,6 +716,7 @@ public:
 		CHAIN_MSG_MAP(CPropertyPageWithAccelerators)
 		CHAIN_MSG_MAP(CDialogResize<CMediaSamplePropertyPage>)
 		MSG_WM_INITDIALOG(OnInitDialog)
+		MSG_WM_DESTROY(OnDestroy)
 		MSG_LVN_GETDISPINFO(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_LIST, OnListViewGetDispInfo)
 		MSG_LVN_GETINFOTIP(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_LIST, OnListViewGetInfoTip)
 		MSG_WM_CONTEXTMENU(OnContextMenu)
@@ -641,16 +725,331 @@ public:
 		COMMAND_ID_HANDLER_EX(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_SAVETOFILE, OnSaveToFile)
 		COMMAND_ID_HANDLER_EX(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_RESETDATA, OnResetData)
 		COMMAND_ID_HANDLER_EX(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_OPENFILTERGRAPHLIST, OnOpenFilterGraphList)
+		COMMAND_ID_HANDLER_EX(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_OPENFILTERGRAPHPROPERTIES, OnOpenFilterGraphProperties)
 		REFLECT_NOTIFICATIONS()
 	END_MSG_MAP()
 
 	BEGIN_DLGRESIZE_MAP(CMediaSamplePropertyPage)
 		DLGRESIZE_CONTROL(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_INTRODUCTION, DLSZ_SIZE_X)
+		DLGRESIZE_CONTROL(IDD_MEDIASAMPLETRACE_MEDIASAMPLE_FILTER, DLSZ_SIZE_X)
 		DLGRESIZE_CONTROL(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_LIST, DLSZ_SIZE_X | DLSZ_SIZE_Y)
 		DLGRESIZE_CONTROL(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_REFRESH, DLSZ_MOVE_Y)
 		DLGRESIZE_CONTROL(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_COPYTOCLIPBOARD, DLSZ_MOVE_Y)
 		DLGRESIZE_CONTROL(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_SAVETOFILE, DLSZ_MOVE_Y)
 	END_DLGRESIZE_MAP()
+
+	public:
+
+		////////////////////////////////////////////////////
+		// CFilterDialog
+
+		class CFilterDialog :
+			public CDialogImpl<CFilterDialog>,
+			public CDialogResize<CFilterDialog>
+		{
+		public:
+			enum { IDD = IDD_MEDIASAMPLETRACE_MEDIASAMPLE_FILTER };
+
+		BEGIN_MSG_MAP_EX(CFilterDialog)
+			//CHAIN_MSG_MAP(CFilterDialog)
+			CHAIN_MSG_MAP(CDialogResize<CFilterDialog>)
+			MSG_WM_INITDIALOG(OnInitDialog)
+			COMMAND_HANDLER_EX(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_FILTER_PROCESS, CBN_SELENDOK, OnProcessComboBoxSelEndOk)
+			COMMAND_HANDLER_EX(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_FILTER_FILTERGRAPH, CBN_SELENDOK, OnFilterGraphComboBoxSelEndOk)
+			COMMAND_HANDLER_EX(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_FILTER_FILTER, CBN_SELENDOK, OnFilterComboBoxSelEndOk)
+			COMMAND_HANDLER_EX(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_FILTER_STREAM, CBN_SELENDOK, OnStreamComboBoxSelEndOk)
+			REFLECT_NOTIFICATIONS()
+		END_MSG_MAP()
+
+		BEGIN_DLGRESIZE_MAP(CFilterDialog)
+			DLGRESIZE_CONTROL(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_FILTER_PROCESS_TITLE, 0)
+			DLGRESIZE_CONTROL(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_FILTER_PROCESS, 0) //DLSZ_SIZE_X)
+			DLGRESIZE_CONTROL(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_FILTER_FILTERGRAPH_TITLE, 0)
+			DLGRESIZE_CONTROL(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_FILTER_FILTERGRAPH, DLSZ_SIZE_X)
+			DLGRESIZE_CONTROL(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_FILTER_FILTER_TITLE, 0)
+			DLGRESIZE_CONTROL(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_FILTER_FILTER, DLSZ_SIZE_X)
+			DLGRESIZE_CONTROL(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_FILTER_STREAM_TITLE, 0)
+			DLGRESIZE_CONTROL(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_FILTER_STREAM, DLSZ_SIZE_X)
+		END_DLGRESIZE_MAP()
+
+		public:
+
+			////////////////////////////////////////////////
+			// CValueT
+
+			template <typename CIdentifier>
+			class CValueT
+			{
+			public:
+				CIdentifier m_nIdentifier;
+				CStringW m_sValue;
+
+			public:
+			// CValueT
+				CValueT() :
+					m_nIdentifier(0)
+				{
+				}
+				CValueT(CIdentifier nIdentifier, LPCWSTR pszValue = NULL) :
+					m_nIdentifier(nIdentifier),
+					m_sValue(pszValue)
+				{
+				}
+			};
+
+			typedef CValueT<UINT32> CProcessValue;
+			typedef CValueT<UINT64> CFilterGraphValue;
+			typedef CValueT<UINT64> CFilterValue;
+			typedef CValueT<UINT> CStreamValue;
+
+			class CProcessValueSortTraits :
+				public CSimpleSortTraitsT<CProcessValue>
+			{
+			public:
+			// CProcessValueSortTraits
+				static INT_PTR CompareElements(const CProcessValue& Element1, const CProcessValue& Element2, PARAMETERARGUMENT)
+				{
+					return (INT_PTR) (Element1.m_nIdentifier - Element2.m_nIdentifier);
+				}
+			};
+
+			class CFilterGraphValueSortTraits :
+				public CSimpleSortTraitsT<CFilterGraphValue>
+			{
+			public:
+			// CFilterGraphValueSortTraits
+				static INT_PTR CompareElements(const CFilterGraphValue& Element1, const CFilterGraphValue& Element2, PARAMETERARGUMENT)
+				{
+					const INT nName = _wcsicmp(Element1.m_sValue, Element2.m_sValue);
+					if(nName)
+						return nName;
+					return (INT_PTR) (Element1.m_nIdentifier - Element2.m_nIdentifier);
+				}
+			};
+
+			class CFilterValueSortTraits :
+				public CSimpleSortTraitsT<CFilterValue>
+			{
+			public:
+			// CFilterValueSortTraits
+				static INT_PTR CompareElements(const CFilterValue& Element1, const CFilterValue& Element2, PARAMETERARGUMENT)
+				{
+					const INT nName = _wcsicmp(Element1.m_sValue, Element2.m_sValue);
+					if(nName)
+						return nName;
+					return (INT_PTR) (Element1.m_nIdentifier - Element2.m_nIdentifier);
+				}
+			};
+
+			class CStreamValueSortTraits :
+				public CSimpleSortTraitsT<CStreamValue>
+			{
+			public:
+			// CStreamValueSortTraits
+				static INT_PTR CompareElements(const CStreamValue& Element1, const CStreamValue& Element2, PARAMETERARGUMENT)
+				{
+					return _wcsicmp(Element1.m_sValue, Element2.m_sValue);
+				}
+			};
+
+		private:
+			CMediaSamplePropertyPage& m_Owner;
+			CRoComboBoxT<CProcessValue, CRoListControlDataTraitsT> m_ProcessComboBox;
+			CRoComboBoxT<CFilterGraphValue, CRoListControlDataTraitsT> m_FilterGraphComboBox;
+			CRoComboBoxT<CFilterValue, CRoListControlDataTraitsT> m_FilterComboBox;
+			CRoComboBoxT<CStreamValue, CRoListControlDataTraitsT> m_StreamComboBox;
+			CProcessValue* m_pProcessValue;
+			CFilterGraphValue* m_pFilterGraphValue;
+			CFilterValue* m_pFilterValue;
+			CStreamValue* m_pStreamValue;
+
+		public:
+		// CFilterDialog
+			CFilterDialog(CMediaSamplePropertyPage* pOwner) :
+				m_Owner(*pOwner)
+			{
+			}
+			VOID UpdateProcessComboBox()
+			{
+				m_ProcessComboBox.ResetContent();
+				INT nItem = 0;
+				_W(m_ProcessComboBox.InsertString(nItem++, _T("<All Processes>")) == 0);
+				m_ProcessComboBox.SetCurSel(0);
+				CRoArrayT<UINT32> IdentifierArray;
+				CRoArrayT<CProcessValue> ValueArray;
+				for(auto&& Item: m_Owner.m_Data.m_ItemArray)
+				{
+					if(IdentifierArray.FindFirst(Item.m_Item.nProcessIdentifier))
+						continue;
+					IdentifierArray.Add(Item.m_Item.nProcessIdentifier);
+					ValueArray.Add(CProcessValue(Item.m_Item.nProcessIdentifier, AtlFormatStringW(L"%d", Item.m_Item.nProcessIdentifier)));
+				}
+				_SortHelper::QuickSort<CProcessValueSortTraits>(ValueArray);
+				for(auto&& Value: ValueArray)
+					m_ProcessComboBox.InsertString(nItem++, Value.m_sValue, Value);
+				if(ValueArray.GetCount() == 1)
+					m_ProcessComboBox.SetCurSel(1);
+				const BOOL bEnabled = m_ProcessComboBox.GetCount() > 2;
+				m_ProcessComboBox.GetWindow(GW_HWNDPREV).EnableWindow(bEnabled);
+				m_ProcessComboBox.EnableWindow(bEnabled);
+				OnProcessComboBoxSelEndOk();
+				UpdateFilterGraphComboBox();
+			}
+			VOID UpdateFilterGraphComboBox()
+			{
+				m_FilterGraphComboBox.ResetContent();
+				INT nItem = 0;
+				_W(m_FilterGraphComboBox.InsertString(nItem++, _T("<All Filter Graphs>")) == 0);
+				m_FilterGraphComboBox.SetCurSel(0);
+				CRoArrayT<UINT64> IdentifierArray;
+				CRoArrayT<CFilterGraphValue> ValueArray;
+				for(auto&& Item: m_Owner.m_Data.m_ItemArray)
+				{
+					if(m_pProcessValue && m_pProcessValue->m_nIdentifier != Item.m_Item.nProcessIdentifier)
+						continue;
+					if(IdentifierArray.FindFirst(Item.m_Item.nFilterGraphIdentifier))
+						continue;
+					IdentifierArray.Add(Item.m_Item.nFilterGraphIdentifier);
+					ValueArray.Add(CFilterGraphValue(Item.m_Item.nFilterGraphIdentifier, AtlFormatStringW(L"0x%p %ls", (UINT_PTR) Item.m_Item.nFilterGraphIdentifier, Item.m_Item.pszFilterGraphName)));
+				}
+				_SortHelper::QuickSort<CFilterGraphValueSortTraits>(ValueArray);
+				for(auto&& Value: ValueArray)
+					m_FilterGraphComboBox.InsertString(nItem++, Value.m_sValue, Value);
+				if(ValueArray.GetCount() == 1)
+					m_FilterGraphComboBox.SetCurSel(1);
+				const BOOL bEnabled = m_FilterGraphComboBox.GetCount() > 2;
+				m_FilterGraphComboBox.GetWindow(GW_HWNDPREV).EnableWindow(bEnabled);
+				m_FilterGraphComboBox.EnableWindow(bEnabled);
+				OnFilterGraphComboBoxSelEndOk();
+				UpdateFilterComboBox();
+			}
+			VOID UpdateFilterComboBox()
+			{
+				m_FilterComboBox.ResetContent();
+				INT nItem = 0;
+				_W(m_FilterComboBox.InsertString(nItem++, _T("<All Filters>")) == 0);
+				m_FilterComboBox.SetCurSel(0);
+				CRoArrayT<UINT64> IdentifierArray;
+				CRoArrayT<CFilterValue> ValueArray;
+				for(auto&& Item: m_Owner.m_Data.m_ItemArray)
+				{
+					if(m_pProcessValue && m_pProcessValue->m_nIdentifier != Item.m_Item.nProcessIdentifier)
+						continue;
+					if(m_pFilterGraphValue && m_pFilterGraphValue->m_nIdentifier != Item.m_Item.nFilterGraphIdentifier)
+						continue;
+					if(IdentifierArray.FindFirst(Item.m_PageItem.nFilterIdentifier))
+						continue;
+					IdentifierArray.Add(Item.m_PageItem.nFilterIdentifier);
+					ValueArray.Add(CFilterValue(Item.m_PageItem.nFilterIdentifier, AtlFormatStringW(L"0x%p %ls", (UINT_PTR) Item.m_PageItem.nFilterIdentifier, Item.m_PageItem.pszFilterName)));
+				}
+				_SortHelper::QuickSort<CFilterValueSortTraits>(ValueArray);
+				for(auto&& Value: ValueArray)
+					m_FilterComboBox.InsertString(nItem++, Value.m_sValue, Value);
+				if(ValueArray.GetCount() == 1)
+					m_FilterComboBox.SetCurSel(1);
+				const BOOL bEnabled = m_FilterComboBox.GetCount() > 2;
+				m_FilterComboBox.GetWindow(GW_HWNDPREV).EnableWindow(bEnabled);
+				m_FilterComboBox.EnableWindow(bEnabled);
+				OnFilterComboBoxSelEndOk();
+				UpdateStreamComboBox();
+			}
+			VOID UpdateStreamComboBox()
+			{
+				m_StreamComboBox.ResetContent();
+				INT nItem = 0;
+				_W(m_StreamComboBox.InsertString(nItem++, _T("<All Streams>")) == 0);
+				m_StreamComboBox.SetCurSel(0);
+				CRoArrayT<CStringW> IdentifierArray;
+				CRoArrayT<CStreamValue> ValueArray;
+				for(auto&& Item: m_Owner.m_Data.m_ItemArray)
+				{
+					if(m_pProcessValue && m_pProcessValue->m_nIdentifier != Item.m_Item.nProcessIdentifier)
+						continue;
+					if(m_pFilterGraphValue && m_pFilterGraphValue->m_nIdentifier != Item.m_Item.nFilterGraphIdentifier)
+						continue;
+					if(m_pFilterValue && m_pFilterValue->m_nIdentifier != Item.m_PageItem.nFilterIdentifier)
+						continue;
+					if(!*Item.m_PageItem.pszStreamName)
+						continue;
+					if(IdentifierArray.FindFirst(Item.m_PageItem.pszStreamName))
+						continue;
+					IdentifierArray.Add(Item.m_PageItem.pszStreamName);
+					ValueArray.Add(CStreamValue(1, Item.m_PageItem.pszStreamName));
+				}
+				_SortHelper::QuickSort<CStreamValueSortTraits>(ValueArray);
+				for(auto&& Value: ValueArray)
+					m_StreamComboBox.InsertString(nItem++, Value.m_sValue, Value);
+				if(ValueArray.GetCount() == 1)
+					m_StreamComboBox.SetCurSel(1);
+				const BOOL bEnabled = m_StreamComboBox.GetCount() > 2;
+				m_StreamComboBox.GetWindow(GW_HWNDPREV).EnableWindow(bEnabled);
+				m_StreamComboBox.EnableWindow(bEnabled);
+				OnStreamComboBoxSelEndOk();
+			}
+			VOID Reset()
+			{
+				m_pProcessValue = NULL;
+				UpdateProcessComboBox();
+			}
+			BOOL IsVisible(const CData::CItem& Item) const
+			{
+				if(m_pProcessValue && Item.m_Item.nProcessIdentifier != m_pProcessValue->m_nIdentifier)
+					return FALSE;
+				if(m_pFilterGraphValue && Item.m_Item.nFilterGraphIdentifier != m_pFilterGraphValue->m_nIdentifier)
+					return FALSE;
+				if(m_pFilterValue && Item.m_PageItem.nFilterIdentifier != m_pFilterValue->m_nIdentifier)
+					return FALSE;
+				if(m_pStreamValue && wcscmp(Item.m_PageItem.pszStreamName, m_pStreamValue->m_sValue) != 0)
+					return FALSE;
+				return TRUE;
+			}
+
+		// Window Message Handler
+			LRESULT OnInitDialog(HWND, LPARAM)
+			{
+				m_ProcessComboBox = GetDlgItem(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_FILTER_PROCESS);
+				m_FilterGraphComboBox = GetDlgItem(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_FILTER_FILTERGRAPH);
+				m_FilterComboBox = GetDlgItem(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_FILTER_FILTER);
+				m_StreamComboBox = GetDlgItem(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_FILTER_STREAM);
+				m_pProcessValue = NULL;
+				m_pFilterGraphValue = NULL;
+				m_pFilterValue = NULL;
+				m_pStreamValue = NULL;
+				DlgResize_Init(FALSE);
+				return TRUE;
+			}
+			LRESULT OnProcessComboBoxSelEndOk(UINT = 0, INT = 0, HWND = NULL)
+			{
+				CProcessValue& ProcessValue = m_ProcessComboBox.GetItemData(m_ProcessComboBox.GetCurSel());
+				m_pProcessValue = ProcessValue.m_nIdentifier ? &ProcessValue : NULL;
+				UpdateFilterGraphComboBox();
+				m_Owner.HandleFilterUpdate();
+				return 0;
+			}
+			LRESULT OnFilterGraphComboBoxSelEndOk(UINT = 0, INT = 0, HWND = NULL)
+			{
+				CFilterGraphValue& FilterGraphValue = m_FilterGraphComboBox.GetItemData(m_FilterGraphComboBox.GetCurSel());
+				m_pFilterGraphValue = FilterGraphValue.m_nIdentifier ? &FilterGraphValue : NULL;
+				UpdateFilterComboBox();
+				m_Owner.HandleFilterUpdate();
+				return 0;
+			}
+			LRESULT OnFilterComboBoxSelEndOk(UINT = 0, INT = 0, HWND = NULL)
+			{
+				CFilterValue& FilterValue = m_FilterComboBox.GetItemData(m_FilterComboBox.GetCurSel());
+				m_pFilterValue = FilterValue.m_nIdentifier ? &FilterValue : NULL;
+				UpdateStreamComboBox();
+				m_Owner.HandleFilterUpdate();
+				return 0;
+			}
+			LRESULT OnStreamComboBoxSelEndOk(UINT = 0, INT = 0, HWND = NULL)
+			{
+				CStreamValue& StreamValue = m_StreamComboBox.GetItemData(m_StreamComboBox.GetCurSel());
+				m_pStreamValue = !StreamValue.m_sValue.IsEmpty() ? &StreamValue : NULL;
+				m_Owner.HandleFilterUpdate();
+				return 0;
+			}
+		};
 
 	private:
 		CMediaSampleTracePropertySheet& m_PropertySheet;
@@ -659,13 +1058,44 @@ public:
 		CRoHyperStatic m_RefreshStatic;
 		CRoHyperStatic m_CopyToClipboardStatic;
 		CRoHyperStatic m_SaveToFileStatic;
+		CFilterDialog m_FilterDialog;
 		CRoMapT<INT, BOOL> m_ChangeMap;
-		CPages m_Pages;
+		CData m_Data;
+		CObjectPtr<CThread> m_pThread;
+		CHandleMap m_HandleMap;
+
+		DWORD ThreadProc(CThread*, CEvent& InitializationEvent, CEvent& TerminationEvent)
+		{
+			CMultiThreadedApartment Apartment;
+			CEvent RequestEvent, ResponseEvent;
+			_W(RequestEvent.Create(NULL, FALSE, FALSE, CString(CPages::GetFileMappingName()) + _T(".TransferRequest")));
+			_W(ResponseEvent.Create(NULL, FALSE, FALSE, CString(CPages::GetFileMappingName()) + _T(".TransferResponse")));
+			_W(InitializationEvent.Set());
+			if(!RequestEvent || !ResponseEvent)
+				return 0;
+			CStackPointer StackPointer;
+			const HANDLE phObjects[] = { TerminationEvent, RequestEvent };
+			for(; ; )
+			{
+				_A(StackPointer.Check()); StackPointer;
+				const DWORD nWaitResult = WaitForMultipleObjects(DIM(phObjects), phObjects, FALSE, INFINITE);
+				_Z4_WAITRESULT(nWaitResult);
+				_A(nWaitResult - WAIT_OBJECT_0 < DIM(phObjects));
+				if(nWaitResult != WAIT_OBJECT_0 + 1) // RequestEvent
+					break;
+				CPages Pages;
+				if(Pages.Initialize())
+					Pages.GetData(m_Data, &m_HandleMap);
+				_W(ResponseEvent.Set());
+			}
+			return 0;
+		}
 
 	public:
 	// CMediaSamplePropertyPage
 		CMediaSamplePropertyPage(CMediaSampleTracePropertySheet* pPropertySheet) :
-			m_PropertySheet(*pPropertySheet)
+			m_PropertySheet(*pPropertySheet),
+			m_FilterDialog(this)
 		{
 		}
 		VOID UpdateControls()
@@ -675,16 +1105,17 @@ public:
 		{
 			CWindowRedraw ListViewRedraw(m_ListView);
 			m_ListView.DeleteAllItems();
+			m_Data.Initialize();
 			CPages Pages;
 			if(Pages.Initialize())
 			{
-				CData Data;
-				Pages.GetData(Data);
-				Data.Sort();
+				Pages.GetData(m_Data, &m_HandleMap);
+				m_Data.Sort();
 				INT nItem = 0;
-				for(auto&& Item: Data.m_ItemArray)
+				for(auto&& Item: m_Data.m_ItemArray)
 					m_ListView.InsertItem(nItem++, Item);
 			}
+			m_FilterDialog.Reset();
 		}
 		static CString FormatTime(UINT64 nTime)
 		{
@@ -770,6 +1201,16 @@ public:
 			}
 			return CStringA(sText);
 		}
+		VOID HandleFilterUpdate()
+		{
+			CWindowRedraw ListViewRedraw(m_ListView);
+			m_ListView.DeleteAllItems();
+			INT nItem = 0;
+			for(auto&& Item: m_Data.m_ItemArray)
+				if(m_FilterDialog.IsVisible(Item))
+					m_ListView.InsertItem(nItem++, Item);
+			// SUGG: Preserve selection
+		}
 
 	// Window Message Handler
 		LRESULT OnInitDialog(HWND, LPARAM)
@@ -786,17 +1227,26 @@ public:
 				_W(m_SaveToFileStatic.SubclassWindow(GetDlgItem(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_SAVETOFILE)));
 				m_SaveToFileStatic.SetExtendedStyle(CRoHyperStatic::CS_ANCHORCLICKCOMMAND);
 				CRoHyperStatic::ArrangeHorizontally(&m_RefreshStatic, &m_CopyToClipboardStatic, &m_SaveToFileStatic, NULL);
+				#pragma region Filter
+				__E(m_FilterDialog.Create(m_hWnd, (LPARAM) this));
+				{
+					CRect FilterPosition, Position;
+					_W(m_FilterDialog.GetWindowRect(FilterPosition));
+					m_FilterDialog.SetDlgCtrlID(CFilterDialog::IDD);
+					const CSize FilterExtent = FilterPosition.Size();
+					_W(m_ListView.GetWindowRect(Position));
+					_W(ScreenToClient(Position));
+					const LONG nSpacing = Position.left;
+					FilterPosition.left = Position.left;
+					FilterPosition.right = Position.right;
+					FilterPosition.top = Position.top;
+					FilterPosition.bottom = FilterPosition.top + FilterExtent.cy;
+					Position.top = FilterPosition.bottom + nSpacing;
+					_W(m_FilterDialog.SetWindowPos(m_IntroductionStatic, FilterPosition, SWP_NOACTIVATE | SWP_SHOWWINDOW));
+					_W(m_ListView.MoveWindow(Position));
+				}
+				#pragma endregion 
 				DlgResize_Init(FALSE, FALSE);
-				_ATLTRY
-				{
-					// NOTE: This forces the global file mapping open referenced by UI
-					// WARN: This is however incomplete since we only keep master mapping and process mappings are gone once the process is gone
-					m_Pages.Initialize(TRUE);
-				}
-				_ATLCATCHALL()
-				{
-					_Z_EXCEPTION();
-				}
 				UpdateListView();
 				m_ChangeMap.RemoveAll();
 				UpdateControls();
@@ -814,6 +1264,7 @@ public:
 				_W(m_PropertySheet.MoveWindow(Position));
 				_W(m_PropertySheet.CenterWindow());
 				#pragma endregion
+				m_pThread.Construct()->Initialize(this, &CMediaSamplePropertyPage::ThreadProc);
 			}
 			_ATLCATCHALL()
 			{
@@ -822,6 +1273,12 @@ public:
 				_ATLRETHROW;
 			}
 			return TRUE;
+		}
+		LRESULT OnDestroy()
+		{
+			CWaitCursor WaitCursor;
+			m_pThread.Release();
+			return 0;
 		}
 		LRESULT OnTranslateAccelerator(MSG* pMessage)
 		{
@@ -887,6 +1344,7 @@ public:
 					sTextBuffer = FormatTime(Item.m_PageItem.nTime);
 				}
 				pHeader->item.pszText = m_ListView.GetTextBuffer();
+				pHeader->item.mask |= LVIF_DI_SETITEM;
 			}
 			return 0;
 		}
@@ -1009,7 +1467,10 @@ public:
 		LRESULT OnResetData(UINT, INT, HWND)
 		{
 			CWaitCursor WaitCursor;
-			m_Pages.ResetData();
+			m_HandleMap.RemoveAll();
+			CPages Pages;
+			if(Pages.Initialize())
+				Pages.ResetData();
 			UpdateListView();
 			return 0;
 		}
@@ -1017,6 +1478,33 @@ public:
 		{
 			CLocalObjectPtr<CFilterGraphHelper> pFilterGraphHelper;
 			pFilterGraphHelper->DoFilterGraphListModal((LONG) (LONG_PTR) m_hWnd);
+			return 0;
+		}
+		LRESULT OnOpenFilterGraphProperties(UINT, INT, HWND)
+		{
+			if(m_ListView.GetSelectedCount() == 1)
+			{
+				const INT nItem = m_ListView.GetNextItem(-1, LVNI_SELECTED);
+				_A(nItem >= 0);
+				CData::CItem& Item = m_ListView.GetItemData(nItem);
+				const LONG nProcessIdentifier = Item.m_Item.nProcessIdentifier;
+				CComPtr<IRunningObjectTable> pRunningObjectTable;
+				__C(GetRunningObjectTable(0, &pRunningObjectTable));
+				CRoMapT<CStringW, CFilterGraphListPropertySheet::CListPropertyPage::CItem> ItemMap;
+				CFilterGraphListPropertySheet::CListPropertyPage::EnumerateItems(pRunningObjectTable, ItemMap, &nProcessIdentifier);
+				for(auto&& GraphItem: ItemMap.GetValues())
+				{
+					if(abs((LONG_PTR) (GraphItem.m_nInstance - Item.m_Item.nFilterGraphIdentifier)) < 0x0100)
+						if(GraphItem.FilterGraphNeeded(pRunningObjectTable))
+						{
+							CLocalObjectPtr<CFilterGraphHelper> pFilterGraphHelper;
+							pFilterGraphHelper->SetFilterGraph(GraphItem.m_pFilterGraph);
+							_V(pFilterGraphHelper->DoPropertyFrameModal((LONG) (LONG_PTR) m_hWnd));
+							return 0;
+						}
+				}
+			}
+			_W(PostMessage(WM_COMMAND, IDC_MEDIASAMPLETRACE_MEDIASAMPLE_OPENFILTERGRAPHLIST));
 			return 0;
 		}
 	};
@@ -1064,5 +1552,3 @@ public:
 		return 0;
 	}
 };
-
-// TODO: Double-Click on media trace entry opens graph
