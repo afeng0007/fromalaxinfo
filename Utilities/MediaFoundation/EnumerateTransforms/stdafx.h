@@ -1,8 +1,9 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2008-2012
+// Copyright (C) Roman Ryltsov, 2008-2015
 // Created by Roman Ryltsov roman@alax.info
-// 
-// $Id$
+//
+// A permission to use the source code is granted as long as reference to 
+// source website http://alax.info is retained.
 
 #pragma once
 
@@ -69,7 +70,7 @@ using namespace WTL;
 ////////////////////////////////////////////////////////////
 // Alax.Info ATL/WTL
 
-#define REGISTRY_PRODUCTROOT	_T("SOFTWARE\\Alax.Info\\Utilities")
+#define REGISTRY_PRODUCTROOT	_T("SOFTWARE\\Alax.Info\\Utility")
 #define REGISTRY_FILEROOT		REGISTRY_PRODUCTROOT _T("\\EnumerateTransforms")
 #define REGISTRY_ROOT			REGISTRY_FILEROOT
 

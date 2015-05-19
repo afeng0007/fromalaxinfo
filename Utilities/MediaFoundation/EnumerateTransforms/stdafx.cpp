@@ -1,7 +1,8 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2008-2012
+// Copyright (C) Roman Ryltsov, 2008-2015
 // Created by Roman Ryltsov roman@alax.info
-// 
-// $Id$
+//
+// A permission to use the source code is granted as long as reference to 
+// source website http://alax.info is retained.
 
 #include "stdafx.h"
