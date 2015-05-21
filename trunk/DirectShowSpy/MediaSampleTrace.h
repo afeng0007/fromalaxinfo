@@ -1515,7 +1515,7 @@ private:
 public:
 // CMediaSampleTracePropertySheet
 	CMediaSampleTracePropertySheet() :
-		CSizablePropertySheetT<CMediaSampleTracePropertySheet>(IDS_MEDIASAMPLETRACE_MEDIASAMPLE_PROPERTYSHEETCAPTION),
+		CSizablePropertySheetT<CMediaSampleTracePropertySheet>(IDS_MEDIASAMPLETRACE_MEDIASAMPLE_PROPERTYSHEETCAPTION, TRUE),
 		m_MediaSamplePropertyPage(this)
 	{
 		AddPage(m_MediaSamplePropertyPage);
