@@ -620,7 +620,7 @@ private:
 public:
 // CFilterGraphListPropertySheet
 	CFilterGraphListPropertySheet(COptions* pOptions = NULL) :
-		CSizablePropertySheetT<CFilterGraphListPropertySheet>(IDS_FILTERGRAPHLIST_LIST_PROPERTYSHEETCAPTION),
+		CSizablePropertySheetT<CFilterGraphListPropertySheet>(IDS_FILTERGRAPHLIST_LIST_PROPERTYSHEETCAPTION, TRUE),
 		m_ListPropertyPage(this)
 	{
 		if(pOptions)
