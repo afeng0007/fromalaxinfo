@@ -106,7 +106,7 @@ public:
 				AM_SAMPLE2_PROPERTIES Properties;
 			} MediaSample;
 		} Data;
-		WCHAR pszComment[64];
+		WCHAR pszComment[96];
 	} PAGEITEM;
 
 	#pragma pack(pop)
@@ -685,6 +685,8 @@ public:
 ////////////////////////////////////////////////////////////
 // CMediaSampleTracePropertySheet
 
+// SUGG: Thread, Type fitlers
+
 class CMediaSampleTracePropertySheet :
 	public CSizablePropertySheetT<CMediaSampleTracePropertySheet>,
 	public CMediaSampleTraceBase
@@ -910,7 +912,7 @@ public:
 					if(IdentifierArray.FindFirst(Item.m_Item.nFilterGraphIdentifier))
 						continue;
 					IdentifierArray.Add(Item.m_Item.nFilterGraphIdentifier);
-					ValueArray.Add(CFilterGraphValue(Item.m_Item.nFilterGraphIdentifier, AtlFormatStringW(L"0x%p %ls", (UINT_PTR) Item.m_Item.nFilterGraphIdentifier, Item.m_Item.pszFilterGraphName)));
+					ValueArray.Add(CFilterGraphValue(Item.m_Item.nFilterGraphIdentifier, GetFilterGraphFriendlyName(Item.m_Item)));
 				}
 				_SortHelper::QuickSort<CFilterGraphValueSortTraits>(ValueArray);
 				for(auto&& Value: ValueArray)
@@ -940,7 +942,7 @@ public:
 					if(IdentifierArray.FindFirst(Item.m_PageItem.nFilterIdentifier))
 						continue;
 					IdentifierArray.Add(Item.m_PageItem.nFilterIdentifier);
-					ValueArray.Add(CFilterValue(Item.m_PageItem.nFilterIdentifier, AtlFormatStringW(L"0x%p %ls", (UINT_PTR) Item.m_PageItem.nFilterIdentifier, Item.m_PageItem.pszFilterName)));
+					ValueArray.Add(CFilterValue(Item.m_PageItem.nFilterIdentifier, GetFilterFriendlyName(Item.m_PageItem)));
 				}
 				_SortHelper::QuickSort<CFilterValueSortTraits>(ValueArray);
 				for(auto&& Value: ValueArray)
@@ -1123,6 +1125,24 @@ public:
 			FileTimeToSystemTime(&reinterpret_cast<const FILETIME&>(nTime), &Time);
 			return AtlFormatString(_T("%02d:%02d:%02d.%03d"), Time.wHour, Time.wMinute, Time.wSecond, Time.wMilliseconds);
 		}
+		static CString GetFilterGraphFriendlyName(const ITEM& Item)
+		{
+			CString sFriendlyName(Item.pszFilterGraphName);
+			if(!sFriendlyName.IsEmpty())
+				sFriendlyName.AppendFormat(_T(" (0x%p)"), (UINT_PTR) Item.nFilterGraphIdentifier);
+			else
+				sFriendlyName.AppendFormat(_T("0x%p"), (UINT_PTR) Item.nFilterGraphIdentifier);
+			return sFriendlyName;
+		}
+		static CString GetFilterFriendlyName(const PAGEITEM& PageItem)
+		{
+			CString sFriendlyName(PageItem.pszFilterName);
+			if(!sFriendlyName.IsEmpty())
+				sFriendlyName.AppendFormat(_T(" (0x%p)"), (UINT_PTR) PageItem.nFilterIdentifier);
+			else
+				sFriendlyName.AppendFormat(_T("0x%p"), (UINT_PTR) PageItem.nFilterIdentifier);
+			return sFriendlyName;
+		}
 		CStringA CreateText()
 		{
 			CString sText;
@@ -1299,10 +1319,10 @@ public:
 					sTextBuffer = AtlFormatString(_T("%d"), (UINT_PTR) Item.m_PageItem.nThreadIdentifier);
 					break;
 				case 3: // Filter Graph
-					sTextBuffer = AtlFormatString(_T("0x%p %ls"), (UINT_PTR) Item.m_Item.nFilterGraphIdentifier, Item.m_Item.pszFilterGraphName);
+					sTextBuffer = GetFilterGraphFriendlyName(Item.m_Item);
 					break;
 				case 4: // Filter
-					sTextBuffer = AtlFormatString(_T("0x%p %ls"), (UINT_PTR) Item.m_PageItem.nFilterIdentifier, Item.m_PageItem.pszFilterName);
+					sTextBuffer = GetFilterFriendlyName(Item.m_PageItem);
 					break;
 				case 5: // Stream
 					sTextBuffer = AtlFormatString(_T("%ls"), Item.m_PageItem.pszStreamName);
@@ -1355,8 +1375,8 @@ public:
 			sTextBuffer.AppendFormat(_T("Time: %s\r\n"), FormatTime(Item.m_PageItem.nTime));
 			sTextBuffer.AppendFormat(_T("Process: %d\r\n"), (UINT_PTR) Item.m_Item.nProcessIdentifier);
 			sTextBuffer.AppendFormat(_T("Thread: %d\r\n"), (UINT_PTR) Item.m_PageItem.nThreadIdentifier);
-			sTextBuffer.AppendFormat(_T("Filter Graph: 0x%p %ls\r\n"), (UINT_PTR) Item.m_Item.nFilterGraphIdentifier, Item.m_Item.pszFilterGraphName);
-			sTextBuffer.AppendFormat(_T("Filter: 0x%p %ls\r\n"), (UINT_PTR) Item.m_PageItem.nFilterIdentifier, Item.m_PageItem.pszFilterName);
+			sTextBuffer.AppendFormat(_T("Filter Graph: %s\r\n"), GetFilterGraphFriendlyName(Item.m_Item));
+			sTextBuffer.AppendFormat(_T("Filter: %s\r\n"), GetFilterFriendlyName(Item.m_PageItem));
 			sTextBuffer.AppendFormat(_T("Stream: %ls\r\n"), Item.m_PageItem.pszStreamName);
 			sTextBuffer.AppendFormat(_T("Type: %s\r\n"), Item.FormatType());
 			switch(Item.m_PageItem.nFlags & PAGEITEMFLAG_TYPE_MASK)
