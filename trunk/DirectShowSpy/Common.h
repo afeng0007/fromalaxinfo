@@ -16,7 +16,14 @@
 #pragma once
 
 #include "AboutDialog.h"
-#include "..\..\Repository-Private\Utilities\EmailTools\Message.h"
+namespace EmailTools
+{
+	#include "Module_i.h"
+	#undef __Module_i_h__
+	#include "..\..\Repository-Private\Utilities\EmailTools\Module_i.h"
+	#include "..\..\Repository-Private\Utilities\EmailTools\Message.h"
+}
+using namespace EmailTools;
 #define  BZ_NO_STDIO
 #include "..\..\Repository-Private\Utilities\DeflateTools\Bzip2Item.h"
 
