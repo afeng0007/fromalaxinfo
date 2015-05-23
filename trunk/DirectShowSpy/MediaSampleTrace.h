@@ -126,9 +126,38 @@ public:
 		public:
 			ITEM m_Item;
 			PAGEITEM m_PageItem;
+			UINT m_nHighlightIndex;
 
 		public:
 		// CItem
+			CItem() :
+				m_nHighlightIndex(0)
+			{
+			}
+			static BOOL GetBackgroundColor(UINT nIndex, COLORREF& nColor)
+			{
+				static const COLORREF g_pnColors[] = 
+				{
+					RGB(0xFF, 0xCC, 0xCC),
+					RGB(0xFF, 0xFF, 0xCC),
+					RGB(0xCC, 0xFF, 0xCC),
+					RGB(0x88, 0xCC, 0xFF),
+					RGB(0xFF, 0x88, 0x88),
+					RGB(0xFF, 0xFF, 0x88),
+					RGB(0x88, 0xFF, 0x88),
+					RGB(0x44, 0x88, 0xFF),
+				};
+				if(nIndex - 1 < DIM(g_pnColors))
+				{
+					nColor = g_pnColors[nIndex - 1];
+					return TRUE;
+				}
+				return FALSE;
+			}
+			BOOL GetBackgroundColor(COLORREF& nColor) const
+			{
+				return GetBackgroundColor(m_nHighlightIndex, nColor);
+			}
 			LPCTSTR FormatType() const
 			{
 				switch(m_PageItem.nFlags & PAGEITEMFLAG_TYPE_MASK)
@@ -706,7 +735,8 @@ public:
 	class CMediaSamplePropertyPage :
 		public CPropertyPageT<CMediaSamplePropertyPage>,
 		public CPropertyPageWithAcceleratorsT<CMediaSamplePropertyPage>,
-		public CDialogResize<CMediaSamplePropertyPage>
+		public CDialogResize<CMediaSamplePropertyPage>,
+		public CCustomDraw<CMediaSamplePropertyPage>
 	{
 		typedef CThreadT<CMediaSamplePropertyPage> CThread;
 
@@ -717,6 +747,7 @@ public:
 		CHAIN_MSG_MAP(CPropertyPage)
 		CHAIN_MSG_MAP(CPropertyPageWithAccelerators)
 		CHAIN_MSG_MAP(CDialogResize<CMediaSamplePropertyPage>)
+		CHAIN_MSG_MAP(CCustomDraw<CMediaSamplePropertyPage>)
 		MSG_WM_INITDIALOG(OnInitDialog)
 		MSG_WM_DESTROY(OnDestroy)
 		MSG_LVN_GETDISPINFO(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_LIST, OnListViewGetDispInfo)
@@ -728,6 +759,8 @@ public:
 		COMMAND_ID_HANDLER_EX(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_RESETDATA, OnResetData)
 		COMMAND_ID_HANDLER_EX(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_OPENFILTERGRAPHLIST, OnOpenFilterGraphList)
 		COMMAND_ID_HANDLER_EX(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_OPENFILTERGRAPHPROPERTIES, OnOpenFilterGraphProperties)
+		COMMAND_ID_HANDLER_EX(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_HIGHLIGHT_REMOVEALL, OnHighlightRemoveAll)
+		COMMAND_RANGE_HANDLER_EX(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_HIGHLIGHT_REMOVE, IDC_MEDIASAMPLETRACE_MEDIASAMPLE_HIGHLIGHT_8, OnHighlight)
 		REFLECT_NOTIFICATIONS()
 	END_MSG_MAP()
 
@@ -1164,6 +1197,7 @@ public:
 				_T("Length Time"),
 				_T("Data Size"),
 				_T("Comment"),
+				_T("Highlight"),
 			};
 			sText += _StringHelper::Join(g_ppszHeader, _T("\t")) + _T("\r\n");
 			#pragma endregion
@@ -1216,6 +1250,12 @@ public:
 						Array.Add(_T(""));
 					Array.Add(CString(Item.m_PageItem.pszComment));
 				}
+				if(Item.m_nHighlightIndex)
+				{
+					while(Array.GetCount() < 15)
+						Array.Add(_T(""));
+					Array.Add(AtlFormatString(_T("*%d"), Item.m_nHighlightIndex));
+				}
 				sText += _StringHelper::Join(Array, _T("\t"));
 				sText += _T("\r\n");
 			}
@@ -1230,6 +1270,21 @@ public:
 				if(m_FilterDialog.IsVisible(Item))
 					m_ListView.InsertItem(nItem++, Item);
 			// SUGG: Preserve selection
+		}
+
+	// CCustomDraw
+		DWORD OnPrePaint(INT nIdentifier, NMCUSTOMDRAW*)
+		{
+			if(nIdentifier == IDC_MEDIASAMPLETRACE_MEDIASAMPLE_LIST)
+				return CDRF_NOTIFYITEMDRAW;
+			return CDRF_DODEFAULT;
+		}
+		DWORD OnItemPrePaint(INT, NMCUSTOMDRAW* pHeader)
+		{
+			NMLVCUSTOMDRAW* pHeaderEx = (NMLVCUSTOMDRAW*) pHeader;
+			const CData::CItem& Item = m_ListView.DataFromParameter(pHeaderEx->nmcd.lItemlParam);
+			Item.GetBackgroundColor(pHeaderEx->clrTextBk);
+			return CDRF_DODEFAULT;
 		}
 
 	// Window Message Handler
@@ -1429,6 +1484,13 @@ public:
 		{
 			CMenu ContainerMenu = AtlLoadMenu(IDD);
 			CMenuHandle Menu = ContainerMenu.GetSubMenu(0);
+			const INT nItemCount = m_ListView.GetItemCount();
+			const INT nSelectItemCount = m_ListView.GetSelectedCount();
+			for(INT nIdentifier = IDC_MEDIASAMPLETRACE_MEDIASAMPLE_HIGHLIGHT_REMOVE; nIdentifier <= IDC_MEDIASAMPLETRACE_MEDIASAMPLE_HIGHLIGHT_8; nIdentifier++)
+				Menu.EnableMenuItem(nIdentifier, nSelectItemCount ? MF_ENABLED : MF_GRAYED | MF_DISABLED);
+			Menu.EnableMenuItem(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_HIGHLIGHT_REMOVEALL, nItemCount ? MF_ENABLED : MF_GRAYED | MF_DISABLED);
+			Menu.EnableMenuItem(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_COPYTOCLIPBOARD, nItemCount ? MF_ENABLED : MF_GRAYED | MF_DISABLED);
+			Menu.EnableMenuItem(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_SAVETOFILE, nItemCount ? MF_ENABLED : MF_GRAYED | MF_DISABLED);
 			Menu.TrackPopupMenu(TPM_RIGHTBUTTON | TPM_LEFTALIGN | TPM_TOPALIGN, Position.x, Position.y, m_hWnd); 
 			return 0;
 		}
@@ -1525,6 +1587,26 @@ public:
 				}
 			}
 			_W(PostMessage(WM_COMMAND, IDC_MEDIASAMPLETRACE_MEDIASAMPLE_OPENFILTERGRAPHLIST));
+			return 0;
+		}
+		LRESULT OnHighlightRemoveAll(UINT, INT nIdentifier, HWND)
+		{
+			const INT nItemCount = m_ListView.GetItemCount();
+			if(nItemCount > 0)
+			{
+				for(INT nItem = 0; nItem < nItemCount; nItem++)
+					m_ListView.GetItemData(nItem).m_nHighlightIndex = 0;
+				m_ListView.RedrawItems(0, nItemCount - 1);
+			}
+			return 0;
+		}
+		LRESULT OnHighlight(UINT, INT nIdentifier, HWND)
+		{
+			for(INT nItem: m_ListView.GetSelectedItems())
+			{
+				m_ListView.GetItemData(nItem).m_nHighlightIndex = nIdentifier - IDC_MEDIASAMPLETRACE_MEDIASAMPLE_HIGHLIGHT_REMOVE;
+				m_ListView.RedrawItems(nItem, nItem);
+			}
 			return 0;
 		}
 	};
