@@ -58,10 +58,10 @@ library AlaxInfoDirectShowSpy
 	]
 	interface IMediaSampleTrace : IUnknown
 	{
-		HRESULT RegisterNewSegment([in] IUnknown* pBaseFilterUnknown, [in] const WCHAR* pszStreamName, [in] LONGLONG nStartTime, [in] LONGLONG nStopTime, [in] DOUBLE fRate, [in] const WCHAR* pszComment);
-		HRESULT RegisterMediaSample([in] IUnknown* pBaseFilterUnknown, [in] const WCHAR* pszStreamName, [in] const BYTE* pnSamplePropertiesData, [in] const WCHAR* pszComment);
-		HRESULT RegisterEndOfStream([in] IUnknown* pBaseFilterUnknown, [in] const WCHAR* pszStreamName, [in] const WCHAR* pszComment);
-		HRESULT RegisterComment([in] IUnknown* pBaseFilterUnknown, [in] const WCHAR* pszStreamName, [in] const WCHAR* pszComment);
+		HRESULT RegisterNewSegment([in] IUnknown* pBaseFilterUnknown, [in] const WCHAR* pszStreamName, [in] LONGLONG nStartTime, [in] LONGLONG nStopTime, [in] DOUBLE fRate, [in] const WCHAR* pszComment, [in] USHORT nHighlight);
+		HRESULT RegisterMediaSample([in] IUnknown* pBaseFilterUnknown, [in] const WCHAR* pszStreamName, [in] const BYTE* pnSamplePropertiesData, [in] const WCHAR* pszComment, [in] USHORT nHighlight);
+		HRESULT RegisterEndOfStream([in] IUnknown* pBaseFilterUnknown, [in] const WCHAR* pszStreamName, [in] const WCHAR* pszComment, [in] USHORT nHighlight);
+		HRESULT RegisterComment([in] IUnknown* pBaseFilterUnknown, [in] const WCHAR* pszStreamName, [in] const WCHAR* pszComment, [in] USHORT nHighlight);
 	};
 	[
 		object,
