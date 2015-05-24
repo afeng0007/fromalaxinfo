@@ -83,6 +83,8 @@ public:
 		PAGEITEMFLAG_ENDOFSTREAM = 2,
 		PAGEITEMFLAG_COMMENT = 3,
 		PAGEITEMFLAG_TYPE_MASK = 0x03,
+		PAGEITEMFLAG_HIGHLIGHT_MASK = 0x3C,
+		PAGEITEMFLAG_HIGHLIGHT_SHIFT = 2,
 	};
 
 	typedef struct _PAGEITEM
@@ -207,6 +209,7 @@ public:
 			CItem& Item = m_ItemArray[nIndex];
 			Item.m_Item = *pItem;
 			Item.m_PageItem = *pPageItem;
+			Item.m_nHighlightIndex = (Item.m_PageItem.nFlags & PAGEITEMFLAG_HIGHLIGHT_MASK) >> PAGEITEMFLAG_HIGHLIGHT_SHIFT;
 		}
 		VOID Sort()
 		{
@@ -270,7 +273,7 @@ public:
 		}
 		static SIZE_T GetFileMappingCapacity()
 		{
-			return 1 << 20; // 1 MB
+			return 8 << 20; // 8 MB
 		}
 		static LPCTSTR GetFileMappingName()
 		{
@@ -502,7 +505,7 @@ public:
 		{
 			return m_ItemList.IsEmpty();
 		}
-		VOID Register(CPages& Pages, UINT64 nFilterIdentifier, const CStringW& sFilterName, LPCWSTR pszStreamName, const PAGEITEM& PageItem, LPCWSTR pszComment)
+		VOID Register(CPages& Pages, UINT64 nFilterIdentifier, const CStringW& sFilterName, LPCWSTR pszStreamName, const PAGEITEM& PageItem, LPCWSTR pszComment, USHORT nHighlight)
 		{
 			const UINT64 nTime = (UINT64) CUsAccurateFileTime::GetTime();
 			for(UINT nIteration = 0; ; nIteration++)
@@ -517,6 +520,7 @@ public:
 					{
 						PAGEITEM* pPageItem = (PAGEITEM*) (pPageHeader + 1) + pPageHeader->nItemCount;
 						pPageItem->nFlags = PageItem.nFlags & PAGEITEMFLAG_TYPE_MASK;
+						pPageItem->nFlags |= (nHighlight << PAGEITEMFLAG_HIGHLIGHT_SHIFT) & PAGEITEMFLAG_HIGHLIGHT_MASK;
 						pPageItem->nThreadIdentifier = GetCurrentThreadId();
 						pPageItem->nFilterIdentifier = nFilterIdentifier;
 						wcsncpy_s(pPageItem->pszFilterName, sFilterName, _TRUNCATE);
@@ -638,9 +642,9 @@ public:
 	}
 
 // IMediaSampleTrace
-	STDMETHOD(RegisterNewSegment)(IUnknown* pBaseFilterUnknown, const WCHAR* pszStreamName, LONGLONG nStartTime, LONGLONG nStopTime, DOUBLE fRate, const WCHAR* pszComment)
+	STDMETHOD(RegisterNewSegment)(IUnknown* pBaseFilterUnknown, const WCHAR* pszStreamName, LONGLONG nStartTime, LONGLONG nStopTime, DOUBLE fRate, const WCHAR* pszComment, USHORT nHighlight)
 	{
-		_Z5(atlTraceCOM, 5, _T("this 0x%p, pBaseFilterUnknown 0x%p, pszStreamName \"%s\", nStartTime %I64d\n"), this, pBaseFilterUnknown, CString(pszStreamName), nStartTime);
+		_Z5(atlTraceCOM, 5, _T("this 0x%p, pBaseFilterUnknown 0x%p, pszStreamName \"%s\", nStartTime %I64d, nHighlight %d\n"), this, pBaseFilterUnknown, CString(pszStreamName), nStartTime, nHighlight);
 		_ATLTRY
 		{
 			PAGEITEM PageItem;
@@ -649,7 +653,7 @@ public:
 			PageItem.Data.NewSegment.nStopTime = nStopTime;
 			PageItem.Data.NewSegment.fRate = fRate;
 			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
-			m_Page.Register(m_Pages, (UINT_PTR) pBaseFilterUnknown, GetFilterName(pBaseFilterUnknown), pszStreamName, PageItem, pszComment);
+			m_Page.Register(m_Pages, (UINT_PTR) pBaseFilterUnknown, GetFilterName(pBaseFilterUnknown), pszStreamName, PageItem, pszComment, nHighlight);
 		}
 		_ATLCATCH(Exception)
 		{
@@ -657,9 +661,9 @@ public:
 		}
 		return S_OK;
 	}
-	STDMETHOD(RegisterMediaSample)(IUnknown* pBaseFilterUnknown, const WCHAR* pszStreamName, const BYTE* pnSamplePropertiesData, const WCHAR* pszComment)
+	STDMETHOD(RegisterMediaSample)(IUnknown* pBaseFilterUnknown, const WCHAR* pszStreamName, const BYTE* pnSamplePropertiesData, const WCHAR* pszComment, USHORT nHighlight)
 	{
-		_Z5(atlTraceCOM, 5, _T("this 0x%p, pBaseFilterUnknown 0x%p, pszStreamName \"%s\", pnSamplePropertiesData 0x%p\n"), this, pBaseFilterUnknown, CString(pszStreamName), pnSamplePropertiesData);
+		_Z5(atlTraceCOM, 5, _T("this 0x%p, pBaseFilterUnknown 0x%p, pszStreamName \"%s\", pnSamplePropertiesData 0x%p, nHighlight %d\n"), this, pBaseFilterUnknown, CString(pszStreamName), pnSamplePropertiesData, nHighlight);
 		_ATLTRY
 		{
 			__D(pnSamplePropertiesData, E_POINTER);
@@ -667,7 +671,7 @@ public:
 			PageItem.nFlags = PAGEITEMFLAG_MEDIASAMPLE;
 			PageItem.Data.MediaSample.Properties = *((const AM_SAMPLE2_PROPERTIES*) pnSamplePropertiesData);
 			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
-			m_Page.Register(m_Pages, (UINT_PTR) pBaseFilterUnknown, GetFilterName(pBaseFilterUnknown), pszStreamName, PageItem, pszComment);
+			m_Page.Register(m_Pages, (UINT_PTR) pBaseFilterUnknown, GetFilterName(pBaseFilterUnknown), pszStreamName, PageItem, pszComment, nHighlight);
 		}
 		_ATLCATCH(Exception)
 		{
@@ -675,15 +679,15 @@ public:
 		}
 		return S_OK;
 	}
-	STDMETHOD(RegisterEndOfStream)(IUnknown* pBaseFilterUnknown, const WCHAR* pszStreamName, const WCHAR* pszComment)
+	STDMETHOD(RegisterEndOfStream)(IUnknown* pBaseFilterUnknown, const WCHAR* pszStreamName, const WCHAR* pszComment, USHORT nHighlight)
 	{
-		_Z5(atlTraceCOM, 5, _T("this 0x%p, pBaseFilterUnknown 0x%p, pszStreamName \"%s\"\n"), this, pBaseFilterUnknown, CString(pszStreamName));
+		_Z5(atlTraceCOM, 5, _T("this 0x%p, pBaseFilterUnknown 0x%p, pszStreamName \"%s\", nHighlight %d\n"), this, pBaseFilterUnknown, CString(pszStreamName), nHighlight);
 		_ATLTRY
 		{
 			PAGEITEM PageItem;
 			PageItem.nFlags = PAGEITEMFLAG_ENDOFSTREAM;
 			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
-			m_Page.Register(m_Pages, (UINT_PTR) pBaseFilterUnknown, GetFilterName(pBaseFilterUnknown), pszStreamName, PageItem, pszComment);
+			m_Page.Register(m_Pages, (UINT_PTR) pBaseFilterUnknown, GetFilterName(pBaseFilterUnknown), pszStreamName, PageItem, pszComment, nHighlight);
 		}
 		_ATLCATCH(Exception)
 		{
@@ -691,15 +695,15 @@ public:
 		}
 		return S_OK;
 	}
-	STDMETHOD(RegisterComment)(IUnknown* pBaseFilterUnknown, const WCHAR* pszStreamName, const WCHAR* pszComment)
+	STDMETHOD(RegisterComment)(IUnknown* pBaseFilterUnknown, const WCHAR* pszStreamName, const WCHAR* pszComment, USHORT nHighlight)
 	{
-		_Z5(atlTraceCOM, 5, _T("this 0x%p, pBaseFilterUnknown 0x%p, pszStreamName \"%s\", pszComment \"%s\"\n"), this, pBaseFilterUnknown, CString(pszStreamName), CString(pszComment));
+		_Z5(atlTraceCOM, 5, _T("this 0x%p, pBaseFilterUnknown 0x%p, pszStreamName \"%s\", pszComment \"%s\", nHighlight %d\n"), this, pBaseFilterUnknown, CString(pszStreamName), CString(pszComment), nHighlight);
 		_ATLTRY
 		{
 			PAGEITEM PageItem;
 			PageItem.nFlags = PAGEITEMFLAG_COMMENT;
 			CRoCriticalSectionLock DataLock(m_DataCriticalSection);
-			m_Page.Register(m_Pages, (UINT_PTR) pBaseFilterUnknown, GetFilterName(pBaseFilterUnknown), pszStreamName, PageItem, pszComment);
+			m_Page.Register(m_Pages, (UINT_PTR) pBaseFilterUnknown, GetFilterName(pBaseFilterUnknown), pszStreamName, PageItem, pszComment, nHighlight);
 		}
 		_ATLCATCH(Exception)
 		{
