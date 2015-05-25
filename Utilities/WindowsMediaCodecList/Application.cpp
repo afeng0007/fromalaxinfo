@@ -17,11 +17,11 @@ class CModule :
 
 public:
 // CModule
-	CModule() throw()
+	CModule()
 	{
 		AtlTraceSetDefaultSettings();
 	}
-	HRESULT PreMessageLoop(INT nShowCommand) throw()
+	HRESULT PreMessageLoop(INT nShowCommand)
 	{
 		_ATLTRY
 		{
@@ -36,12 +36,12 @@ public:
 		}
 		return S_OK;
 	}
-	VOID RunMessageLoop() throw()
+	VOID RunMessageLoop()
 	{
 		CMainDialog MainDialog;
 		MainDialog.DoModal();
 	}
-	HRESULT PostMessageLoop() throw()
+	HRESULT PostMessageLoop()
 	{
 		_ATLTRY
 		{
