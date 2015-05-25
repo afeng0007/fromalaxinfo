@@ -18,7 +18,7 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="WindowsMediaCodecList.cpp">
+    <ClCompile Include="Application.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -37,15 +37,12 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="res\WindowsMediaCodecList.ico">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="WindowsMediaCodecList.ico">
+    <None Include="Module.ico">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="WindowsMediaCodecList.rc">
+    <ResourceCompile Include="Module.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>

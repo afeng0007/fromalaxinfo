@@ -5,22 +5,15 @@
 #pragma once
 
 ////////////////////////////////////////////////////////////
-// Windows definitions
+// SDK
 
-#define WINVER			0x0500
-#define _WIN32_WINNT	0x0501
-#define _WIN32_WINDOWS	0x0410
-#define _WIN32_IE		0x0501
-#define _RICHEDIT_VER	0x0200
-
-#define INLINE_HRESULT_FROM_WIN32
+#include <sdkddkver.h>
 #define _INC_WINDOWSX
-
 #include <windows.h>
-#include <shellapi.h>
+//#include <shellapi.h>
 
 ////////////////////////////////////////////////////////////
-// ATL definitions
+// ATL
 
 #define _ATL_APARTMENT_THREADED
 //#define _ATL_NO_COM_SUPPORT
