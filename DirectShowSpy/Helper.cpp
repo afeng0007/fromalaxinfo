@@ -171,13 +171,13 @@ public:
 	{
 		CRoCriticalSectionLock ReceiveLock(m_ReceiveCriticalSection);
 		if(m_pMediaSampleTrace)
-			_V(m_pMediaSampleTrace->RegisterNewSegment((IBaseFilter*) this, L"Main", nStartTime, nStopTime, fRate, NULL));
+			_V(m_pMediaSampleTrace->RegisterNewSegment((IBaseFilter*) this, L"Main", nStartTime, nStopTime, fRate, NULL, 0));
 	}
 	VOID DeliverEndOfStream(CInputPin*)
 	{
 		CRoCriticalSectionLock ReceiveLock(m_ReceiveCriticalSection);
 		if(m_pMediaSampleTrace)
-			_V(m_pMediaSampleTrace->RegisterEndOfStream((IBaseFilter*) this, L"Main", L"That's All!"));
+			_V(m_pMediaSampleTrace->RegisterEndOfStream((IBaseFilter*) this, L"Main", L"That's All!", 0));
 		NotifyComplete(S_OK);
 	}
 	VOID CueFilter()
@@ -207,7 +207,7 @@ public:
 		CMediaSampleProperties Properties(pMediaSample);
 		CRoCriticalSectionLock DataLock(GetDataCriticalSection());
 		if(m_pMediaSampleTrace)
-			_V(m_pMediaSampleTrace->RegisterMediaSample((IBaseFilter*) this, L"Main", (BYTE*) (AM_SAMPLE2_PROPERTIES*) &Properties, NULL));
+			_V(m_pMediaSampleTrace->RegisterMediaSample((IBaseFilter*) this, L"Main", (BYTE*) (AM_SAMPLE2_PROPERTIES*) &Properties, NULL, 0));
 		nReceiveResult = S_OK;
 	}
 	const CObjectPtr<CInputPin>& GetInputPin() const
