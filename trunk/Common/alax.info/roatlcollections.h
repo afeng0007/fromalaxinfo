@@ -1,8 +1,6 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2006-2012
+// Copyright (C) Roman Ryltsov, 2006-2015
 // Created by Roman Ryltsov roman@alax.info
-// 
-// $Id$
 //
 // A permission to use the source code is granted as long as reference to 
 // source website http://alax.info is retained.
@@ -12,10 +10,43 @@
 #include <atlcoll.h>
 
 ////////////////////////////////////////////////////////////
+// CRoIterativeTraitsBase
+
+class CRoIterativeTraitsBase
+{
+public:
+
+	////////////////////////////////////////////////////////
+	// CAddressT
+
+	template <typename CValue>
+	class CAddressT
+	{
+	public:
+		CValue m_Value;
+
+	public:
+	// CAddressT
+		const CValue* operator & () const
+		{
+			return reinterpret_cast<const CValue*>(this);
+		}
+		CValue* operator & ()
+		{
+			return reinterpret_cast<CValue*>(this);
+		}
+	};
+
+public:
+// CRoIterativeTraitsBase
+};
+
+////////////////////////////////////////////////////////////
 // CRoIterativeArrayTraitsT
 
-template <typename _Array>
-class CRoIterativeArrayTraitsT
+template <typename CArray>
+class CRoIterativeArrayTraitsT :
+	public CRoIterativeTraitsBase
 {
 protected:
 	typedef SIZE_T KEY;
@@ -28,12 +59,12 @@ public:
 	class CIterator
 	{
 	public:
-		const _Array* m_pArray;
+		const CArray* m_pArray;
 		KEY m_nIndex;
 
 	public:
 	// CIterator
-		CIterator(const _Array* pArray) throw() :
+		CIterator(const CArray* pArray) throw() :
 			m_pArray(pArray),
 			m_nIndex(0)
 		{
@@ -59,12 +90,12 @@ public:
 	class CReverseIterator
 	{
 	public:
-		const _Array* m_pArray;
+		const CArray* m_pArray;
 		KEY m_nIndex;
 
 	public:
 	// CReverseIterator
-		CReverseIterator(const _Array* pArray) throw() :
+		CReverseIterator(const CArray* pArray) throw() :
 			m_pArray(pArray),
 			m_nIndex(pArray->GetCount() - 1)
 		{
@@ -84,6 +115,59 @@ public:
 		}
 	};
 
+	////////////////////////////////////////////////////////
+	// CRangeIterator
+
+	class CRangeIterator
+	{
+	public:
+		const CArray& m_Array;
+		SIZE_T m_nIndex;
+
+	public:
+	// CRangeIterator
+		ATL_FORCEINLINE CRangeIterator(const CArray* pArray, SIZE_T nIndex) :
+			m_Array(*pArray),
+			m_nIndex(nIndex)
+		{
+			_A(pArray);
+		}
+		ATL_FORCEINLINE BOOL operator == (const CRangeIterator& Value) const
+		{
+			_A(&m_Array == &Value.m_Array);
+			return m_nIndex == Value.m_nIndex;
+		}
+		ATL_FORCEINLINE BOOL operator != (const CRangeIterator& Value) const
+		{
+			return !(*this == Value);
+		}
+		ATL_FORCEINLINE CRangeIterator& operator ++ ()
+		{
+			++m_nIndex;
+			return *this;
+		}
+		ATL_FORCEINLINE operator const typename CArray::CCollectionElement* () const
+		{
+			const typename CArray::CCollectionElement& Element = m_Array.GetAt(m_nIndex);
+			CAddressT<typename CArray::CCollectionElement>& ElementAddress = reinterpret_cast<CAddressT<typename CArray::CCollectionElement>&>(Element);
+			return &ElementAddress;
+		}
+		ATL_FORCEINLINE operator typename CArray::CCollectionElement* ()
+		{
+			typename CArray::CCollectionElement& Element = const_cast<CArray&>(m_Array).GetAt(m_nIndex);
+			CAddressT<typename CArray::CCollectionElement>& ElementAddress = reinterpret_cast<CAddressT<typename CArray::CCollectionElement>&>(Element);
+			return &ElementAddress;
+		}
+		ATL_FORCEINLINE static CRangeIterator begin(const CArray* pArray)
+		{
+			return CRangeIterator(pArray, 0);
+		}
+		ATL_FORCEINLINE static CRangeIterator end(const CArray* pArray)
+		{
+			return CRangeIterator(pArray, pArray->GetCount());
+		}
+	};
+
 public:
 // CRoIterativeArrayTraitsT
 };
@@ -91,8 +175,9 @@ public:
 ////////////////////////////////////////////////////////////
 // CRoIterativeListTraitsT
 
-template <typename _List>
-class CRoIterativeListTraitsT
+template <typename CList>
+class CRoIterativeListTraitsT :
+	public CRoIterativeTraitsBase
 {
 protected:
 	typedef POSITION KEY;
@@ -105,12 +190,12 @@ public:
 	class CIterator
 	{
 	public:
-		const _List* m_pList;
+		const CList* m_pList;
 		KEY m_Position;
 
 	public:
 	// CIterator
-		CIterator(const _List* pList) throw() :
+		CIterator(const CList* pList) throw() :
 			m_pList(pList),
 			m_Position(pList->GetHeadPosition())
 		{
@@ -135,12 +220,12 @@ public:
 	class CReverseIterator
 	{
 	public:
-		const _List* m_pList;
+		const CList* m_pList;
 		KEY m_Position;
 
 	public:
 	// CReverseIterator
-		CReverseIterator(const _List* pList) throw() :
+		CReverseIterator(const CList* pList) throw() :
 			m_pList(pList),
 			m_Position(pList->GetTailPosition())
 		{
@@ -158,17 +243,75 @@ public:
 			return m_Position;
 		}
 	};
+
+	////////////////////////////////////////////////////////
+	// CRangeIterator
+
+	class CRangeIterator
+	{
+	public:
+		const CList& m_List;
+		POSITION m_Position;
+
+	public:
+	// CRangeIterator
+		ATL_FORCEINLINE CRangeIterator(const CList* pList, POSITION Position) :
+			m_List(*pList),
+			m_Position(Position)
+		{
+			_A(pList);
+		}
+		ATL_FORCEINLINE BOOL operator == (const CRangeIterator& Value) const
+		{
+			_A(&m_List == &Value.m_List);
+			return m_Position == Value.m_Position;
+		}
+		ATL_FORCEINLINE BOOL operator != (const CRangeIterator& Value) const
+		{
+			return !(*this == Value);
+		}
+		ATL_FORCEINLINE CRangeIterator& operator ++ ()
+		{
+			m_List.GetNext(m_Position);
+			return *this;
+		}
+		ATL_FORCEINLINE operator const typename CList::CCollectionElement* () const
+		{
+			_A(m_Position);
+			const typename CList::CCollectionElement& Element = m_List.GetAt(m_Position);
+			CAddressT<typename CList::CCollectionElement>& ElementAddress = reinterpret_cast<CAddressT<typename CList::CCollectionElement>&>(Element);
+			return &ElementAddress;
+		}
+		ATL_FORCEINLINE operator typename CList::CCollectionElement* ()
+		{
+			_A(m_Position);
+			typename CList::CCollectionElement& Element = const_cast<CList&>(m_List).GetAt(m_Position);
+			CAddressT<typename CList::CCollectionElement>& ElementAddress = reinterpret_cast<CAddressT<typename CList::CCollectionElement>&>(Element);
+			return &ElementAddress;
+		}
+		ATL_FORCEINLINE static CRangeIterator begin(const CList* pList)
+		{
+			return CRangeIterator(pList, pList->GetHeadPosition());
+		}
+		ATL_FORCEINLINE static CRangeIterator end(const CList* pList)
+		{
+			return CRangeIterator(pList, NULL);
+		}
+	};
+
+public:
+// CRoIterativeListTraitsT
 };
 
 ////////////////////////////////////////////////////////////
 // CRoIterativeCollectionT
 
-template <typename T, template <typename _Collection> class _IterativeTraitsT, typename _Element, typename _ElementTraits = CElementTraits<_Element> >
+template <typename T, template <typename _Collection> class CIterativeTraits, typename _Element, typename _ElementTraits = CElementTraits<_Element> >
 class CRoIterativeCollectionT :
-	protected _IterativeTraitsT<T>
+	protected CIterativeTraits<T>
 {
 protected:
-	typedef typename _IterativeTraitsT<T>::KEY KEY;
+	typedef typename CIterativeTraits<T>::KEY KEY;
 
 public:
 // CRoIterativeCollectionT
@@ -275,6 +418,24 @@ public:
 		SIZE_T RemoveThat(BOOL (*pCompareElement)(typename _ElementTraits::INARGTYPE Element)) throw()
 		{
 			return RemoveThatT<CReverseIterator>(pCompareElement);
+		}
+		BOOL RemoveFirst(typename _ElementTraits::INARGTYPE Element)
+		{
+			T* pT = static_cast<T*>(this);
+			KEY Key;
+			if(!pT->FindFirst(Element, &Key))
+				return FALSE;
+			pT->RemoveAt(Key);
+			return TRUE;
+		}
+		BOOL RemoveLast(typename _ElementTraits::INARGTYPE Element)
+		{
+			T* pT = static_cast<T*>(this);
+			KEY Key;
+			if(!pT->FindLast(Element, &Key))
+				return FALSE;
+			pT->RemoveAt(Key);
+			return TRUE;
 		}
 	//}
 	template <typename _Iterator>
@@ -389,6 +550,16 @@ public:
 		return nCount;
 	}
 	// TODO: ForEachThat
+
+// Range Iterator
+	ATL_FORCEINLINE typename CIterativeTraits<T>::CRangeIterator begin() const
+	{
+		return CRangeIterator::begin(static_cast<const T*>(this));
+	}
+	ATL_FORCEINLINE typename CIterativeTraits<T>::CRangeIterator end() const
+	{
+		return CRangeIterator::end(static_cast<const T*>(this));
+	}
 };
 
 ////////////////////////////////////////////////////////////
@@ -399,7 +570,9 @@ class CRoArrayT :
 	public CAtlArray<_Element, _ElementTraits>,
 	public CRoIterativeCollectionT<CRoArrayT<_Element, _ElementTraits>, CRoIterativeArrayTraitsT, _Element, _ElementTraits>
 {
+public:
 	typedef CAtlArray<_Element, _ElementTraits> CBaseArray;
+	typedef _Element CCollectionElement;
 
 private:
 
@@ -471,6 +644,10 @@ class CRoListT :
 	public CAtlList<_Element, _ElementTraits>,
 	public CRoIterativeCollectionT<CRoListT<_Element, _ElementTraits>, CRoIterativeListTraitsT, _Element, _ElementTraits>
 {
+public:
+	typedef CRoListT<_Element, _ElementTraits> CRoList;
+	typedef _Element CCollectionElement;
+
 public:
 // CRoListT
 	BOOL FindPositionIndex(POSITION Position, SIZE_T* pnIndex = NULL) const throw()
@@ -710,10 +887,182 @@ public:
 
 template<typename _KeyElement, typename _Element, class _KeyElementTraits = CElementTraits<_KeyElement>, class _ElementTraits = CElementTraits<_Element> >
 class CRoMapT :
-	public CAtlMap<_KeyElement, _Element, _KeyElementTraits, _ElementTraits>
+	public CAtlMap<_KeyElement, _Element, _KeyElementTraits, _ElementTraits>,
+	public CRoIterativeTraitsBase
 {
 public:
+	typedef CAtlMap<_KeyElement, _Element, _KeyElementTraits, _ElementTraits> CBaseMap;
+	typedef CRoMapT<_KeyElement, _Element, _KeyElementTraits, _ElementTraits> CMap;
+	typedef _Element CCollectionElement;
+
+	////////////////////////////////////////////////////////
+	// CPositionRangeIterator
+
+	class CPositionRangeIterator
+	{
+	public:
+		const CMap& m_Map;
+		POSITION m_Position;
+
+	public:
+	// CPositionRangeIterator
+		ATL_FORCEINLINE CPositionRangeIterator(const CMap* pMap, POSITION Position) :
+			m_Map(*pMap),
+			m_Position(Position)
+		{
+			_A(pMap);
+		}
+		ATL_FORCEINLINE BOOL operator == (const CPositionRangeIterator& Position) const
+		{
+			_A(&m_Map == &Position.m_Map);
+			return m_Position == Position.m_Position;
+		}
+		ATL_FORCEINLINE BOOL operator != (const CPositionRangeIterator& Position) const
+		{
+			return !(*this == Position);
+		}
+		ATL_FORCEINLINE CPositionRangeIterator& operator ++ ()
+		{
+			m_Map.GetNext(m_Position);
+			return *this;
+		}
+		ATL_FORCEINLINE operator const POSITION* () const
+		{
+			return &m_Position;
+		}
+		ATL_FORCEINLINE operator typename POSITION* ()
+		{
+			return &m_Position;
+		}
+		ATL_FORCEINLINE static CPositionRangeIterator begin(const CMap* pMap)
+		{
+			return CPositionRangeIterator(pMap, pMap->GetStartPosition());
+		}
+		ATL_FORCEINLINE static CPositionRangeIterator end(const CMap* pMap)
+		{
+			return CPositionRangeIterator(pMap, NULL);
+		}
+	};
+
+	////////////////////////////////////////////////////////
+	// CPositions
+
+	class CPositions
+	{
+	public:
+		const CMap* m_pMap;
+
+	public:
+	// CPositions
+		ATL_FORCEINLINE CPositions(const CMap* pMap) :
+			m_pMap(pMap)
+		{
+			_A(pMap);
+		}
+
+	// Range Iterator
+		ATL_FORCEINLINE CPositionRangeIterator begin() const
+		{
+			return CPositionRangeIterator::begin(m_pMap);
+		}
+		ATL_FORCEINLINE CPositionRangeIterator end() const
+		{
+			return CPositionRangeIterator::end(m_pMap);
+		}
+	};
+
+	////////////////////////////////////////////////////////
+	// CValueRangeIterator
+
+	class CValueRangeIterator
+	{
+	public:
+		const CMap& m_Map;
+		POSITION m_Position;
+
+	public:
+	// CValueRangeIterator
+		ATL_FORCEINLINE CValueRangeIterator(const CMap* pMap, POSITION Position) :
+			m_Map(*pMap),
+			m_Position(Position)
+		{
+			_A(pMap);
+		}
+		ATL_FORCEINLINE BOOL operator == (const CValueRangeIterator& Value) const
+		{
+			_A(&m_Map == &Value.m_Map);
+			return m_Position == Value.m_Position;
+		}
+		ATL_FORCEINLINE BOOL operator != (const CValueRangeIterator& Value) const
+		{
+			return !(*this == Value);
+		}
+		ATL_FORCEINLINE CValueRangeIterator& operator ++ ()
+		{
+			m_Map.GetNext(m_Position);
+			return *this;
+		}
+		ATL_FORCEINLINE operator const typename CMap::CCollectionElement* () const
+		{
+			_A(m_Position);
+			const typename CMap::CCollectionElement& Element = m_Map.GetValueAt(m_Position);
+			CAddressT<typename CMap::CCollectionElement>& ElementAddress = reinterpret_cast<CAddressT<typename CMap::CCollectionElement>&>(Element);
+			return &ElementAddress;
+		}
+		ATL_FORCEINLINE operator typename CMap::CCollectionElement* ()
+		{
+			_A(m_Position);
+			typename CMap::CCollectionElement& Element = const_cast<CMap&>(m_Map).GetValueAt(m_Position);
+			CAddressT<typename CMap::CCollectionElement>& ElementAddress = reinterpret_cast<CAddressT<typename CMap::CCollectionElement>&>(Element);
+			return &ElementAddress;
+		}
+		ATL_FORCEINLINE static CValueRangeIterator begin(const CMap* pMap)
+		{
+			return CValueRangeIterator(pMap, pMap->GetStartPosition());
+		}
+		ATL_FORCEINLINE static CValueRangeIterator end(const CMap* pMap)
+		{
+			return CValueRangeIterator(pMap, NULL);
+		}
+	};
+
+	////////////////////////////////////////////////////////
+	// CValues
+
+	class CValues
+	{
+	public:
+		const CMap* m_pMap;
+
+	public:
+	// CValues
+		ATL_FORCEINLINE CValues(const CMap* pMap) :
+			m_pMap(pMap)
+		{
+			_A(pMap);
+		}
+
+	// Range Iterator
+		ATL_FORCEINLINE CValueRangeIterator begin() const
+		{
+			return CValueRangeIterator::begin(m_pMap);
+		}
+		ATL_FORCEINLINE CValueRangeIterator end() const
+		{
+			return CValueRangeIterator::end(m_pMap);
+		}
+	};
+
+public:
 // CRoMapT
+	CPositions GetPositions() const
+	{
+		return CPositions(this);
+	}
+	CValues GetValues() const
+	{
+		return CValues(this);
+	}
 };
 
 ////////////////////////////////////////////////////////////
