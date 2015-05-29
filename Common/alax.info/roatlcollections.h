@@ -9,6 +9,16 @@
 
 #include <atlcoll.h>
 
+#if !defined(_A)
+	#define _A ATLASSERT
+#endif
+#if !defined(_W)
+	#define _W ATLVERIFY
+#endif
+#if !defined(__D)
+	#define __D ATLENSURE_THROW
+#endif
+
 ////////////////////////////////////////////////////////////
 // CRoIterativeTraitsBase
 
