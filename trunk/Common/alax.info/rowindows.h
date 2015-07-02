@@ -1,11 +1,11 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2006-2012
-// Created by Roman Ryltsov roman@alax.info
+// Template class library; extends Widnows SDK, ATL, WTL
 // 
-// $Id$
+// Copyright (C) Roman Ryltsov, 2006-2015
+// Created by Roman Ryltsov roman@alax.info
 //
-// A permission to use the source code is granted as long as reference to 
-// source website http://alax.info is retained.
+// A permission to re-use this source code is granted as long as copyright notice and 
+// reference to source website http://alax.info is retained.
 
 #pragma once
 
@@ -358,13 +358,7 @@ public:
 // CMessageOnlyWindowImpl
 	static HWND GetParentWindow() throw()
 	{
-#if WINVER >= 0x0500
-		OSVERSIONINFO VersionInformation = { sizeof VersionInformation };
-		ATLVERIFY(GetVersionEx(&VersionInformation));
-		if(VersionInformation.dwPlatformId == VER_PLATFORM_WIN32_NT && VersionInformation.dwMajorVersion >= 5)
-			return HWND_MESSAGE;
-#endif // WINVER >= 0x0500
-		return NULL;
+		return HWND_MESSAGE; // Windows 2000+
 	}
 	HWND Create(HWND hParentWindow = GetParentWindow(), _U_RECT Position = NULL, LPCTSTR pszWindowName = NULL, DWORD nStyle = 0, DWORD nExStyle = 0, _U_MENUorID Menu = 0U, VOID* pvCreateParameter = NULL)
 	{
@@ -392,9 +386,9 @@ public:
 	UINT_PTR AddParameter(CAutoPtr<_Parameter>& pParameter)
 	{
 		CRoCriticalSectionLock DataLock(m_DataCriticalSection);
-		UINT_PTR nCookie = ++m_nCounter;
+		const UINT_PTR nCookie = ++m_nCounter;
 		_A(!m_ParameterMap.Lookup((UINT) nCookie));
-		m_ParameterMap[(UINT) nCookie] = pParameter;
+		m_ParameterMap[nCookie] = pParameter;
 		return nCookie;
 	}
 	UINT_PTR AddParameter(const _Parameter& Parameter)
@@ -405,20 +399,21 @@ public:
 	}
 	CAutoPtr<_Parameter> RemoveParameter(UINT_PTR nCookie) throw()
 	{
-		CAutoPtr<_Parameter> pParameter;
 		CRoCriticalSectionLock DataLock(m_DataCriticalSection);
-		POSITION Position = m_ParameterMap.Lookup((UINT) nCookie);
-		if(Position)
-		{
-			pParameter = m_ParameterMap.GetValueAt(Position);
-			m_ParameterMap.RemoveAtPos(Position);
-		}
+		const POSITION Position = m_ParameterMap.Lookup(nCookie);
+		CAutoPtr<_Parameter> pParameter;
+		if(!Position)
+			return pParameter; // Nothing
+		pParameter = m_ParameterMap.GetValueAt(Position);
+		m_ParameterMap.RemoveAtPos(Position);
 		return pParameter;
 	}
-	VOID RemoveAllParameters() throw()
+	SIZE_T RemoveAllParameters() throw()
 	{
 		CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+		const SIZE_T nCount = m_ParameterMap.GetCount();
 		m_ParameterMap.RemoveAll();
+		return nCount;
 	}
 };
 
@@ -483,7 +478,7 @@ public:
 	}
 	SIZE_T DispatchPrivateMessages() throw()
 	{
-		return RemovePrivateMessages(DispatchPrivateMessage);
+		return RemovePrivateMessages(&T::DispatchPrivateMessage);
 	}
 	LRESULT HandlePostedPrivateMessage(WPARAM wParam, LPARAM lParam) throw()
 	{
@@ -498,6 +493,36 @@ public:
 		return pT->HandlePostedPrivateMessage(wParam, lParam);
 	}
 };
+
+inline SSIZE_T WaitForMultipleObjectsDispatchingMessages(SIZE_T nObjectCount, const HANDLE* phObjects, BOOL bWaitAllObjects = FALSE, ULONG nTimeoutTime = INFINITE, DWORD nWakeMask = QS_ALLINPUT | QS_ALLPOSTMESSAGE)
+{
+	_A(phObjects && nObjectCount);
+	const ULONG nReturnTime = GetTickCount() + nTimeoutTime;
+	DWORD nWaitResult;
+	for(; ; )
+	{
+		ULONG nCurrentTimeoutTime;
+		if(nTimeoutTime != INFINITE)
+		{
+			nCurrentTimeoutTime = nReturnTime - GetTickCount();
+			if((LONG) nCurrentTimeoutTime <= 0)
+				return WAIT_TIMEOUT;
+		} else
+			nCurrentTimeoutTime = INFINITE;
+		nWaitResult = MsgWaitForMultipleObjects((DWORD) nObjectCount, phObjects, bWaitAllObjects, nCurrentTimeoutTime, nWakeMask);
+		_Z5_WAITRESULT(nWaitResult);
+		_A(nWaitResult - WAIT_OBJECT_0 <= nObjectCount || nWaitResult == WAIT_TIMEOUT && nCurrentTimeoutTime != INFINITE);
+		if(nWaitResult - WAIT_OBJECT_0 != nObjectCount)
+			break;
+		MSG Message;
+		while(PeekMessage(&Message, NULL, WM_NULL, WM_NULL, PM_REMOVE))
+		{
+			TranslateMessage(&Message);
+			DispatchMessage(&Message);
+		}
+	}
+	return nWaitResult;
+}
 
 ////////////////////////////////////////////////////////////
 // CWindowedTimedEventDaemonWindow
@@ -834,4 +859,215 @@ public:
 		return bResult;
 	}
 };
+
+////////////////////////////////////////////////////////////
+// CThreadHookData
+
+class CThreadHookData
+{
+public:
+	DWORD m_nThreadIdentifier;
+	HHOOK m_hHook;
+
+public:
+// CThreadHookData
+	CThreadHookData() :
+		m_hHook(NULL)
+	{
+	}
+};
+	
+////////////////////////////////////////////////////////////
+// CThreadGetMessageHookTraits
+
+class CThreadGetMessageHookTraits
+{
+public:
+	typedef MSG CMessageData;
+
+public:
+// CThreadPreMessageHookTraits
+	static INT GetHookIdentifier()
+	{
+		return WH_GETMESSAGE;
+	}
+};
+
+////////////////////////////////////////////////////////////
+// CThreadPreMessageHookTraits
+
+class CThreadPreMessageHookTraits
+{
+public:
+	typedef CWPSTRUCT CMessageData;
+
+public:
+// CThreadPreMessageHookTraits
+	static INT GetHookIdentifier()
+	{
+		return WH_CALLWNDPROC;
+	}
+};
+	
+////////////////////////////////////////////////////////////
+// CThreadPostMessageHookTraits
+
+class CThreadPostMessageHookTraits
+{
+public:
+	typedef CWPRETSTRUCT CMessageData;
+
+public:
+// CThreadPostMessageHookTraits
+	static INT GetHookIdentifier()
+	{
+		return WH_CALLWNDPROCRET;
+	}
+};
+	
+////////////////////////////////////////////////////////////
+// CThreadMessageHookT
+	
+template <typename T, typename CTraits, typename CHookData = CThreadHookData>
+class CThreadMessageHookT
+{
+private:
+	static CRoListT<CHookData>* g_pHookDataList;
+	CHookData* m_pHookData;
+
+	static BOOL FindHook(POSITION& Position, DWORD nThreadIdentifier = GetCurrentThreadId())
+	{
+		_A(_pAtlModule);
+		CComCritSecLock<CComCriticalSection> DataLock(_pAtlModule->m_csStaticDataInitAndTypeInfo);
+		if(g_pHookDataList)
+			for(POSITION CurrentPosition = g_pHookDataList->GetTailPosition(); CurrentPosition; g_pHookDataList->GetPrev(CurrentPosition))
+			{
+				const CHookData& HookData = g_pHookDataList->GetAt(CurrentPosition);
+				if(HookData.m_nThreadIdentifier != nThreadIdentifier)
+					continue;
+				Position = CurrentPosition;
+				return TRUE;
+			}
+		return FALSE;
+	}
+	static BOOL FindHook(HHOOK& hHook, DWORD nThreadIdentifier = GetCurrentThreadId())
+	{
+		_A(_pAtlModule);
+		CComCritSecLock<CComCriticalSection> DataLock(_pAtlModule->m_csStaticDataInitAndTypeInfo);
+		POSITION Position;
+		if(!FindHook(Position, nThreadIdentifier))
+			return FALSE;
+		_A(g_pHookDataList);
+		hHook = g_pHookDataList->GetAt(Position).m_hHook;
+		return TRUE;
+	}
+	static LRESULT CALLBACK HookProc(INT nCode, WPARAM wParam, LPARAM lParam)
+	{
+		HHOOK hHook;
+		if(!FindHook(hHook))
+			return 0;
+		if(nCode == HC_ACTION)
+			T::HandleMessage(wParam, *((CTraits::CMessageData*) lParam));
+		return CallNextHookEx(hHook, nCode, wParam, lParam);
+	}
+
+protected:
+	static BOOL CheckClassName(HWND hWindow, LPCTSTR pszClassName)
+	{
+		TCHAR pszWindowClassName[64] = { 0 };
+		_W(GetClassName(hWindow, pszWindowClassName, _countof(pszWindowClassName)));
+		return _tcscmp(pszWindowClassName, pszClassName) == 0;
+	}
+	static CString GetWindowText(HWND hWindow)
+	{
+		CString sWindowText;
+		CWindow(hWindow).GetWindowText(sWindowText);
+		return sWindowText;
+	}
+	static BOOL FindHookData(CHookData*& pHookData, DWORD nThreadIdentifier = GetCurrentThreadId())
+	{
+		_A(_pAtlModule);
+		_A(VerifyCriticalSectionLocked(_pAtlModule->m_csStaticDataInitAndTypeInfo));
+		POSITION Position;
+		if(!FindHook(Position, nThreadIdentifier))
+			return FALSE;
+		_A(g_pHookDataList);
+		pHookData = &g_pHookDataList->GetAt(Position);
+		return TRUE;
+	}
+	static BOOL FindHookData(CHookData& HookData, DWORD nThreadIdentifier = GetCurrentThreadId())
+	{
+		_A(_pAtlModule);
+		CComCritSecLock<CComCriticalSection> DataLock(_pAtlModule->m_csStaticDataInitAndTypeInfo);
+		POSITION Position;
+		if(!FindHook(Position, nThreadIdentifier))
+			return FALSE;
+		_A(g_pHookDataList);
+		HookData = g_pHookDataList->GetAt(Position);
+		return TRUE;
+	}
+	CHookData* GetHookData() const
+	{
+		return m_pHookData;
+	}
+	static VOID HandleMessage(WPARAM, typename CTraits::CMessageData&);
+
+public:
+// CThreadMessageHookT
+	CThreadMessageHookT() :
+		m_pHookData(NULL)
+	{
+	}
+	~CThreadMessageHookT()
+	{
+		Terminate();
+	}
+	VOID Initialize()
+	{
+		_A(!m_pHookData);
+		const HINSTANCE hInstance = NULL; //_AtlBaseModule.GetModuleInstance()
+		const DWORD nThreadIdentifier = GetCurrentThreadId();
+		const HHOOK hHook = SetWindowsHookEx(CTraits::GetHookIdentifier(), HookProc, hInstance, nThreadIdentifier);
+		__E(hHook);
+		_A(_pAtlModule);
+		CComCritSecLock<CComCriticalSection> DataLock(_pAtlModule->m_csStaticDataInitAndTypeInfo);
+		if(!g_pHookDataList)
+			g_pHookDataList = new CRoListT<CHookData>;
+		const POSITION Position = g_pHookDataList->AddTail();
+		CHookData& HookData = g_pHookDataList->GetAt(Position);
+		HookData.m_nThreadIdentifier = nThreadIdentifier;
+		HookData.m_hHook = hHook;
+		m_pHookData = &HookData;
+	}
+	VOID Terminate()
+	{
+		if(m_pHookData)
+		{
+			HHOOK hHook = NULL;
+			{
+				_A(_pAtlModule);
+				CComCritSecLock<CComCriticalSection> DataLock(_pAtlModule->m_csStaticDataInitAndTypeInfo);
+				POSITION Position = NULL;
+				if(FindHook(Position))
+				{
+					_A(m_pHookData == &g_pHookDataList->GetAt(Position));
+					hHook = g_pHookDataList->GetAt(Position).m_hHook;
+					g_pHookDataList->RemoveAt(Position);
+					if(g_pHookDataList->IsEmpty())
+					{
+						delete g_pHookDataList;
+						g_pHookDataList = NULL;
+					}
+				} else
+					_A(FALSE);
+				m_pHookData = NULL;
+			}
+			if(hHook)
+				_W(UnhookWindowsHookEx(hHook));
+		}
+	}
+};
+
+template <typename T, typename CTraits, typename CHookData>
+__declspec(selectany) CRoListT<CHookData>* CThreadMessageHookT<T, CTraits, CHookData>::g_pHookDataList = NULL;
 
