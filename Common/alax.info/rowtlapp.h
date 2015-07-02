@@ -1,11 +1,11 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2006-2012
-// Created by Roman Ryltsov roman@alax.info
+// Template class library; extends Widnows SDK, ATL, WTL
 // 
-// $Id$
+// Copyright (C) Roman Ryltsov, 2006-2015
+// Created by Roman Ryltsov roman@alax.info
 //
-// A permission to use the source code is granted as long as reference to 
-// source website http://alax.info is retained.
+// A permission to re-use this source code is granted as long as copyright notice and 
+// reference to source website http://alax.info is retained.
 
 #pragma once
 

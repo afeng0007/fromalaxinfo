@@ -1,23 +1,15 @@
 ////////////////////////////////////////////////////////////
+// Template class library; extends Widnows SDK, ATL, WTL
+// 
 // Copyright (C) Roman Ryltsov, 2006-2015
 // Created by Roman Ryltsov roman@alax.info
 //
-// A permission to use the source code is granted as long as reference to 
-// source website http://alax.info is retained.
+// A permission to re-use this source code is granted as long as copyright notice and 
+// reference to source website http://alax.info is retained.
 
 #pragma once
 
 #include <atlcoll.h>
-
-#if !defined(_A)
-	#define _A ATLASSERT
-#endif
-#if !defined(_W)
-	#define _W ATLVERIFY
-#endif
-#if !defined(__D)
-	#define __D ATLENSURE_THROW
-#endif
 
 ////////////////////////////////////////////////////////////
 // CRoIterativeTraitsBase

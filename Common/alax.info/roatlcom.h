@@ -1,9 +1,11 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2006-2014
+// Template class library; extends Widnows SDK, ATL, WTL
+// 
+// Copyright (C) Roman Ryltsov, 2006-2015
 // Created by Roman Ryltsov roman@alax.info
 //
-// A permission to use the source code is granted as long as reference to 
-// source website http://alax.info is retained.
+// A permission to re-use this source code is granted as long as copyright notice and 
+// reference to source website http://alax.info is retained.
 
 #pragma once
 
@@ -14,9 +16,23 @@
 #include "roatlbase.h"
 #include "roatlcollections.h"
 
+////////////////////////////////////////////////////////////
+// Version
+
 #if !defined(_WIN32_WINNT_WIN7)
 	#define _WIN32_WINNT_WIN7 0x0601
 #endif // !defined(_WIN32_WINNT_WIN7)
+
+#if !defined(_versionhelpers_H_INCLUDED_)
+
+inline bool IsWindowsVistaOrGreater()
+{
+	OSVERSIONINFOEX VersionInformation = { sizeof VersionInformation };
+	GetVersionEx((OSVERSIONINFO*) &VersionInformation);
+	return VersionInformation.dwMajorVersion >= 6; // Windows Vista, Windows Server 2008
+}
+
+#endif // !defined(_versionhelpers_H_INCLUDED_)
 
 ////////////////////////////////////////////////////////////
 // _Z
@@ -366,30 +382,30 @@ public:
 
 public:
 // CObjectPtrT
-	CLocalObjectPtr() throw()
+	CLocalObjectPtr()
 	{
 		m_Instance.SetVoid(NULL);
 		m_Instance.InternalFinalConstructAddRef();
-#if _MSC_VER >= 1400
-		ATLVERIFY(SUCCEEDED(m_Instance._AtlInitialConstruct()));
-#endif // _MSC_VER >= 1400
+		#if _MSC_VER >= 1400
+			ATLVERIFY(SUCCEEDED(m_Instance._AtlInitialConstruct()));
+		#endif // _MSC_VER >= 1400
 		ATLVERIFY(SUCCEEDED(m_Instance.FinalConstruct()));
 		ATLVERIFY(SUCCEEDED(m_Instance._AtlFinalConstruct()));
 		m_Instance.InternalFinalConstructRelease();
 		m_Instance.InternalAddRef();
 	}
-	~CLocalObjectPtr() throw()
+	~CLocalObjectPtr()
 	{
 	}
-	operator const _Object* () const throw()
-	{
-		return &m_Instance;
-	}
-	operator _Object* () throw()
+	operator const _Object* () const
 	{
 		return &m_Instance;
 	}
-	_Object* operator -> () throw()
+	operator _Object* ()
+	{
+		return &m_Instance;
+	}
+	_Object* operator -> ()
 	{
 		return &m_Instance;
 	}
@@ -653,13 +669,13 @@ typedef CActiveObjectT<> CActiveObject;
 ////////////////////////////////////////////////////////////
 // CThreadT
 
-template <typename _Owner>
+template <typename COwner>
 class ATL_NO_VTABLE CThreadT :
 	public CComObjectRootEx<CComMultiThreadModelNoCS>,
 	public IUnknown
 {
 protected:
-	typedef CThreadT<_Owner> CThread;
+	typedef CThreadT<COwner> CThread;
 
 public:
 
@@ -667,140 +683,196 @@ BEGIN_COM_MAP(CThreadT)
 END_COM_MAP()
 
 public:
-	typedef DWORD (_Owner::*OWNERTHREADPROC)(CThread* pThread, CEvent& InitializationEvent, CEvent& TerminationEvent);
+	typedef DWORD (COwner::*OWNERTHREADPROC)(CThread* pThread, CEvent& InitializationEvent, CEvent& TerminationEvent);
+
+	////////////////////////////////////////////////////////
+	// CMessageQueue
+
+	class CMessageQueue
+	{
+	public:
+	// CMessageQueue
+		CMessageQueue()
+		{
+			MSG Message;
+			PeekMessage(&Message, NULL, WM_USER, WM_USER, PM_NOREMOVE);
+		}
+		BOOL Wait(DWORD nTimeoutTime = INFINITE)
+		{
+			const DWORD nWaitResult = MsgWaitForMultipleObjects(0, NULL, FALSE, nTimeoutTime, QS_POSTMESSAGE);
+			_Z5_WAITRESULT(nWaitResult);
+			_A(nWaitResult == WAIT_OBJECT_0 || nWaitResult == WAIT_TIMEOUT && nTimeoutTime != INFINITE);
+			return nWaitResult == WAIT_OBJECT_0;
+		}
+		BOOL Peek(UINT& nMessage)
+		{
+			MSG Message;
+			if(!PeekMessage(&Message, NULL, 0, 0, PM_REMOVE))
+				return FALSE;
+			nMessage = Message.message;
+			return TRUE;
+		}
+		static VOID Post(DWORD nIdentifier, UINT nMessage, WPARAM wParam = 0, LPARAM lParam = 0)
+		{
+			_A(nIdentifier);
+			_W(PostThreadMessage(nIdentifier, nMessage, wParam, lParam));
+		}
+	};
 
 private:
-	_Owner* m_pOwner;
+	COwner* m_pOwner;
 	OWNERTHREADPROC m_pOwnerThreadProc;
 	CEvent m_InitializationEvent;
 	CEvent m_TerminationEvent;
-	CHandle m_ThreadHandle;
-	DWORD m_nThreadIdentifier;
-	DWORD m_nThreadExitCode;
+	CHandle m_Handle;
+	DWORD m_nIdentifier;
 
-	DWORD ThreadProc() throw()
+	DWORD ThreadProc()
 	{
 		DWORD nResult;
 		_ATLTRY
 		{
-			ATLTRACE(atlTraceGeneral, 3, _T("Thread %d (0x%x) has been started\n"), GetCurrentThreadId(), GetCurrentThreadId());
+			ATLTRACE(atlTraceGeneral, 3, _T("Starting thread %d (0x%X)\n"), GetCurrentThreadId(), GetCurrentThreadId());
 			ATLASSERT(m_pOwner && m_pOwnerThreadProc);
 			nResult = (m_pOwner->*m_pOwnerThreadProc)(this, m_InitializationEvent, m_TerminationEvent);
-			ATLTRACE(atlTraceGeneral, 3, _T("Thread %d (0x%x) is being completed with result %d\n"), GetCurrentThreadId(), GetCurrentThreadId(), nResult);
+			ATLTRACE(atlTraceGeneral, 3, _T("Stopping thread %d (0x%X), result %d (0x%X)\n"), GetCurrentThreadId(), GetCurrentThreadId(), nResult, nResult);
 		}
 		_ATLCATCH(Exception)
 		{
 			//_Z_EXCEPTION();
-			ATLTRACE(atlTraceException, 1, _T("An exception 0x%08X has been caught in thread %d\n"), Exception.m_hr, GetCurrentThreadId());
-			nResult = Exception.m_hr;
+			ATLTRACE(atlTraceException, 1, _T("An exception 0x%08X has been caught in thread %d (0x%X)\n"), (HRESULT) Exception, GetCurrentThreadId(), GetCurrentThreadId());
+			nResult = (HRESULT) Exception;
 		}
 		_ATLCATCHALL()
 		{
 			//_Z_EXCEPTION();
-			ATLTRACE(atlTraceException, 1, _T("An exception has been caught in thread %d\n"), GetCurrentThreadId());
+			ATLTRACE(atlTraceException, 1, _T("An exception has been caught in thread %d (0x%X)\n"), GetCurrentThreadId(), GetCurrentThreadId());
 			nResult = E_FAIL;
 		}
 		return nResult;
 	}
-	static DWORD WINAPI ThreadProc(CThreadT* pThread) throw()
+	static DWORD WINAPI ThreadProc(CThreadT* pThread)
 	{
 		return pThread->ThreadProc();
 	}
 
 public:
 // CThreadT
-	CThreadT() throw() :
+	CThreadT() :
 		m_pOwner(NULL),
 		m_pOwnerThreadProc(NULL),
 		m_InitializationEvent(NULL, TRUE, FALSE, NULL),
 		m_TerminationEvent(NULL, TRUE, FALSE, NULL),
-		m_nThreadIdentifier(0),
-		m_nThreadExitCode(0)
+		m_nIdentifier(0)
 	{
 		ATLTRACE(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
 	}
-	~CThreadT() throw()
+	~CThreadT()
 	{
 		ATLTRACE(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
 		Terminate();
 	}
-	const CHandle& GetHandle() const throw()
+	const CHandle& GetHandle() const
 	{
-		return m_ThreadHandle;
+		return m_Handle;
 	}
-	DWORD GetIdentifier() const throw()
+	DWORD GetIdentifier() const
 	{
-		return m_nThreadIdentifier;
+		return m_nIdentifier;
 	}
-	DWORD GetExitCode() const throw()
+	BOOL GetExitCode(DWORD& nExitCode) const
 	{
-		// TODO: An option to wait for exit code
-		return m_nThreadExitCode;
+		return GetExitCodeThread(m_Handle, &nExitCode);
 	}
-	VOID Initialize(_Owner* pOwner, OWNERTHREADPROC pOwnerThreadProc, CEvent** ppInitializationEvent)
+	BOOL IsStillActive() const
+	{
+		if(!m_Handle)
+			return FALSE;
+		DWORD nExitCode;
+		__E(GetExitCode(nExitCode));
+		return nExitCode == STILL_ACTIVE;
+	}
+	VOID Initialize(COwner* pOwner, OWNERTHREADPROC pOwnerThreadProc, CEvent** ppInitializationEvent)
 	{
 		ATLASSERT(!m_pOwner && pOwner);
 		ATLASSERT(ppInitializationEvent);
 		m_pOwner = pOwner;
 		m_pOwnerThreadProc = pOwnerThreadProc;
-		m_nThreadExitCode = 0;
 		ATLASSERT(WaitForSingleObject(m_TerminationEvent, 0) == WAIT_TIMEOUT);
-		m_ThreadHandle.Attach(CreateThreadT<CThreadT>(NULL, 0, ThreadProc, this, CREATE_SUSPENDED, &m_nThreadIdentifier));
-		ATLWINCHECK(m_ThreadHandle);
-		ATLASSERT(m_nThreadIdentifier);
-		ATLTRACE(atlTraceGeneral, 3, _T("Thread %d (0x%x) has been started from thread %d\n"), m_nThreadIdentifier, m_nThreadIdentifier, GetCurrentThreadId());
-		ResumeThread(m_ThreadHandle);
+		static const DWORD g_nFlags = 0; //CREATE_SUSPENDED;
+		m_Handle.Attach(CreateThreadT<CThreadT>(NULL, 0, ThreadProc, this, g_nFlags, &m_nIdentifier));
+		ATLWINCHECK(m_Handle);
+		ATLASSERT(m_nIdentifier);
+		ATLTRACE(atlTraceGeneral, 3, _T("Thread %d (0x%X) started from thread %d (0x%X)\n"), m_nIdentifier, m_nIdentifier, GetCurrentThreadId(), GetCurrentThreadId());
+		//ResumeThread(m_Handle);
 		*ppInitializationEvent = &m_InitializationEvent;
 	}
-	BOOL Initialize(_Owner* pOwner, OWNERTHREADPROC pOwnerThreadProc)
+	BOOL Initialize(COwner* pOwner, OWNERTHREADPROC pOwnerThreadProc)
 	{
 		CEvent* pInitializationEvent;
 		Initialize(pOwner, pOwnerThreadProc, &pInitializationEvent);
 		ATLASSERT(pInitializationEvent == &m_InitializationEvent);
-		HANDLE phObjects[] = { m_ThreadHandle, m_InitializationEvent };
-		DWORD nWaitResult = WaitForMultipleObjects(_countof(phObjects), phObjects, FALSE, INFINITE);
+		const HANDLE phObjects[] = { m_Handle, m_InitializationEvent };
+		const DWORD nWaitResult = WaitForMultipleObjects(_countof(phObjects), phObjects, FALSE, INFINITE);
 		ATLASSERT((nWaitResult - WAIT_OBJECT_0) < _countof(phObjects));
 		if(nWaitResult == WAIT_OBJECT_0 + 0)
 		{
-			ATLVERIFY(GetExitCodeThread(m_ThreadHandle, &m_nThreadExitCode));
-			m_ThreadHandle.Close();
-			SetLastError(m_nThreadExitCode);
+			DWORD nExitCode;
+			ATLVERIFY(GetExitCodeThread(m_Handle, &nExitCode));
+			m_Handle.Close();
+			SetLastError(nExitCode);
 			return FALSE;
 		}
 		return TRUE;
 	}
-	BOOL Terminate(ULONG nTimeout = INFINITE, BOOL bForceTermination = TRUE) throw()
+	BOOL Terminate(ULONG nTimeout = INFINITE, BOOL bForce = TRUE)
 	{
-		if(!m_ThreadHandle)
+		if(!m_Handle)
 			return FALSE;
-		ATLTRACE(atlTraceGeneral, 3, _T("Thread %d (0x%x) is being terminated from thread %d, nTimeout %d, bForceTermination %d\n"), m_nThreadIdentifier, m_nThreadIdentifier, GetCurrentThreadId(), nTimeout, bForceTermination);
+		ATLTRACE(atlTraceGeneral, 3, _T("Thread %d (0x%X) is being terminated from thread %d (0x%X), nTimeout %d, bForce %d\n"), m_nIdentifier, m_nIdentifier, GetCurrentThreadId(), GetCurrentThreadId(), nTimeout, bForce);
 		ATLVERIFY(m_TerminationEvent.Set());
-		if(GetCurrentThreadId() != m_nThreadIdentifier)
+		if(GetCurrentThreadId() != m_nIdentifier)
 		{
-			const DWORD nWaitResult = WaitForSingleObject(m_ThreadHandle, nTimeout);
-			ATLTRACE(atlTraceGeneral, 4, _T("m_nThreadIdentifier %d, nWaitResult %d\n"), m_nThreadIdentifier, nWaitResult);
+			const DWORD nWaitResult = WaitForSingleObject(m_Handle, nTimeout);
+			ATLTRACE(atlTraceGeneral, 4, _T("m_nIdentifier %d (0x%X), nWaitResult 0x%X\n"), m_nIdentifier, m_nIdentifier, nWaitResult);
 			ATLASSERT(nWaitResult == WAIT_OBJECT_0 || nWaitResult == WAIT_TIMEOUT && nTimeout != INFINITE);
 			if(nWaitResult != WAIT_OBJECT_0)
 			{
-				if(!bForceTermination)
+				if(!bForce)
 					return FALSE;
-				ATLTRACE(atlTraceGeneral, 2, _T("Thread %d (0x%x) is being forcefully terminated from thread %d\n"), m_nThreadIdentifier, m_nThreadIdentifier, GetCurrentThreadId());
-				ATLVERIFY(TerminateThread(m_ThreadHandle, (DWORD) E_FAIL));
+				ATLTRACE(atlTraceGeneral, 2, _T("Thread %d (0x%X) is being forcefully terminated from thread %d (0x%X)\n"), m_nIdentifier, m_nIdentifier, GetCurrentThreadId(), GetCurrentThreadId());
+				ATLVERIFY(TerminateThread(m_Handle, (DWORD) HRESULT_FROM_WIN32(ERROR_TIMEOUT)));
 			}
-			ATLTRACE(atlTraceGeneral, 3, _T("Thread %d (0x%x) has been terminated from thread %d\n"), m_nThreadIdentifier, m_nThreadIdentifier, GetCurrentThreadId());
+			ATLTRACE(atlTraceGeneral, 3, _T("Thread %d (0x%x) has been terminated from thread %d\n"), m_nIdentifier, m_nIdentifier, GetCurrentThreadId());
 		} else
-			ATLTRACE(atlTraceGeneral, 3, _T("Thread %d is self-terminated, no need to synchronize\n"), m_nThreadIdentifier);
-		m_ThreadHandle.Close();
+			ATLTRACE(atlTraceGeneral, 3, _T("Thread %d (0x%X) is self-terminated\n"), m_nIdentifier, m_nIdentifier);
+		m_Handle.Close();
 		return TRUE;
 	}
-	VOID AsynchronousTerminate() throw()
+	VOID AsynchronousTerminate()
 	{
 		ATLVERIFY(m_TerminationEvent.Set());
+	}
+	VOID PostMessage(UINT nMessage, WPARAM wParam = 0, LPARAM lParam = 0)
+	{
+		_A(m_Handle);
+		_W(PostThreadMessage(m_nIdentifier, nMessage, wParam, lParam));
 	}
 };
 
 ////////////////////////////////////////////////////////
 // CTimedEventDaemon
+
+// TODO: Clean up tracing
+#if _MSC_VER >= 1800 // Visual Studio 2013
+	#if defined(_DEBUG)
+		#define atlTraceTimedEvent 0 // Disabled for stock ATLTRACE
+	#else
+		#define atlTraceTimedEvent ((INT) -1) // Disabled for my ATLTRACE
+	#endif
+#else
+	#define atlTraceTimedEvent atlTraceCore
+#endif
 
 class ATL_NO_VTABLE CTimedEventDaemon :
 	public CComObjectRootEx<CComMultiThreadModelNoCS>,
@@ -833,10 +905,10 @@ public:
 
 	public:
 	// CTimedEvent
-		CTimedEvent() throw()
+		CTimedEvent()
 		{
 		}
-		CTimedEvent(ULONG nDelay, ULONG nResolution, TIMECALLBACK* pTimeProc, DWORD_PTR nUser, UINT nFlags) throw() :
+		CTimedEvent(ULONG nDelay, ULONG nResolution, TIMECALLBACK* pTimeProc, DWORD_PTR nUser, UINT nFlags) :
 			m_nDelay(nDelay),
 			m_nResolution(nResolution), 
 			m_pTimeProc(pTimeProc), 
@@ -857,14 +929,14 @@ public:
 	{
 	public:
 	// CTimedEventList
-		BOOL IsValidPosition(POSITION Position) const throw()
+		BOOL IsValidPosition(POSITION Position) const
 		{
 			for(POSITION CurrentPosition = GetHeadPosition(); CurrentPosition; GetNext(CurrentPosition))
 				if(CurrentPosition == Position)
 					return TRUE;
 			return FALSE;
 		}
-		POSITION GetEarliestActivePosition() const throw()
+		POSITION GetEarliestActivePosition() const
 		{
 			POSITION BestPosition = NULL;
 			for(POSITION Position = GetHeadPosition(); Position; GetNext(Position))
@@ -887,19 +959,19 @@ public:
 private:
 	static BOOL g_bDefaultTimedEventDaemonTerminated;
 	static CTimedEventDaemon* g_pDefaultTimedEventDaemon;
-#if _DEVELOPMENT
-	DWORD m_nSignature;
-#endif // _DEVELOPMENT
+	#if _DEVELOPMENT
+		DWORD m_nSignature;
+	#endif // _DEVELOPMENT
 	mutable CComAutoCriticalSection m_DataCriticalSection;
 	CTimedEventList m_TimedEventList;
 	CEvent m_ListChangeEvent;
-#if defined(_WINDLL)
-	CEvent m_ThreadPreTerminationEvent;
-#endif // defined(_WINDLL)
+	#if defined(_WINDLL)
+		CEvent m_ThreadPreTerminationEvent;
+	#endif // defined(_WINDLL)
 	CObjectPtr<CThread> m_pThread;
 	CEvent m_IdlenessEvent;
 
-	static VOID STDMETHODCALLTYPE DestroyDefaultTimedEventDaemon(DWORD_PTR nParameter) throw()
+	static VOID STDMETHODCALLTYPE DestroyDefaultTimedEventDaemon(DWORD_PTR nParameter)
 	{
 		_ATLTRY
 		{
@@ -910,10 +982,10 @@ private:
 				g_bDefaultTimedEventDaemonTerminated = TRUE;
 				if(g_pDefaultTimedEventDaemon)
 				{
-#if defined(_DEBUG) || _TRACE
-					// NOTE: Add a lock removed by timeSetEvent
-					_pAtlModule->Lock();
-#endif // defined(_DEBUG) || _TRACE
+					#if defined(_DEBUG) || _TRACE
+						// NOTE: Add a lock removed by timeSetEvent
+						_pAtlModule->Lock();
+					#endif // defined(_DEBUG) || _TRACE
 					pTimedEventDaemon.Swap(&g_pDefaultTimedEventDaemon);
 				}
 			}
@@ -940,7 +1012,7 @@ private:
 		for(; ; )
 		{
 			const DWORD nWaitResult = WaitForMultipleObjects(DIM(phObjects), phObjects, FALSE, INFINITE);
-			ATLTRACE(atlTraceSync, 5, _T("nWaitResult 0x%x\n"), nWaitResult);
+			_Z5_WAITRESULT(nWaitResult);
 			_A((nWaitResult - WAIT_OBJECT_0) < DIM(phObjects));
 			if(nWaitResult != WAIT_OBJECT_0 + 1) // m_ListChangeEvent
 				break;
@@ -952,23 +1024,23 @@ private:
 					CComCritSecLock<CComAutoCriticalSection> DataLock(m_DataCriticalSection);
 					CurrentPosition = m_TimedEventList.GetEarliestActivePosition();
 					_W(m_ListChangeEvent.Reset());
-					ATLTRACE(atlTraceCore, 4, _T("%d timed events on the list\n"), m_TimedEventList.GetCount());
+					_Z4(atlTraceTimedEvent, 4, _T("%d timed events on the list\n"), m_TimedEventList.GetCount());
 					if(!CurrentPosition)
 					{
-						ATLTRACE(atlTraceCore, 4, _T("No more active timed events found\n"));
+						_Z4(atlTraceTimedEvent, 4, _T("No more active timed events found\n"));
 						break;
 					}
 					const CTimedEvent& CurrentTimedEvent = m_TimedEventList.GetAt(CurrentPosition);
 					nDelay = (LONG) (CurrentTimedEvent.m_nTime + CurrentTimedEvent.m_nDelay) - GetTickCount();
 				}
 				const DWORD nWaitResult = (nDelay > 0) ? WaitForMultipleObjects(DIM(phObjects), phObjects, FALSE, nDelay) : WAIT_TIMEOUT;
-				ATLTRACE(atlTraceSync, 5, _T("nWaitResult 0x%x\n"), nWaitResult);
+				_Z5_WAITRESULT(nWaitResult);
 				_A((nWaitResult - WAIT_OBJECT_0) < DIM(phObjects) || nWaitResult == WAIT_TIMEOUT);
 				if(nWaitResult == WAIT_OBJECT_0 + 0) // Termination
 					break;
 				if(nWaitResult == WAIT_OBJECT_0 + 1) // m_ListChangeEvent
 				{
-					ATLTRACE(atlTraceCore, 4, _T("Timed event list changed\n"));
+					_Z4(atlTraceTimedEvent, 4, _T("Timed event list changed\n"));
 					continue;
 				}
 				TIMECALLBACK* pTimeProc = NULL;
@@ -977,7 +1049,7 @@ private:
 					CComCritSecLock<CComAutoCriticalSection> DataLock(m_DataCriticalSection);
 					if(!m_TimedEventList.IsValidPosition(CurrentPosition))
 						continue;
-					ATLTRACE(atlTraceCore, 4, _T("Firing an event, CurrentPosition 0x%08X\n"), CurrentPosition);
+					_Z4(atlTraceTimedEvent, 4, _T("Firing an event, CurrentPosition 0x%p\n"), CurrentPosition);
 					CTimedEvent& CurrentTimedEvent = m_TimedEventList.GetAt(CurrentPosition);
 					CurrentTimedEvent.m_nTime = GetTickCount();
 					CurrentTimedEvent.m_bShot = TRUE;
@@ -1013,7 +1085,7 @@ private:
 
 public:
 // CTimedEventDaemon
-	static CObjectPtr<CTimedEventDaemon> GetDefaultTimedEventDaemon() throw()
+	static CObjectPtr<CTimedEventDaemon> GetDefaultTimedEventDaemon()
 	{
 		CObjectPtr<CTimedEventDaemon> pTimedEventDaemon;
 		CComCritSecLock<CComCriticalSection> Lock(_pAtlModule->m_csStaticDataInitAndTypeInfo);
@@ -1027,10 +1099,10 @@ public:
 					pTimedEventDaemon.Construct()->Initialize();
 					_pAtlModule->AddTermFunc(DestroyDefaultTimedEventDaemon, (DWORD_PTR) (CTimedEventDaemon*) pTimedEventDaemon);
 					g_pDefaultTimedEventDaemon = pTimedEventDaemon.Detach();
-#if defined(_DEBUG) || _TRACE
-					// NOTE: Exclude object's module lock so that it does not affect termination lock count report
-					_pAtlModule->Unlock();
-#endif // defined(_DEBUG) || _TRACE
+					#if defined(_DEBUG) || _TRACE
+						// NOTE: Exclude object's module lock so that it does not affect termination lock count report
+						_pAtlModule->Unlock();
+					#endif // defined(_DEBUG) || _TRACE
 				}
 				_ATLCATCHALL()
 				{
@@ -1041,20 +1113,20 @@ public:
 		}
 		return pTimedEventDaemon;
 	}
-	CTimedEventDaemon() throw() :
+	CTimedEventDaemon() :
 		m_ListChangeEvent(TRUE, FALSE),
 		m_IdlenessEvent(TRUE, TRUE)
 	{
-		ATLTRACE(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
-#if _DEVELOPMENT
-		// WARN: CTimedEventDaemon has unresolved problems with late termination, so 
-		//       we mark used memory block to distinguish in head trace
-		m_nSignature = 0x89674523;
-#endif // _DEVELOPMENT
+		_Z4_THIS();
+		#if _DEVELOPMENT
+			// WARN: CTimedEventDaemon has unresolved problems with late termination, so 
+			//       we mark used memory block to distinguish in head trace
+			m_nSignature = 0x89674523;
+		#endif // _DEVELOPMENT
 	}
-	~CTimedEventDaemon() throw()
+	~CTimedEventDaemon()
 	{
-		ATLTRACE(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		_Z4_THIS();
 		_A(!m_pThread);
 	}
 	VOID Initialize()
@@ -1066,7 +1138,7 @@ public:
 		_A(!m_pThread);
 		__E(m_pThread.Construct()->Initialize(this, &CTimedEventDaemon::ThreadProc));
 	}
-	VOID Terminate() throw()
+	VOID Terminate()
 	{
 		CObjectPtr<CThread> pThread;
 		{
@@ -1086,7 +1158,7 @@ public:
 					pThread.Release();
 					const HANDLE phObjects[] = { ThreadPreTerminationEvent, Thread };
 					const DWORD nWaitResult = WaitForMultipleObjects(DIM(phObjects), phObjects, FALSE, INFINITE);
-					_Z5(atlTraceSync, 5, _T("nWaitResult 0x%x\n"), nWaitResult);
+					_Z5_WAITRESULT(nWaitResult);
 					_A(nWaitResult - WAIT_OBJECT_0 < DIM(phObjects));
 					return;
 				}
@@ -1094,7 +1166,7 @@ public:
 			pThread->Terminate();
 		}
 	}
-	HRESULT SetEvent(ULONG nDelay, ULONG nResolution, TIMECALLBACK* pTimeProc, DWORD_PTR nUser, UINT nFlags, UINT_PTR* pnEvent) throw()
+	HRESULT SetEvent(ULONG nDelay, ULONG nResolution, TIMECALLBACK* pTimeProc, DWORD_PTR nUser, UINT nFlags, UINT_PTR* pnEvent)
 	{
 		_ATLTRY
 		{
@@ -1104,7 +1176,7 @@ public:
 			_W(m_ListChangeEvent.Set());
 			_A(pnEvent);
 			*pnEvent = (UINT_PTR) Position;
-			ATLTRACE(atlTraceCore, 4, _T("An event has been set, Position 0x%08X, nDelay %d, nFlags 0x%x, %d events on the list\n"), Position, nDelay, nFlags, m_TimedEventList.GetCount());
+			_Z4(atlTraceTimedEvent, 4, _T("An event has been set, Position 0x%p, nDelay %d, nFlags 0x%X, %d events on the list\n"), Position, nDelay, nFlags, m_TimedEventList.GetCount());
 		}
 		_ATLCATCH(Exception)
 		{
@@ -1112,34 +1184,35 @@ public:
 		}
 		return S_OK;
 	}
-	HRESULT KillEvent(UINT_PTR nEvent) throw()
+	HRESULT KillEvent(UINT_PTR nEvent)
 	{
 		BOOL bConcurrentlyActive = FALSE;
 		{
 			CComCritSecLock<CComAutoCriticalSection> DataLock(m_DataCriticalSection);
 			const POSITION Position = (POSITION) nEvent;
-			ATLTRACE(atlTraceCore, 4, _T("An event is being killed, Position 0x%08X\n"), Position);
+			_Z4(atlTraceTimedEvent, 4, _T("An event is being killed, Position 0x%p\n"), Position);
 			_D(m_TimedEventList.IsValidPosition(Position), E_INVALIDARG);
 			if(m_TimedEventList.GetAt(Position).m_bActive)
 				if(m_pThread && m_pThread->GetIdentifier() != GetCurrentThreadId())
 					bConcurrentlyActive = TRUE;
 			m_TimedEventList.RemoveAt(Position);
 			_W(m_ListChangeEvent.Set());
-			ATLTRACE(atlTraceCore, 4, _T("An event has been killed, Position 0x%08X, %d more events on the list\n"), Position, m_TimedEventList.GetCount());
+			_Z4(atlTraceTimedEvent, 4, _T("An event has been killed, Position 0x%p, %d more events on the list\n"), Position, m_TimedEventList.GetCount());
 		}
 		if(bConcurrentlyActive)
 		{
-			static const DWORD g_nTimeout = 5000;
-			DWORD nWaitResult = WaitForSingleObject(m_IdlenessEvent, g_nTimeout);
+			static const DWORD g_nTimeout = 5 * 1000; // 5 seconds
+			const DWORD nWaitResult = WaitForSingleObject(m_IdlenessEvent, g_nTimeout);
+			//_Z5_WAITRESULT(nWaitResult);
 			_A(nWaitResult == WAIT_OBJECT_0 || nWaitResult == WAIT_TIMEOUT);
 			if(nWaitResult != WAIT_OBJECT_0)
-				ATLTRACE(atlTraceGeneral, 2, _T("Worker thread failed to get idle within reasonable time, nWaitResult %d\n"), nWaitResult);
+				_Z2(atlTraceTimedEvent, 2, _T("Worker thread failed to get idle within reasonable time, nWaitResult 0x%X\n"), nWaitResult);
 		}
 		return S_OK;
 	}
 
 // Standard API substitution
-	static MMRESULT timeSetEvent(UINT nDelay, UINT nResolution, TIMECALLBACK* pTimeProc, DWORD_PTR nUser, UINT nFlags) throw()
+	static MMRESULT timeSetEvent(UINT nDelay, UINT nResolution, TIMECALLBACK* pTimeProc, DWORD_PTR nUser, UINT nFlags)
 	{
 		_A(nFlags == (TIME_CALLBACK_FUNCTION | TIME_PERIODIC) || nFlags == (TIME_CALLBACK_FUNCTION | TIME_ONESHOT));
 		UINT_PTR nEvent = 0;
@@ -1151,7 +1224,7 @@ public:
 		}
 		return (MMRESULT) nEvent;
 	}
-	static MMRESULT timeKillEvent(UINT uEvent) throw()
+	static MMRESULT timeKillEvent(UINT uEvent)
 	{
 		MMRESULT nResult = MMSYSERR_INVALPARAM;
 		if(_pAtlModule && _pAtlModule->cbSize)
@@ -1216,7 +1289,7 @@ public:
 			_W(IdlenessEvent.Set());
 		}
 	}
-	static VOID CALLBACK TimedEventProc(UINT_PTR nEvent, UINT, DWORD_PTR nUser, DWORD_PTR, DWORD_PTR) throw()
+	static VOID CALLBACK TimedEventProc(UINT_PTR nEvent, UINT, DWORD_PTR nUser, DWORD_PTR, DWORD_PTR)
 	{
 		_ATLTRY
 		{
@@ -1230,7 +1303,7 @@ public:
 
 public:
 // CTimedEventT
-	CTimedEventT() throw() :
+	CTimedEventT() :
 		m_nEvent(0),
 		m_IdlenessEvent(TRUE, TRUE)
 	{
@@ -1239,37 +1312,37 @@ public:
 		m_pHandler = NULL;
 #endif // defined(_DEBUG)
 	}
-	~CTimedEventT() throw()
+	~CTimedEventT()
 	{
 		Destroy();
 		static const DWORD g_nTimeout = 5 * 1000;
 		const DWORD nWaitResult = WaitForSingleObject(m_IdlenessEvent, g_nTimeout);
-		ATLTRACE(atlTraceSync, 5, _T("nWaitResult 0x%x\n"), nWaitResult);
+		_Z5_WAITRESULT(nWaitResult);
 		_A(nWaitResult == WAIT_OBJECT_0 || nWaitResult == WAIT_TIMEOUT);
 		if(nWaitResult != WAIT_OBJECT_0)
 			ATLTRACE(atlTraceGeneral, 2, _T("Worker thread failed to get idle within reasonable time, nWaitResult %d\n"), nWaitResult);
 	}
-	VOID Initialize(CTimedEventDaemon* pTimedEventDaemon) throw()
+	VOID Initialize(CTimedEventDaemon* pTimedEventDaemon)
 	{
 		_A(pTimedEventDaemon);
 		CComCritSecLock<CComAutoCriticalSection> DataLock(m_DataCriticalSection);
 		_A(!m_pTimedEventDaemon || m_pTimedEventDaemon == pTimedEventDaemon);
 		m_pTimedEventDaemon = pTimedEventDaemon;
 	}
-	const _Parameter& GetParameter() const throw()
+	const _Parameter& GetParameter() const
 	{
 		return m_Parameter;
 	}
-	VOID SetParameter(_Parameter Parameter) throw()
+	VOID SetParameter(_Parameter Parameter)
 	{
 		m_Parameter = Parameter;
 	}
-	UINT_PTR GetEvent() const throw()
+	UINT_PTR GetEvent() const
 	{
 		CComCritSecLock<CComAutoCriticalSection> DataLock(m_DataCriticalSection);
 		return m_nEvent;
 	}
-	BOOL IsActive() const throw()
+	BOOL IsActive() const
 	{
 		CComCritSecLock<CComAutoCriticalSection> DataLock(m_DataCriticalSection);
 		return m_nEvent != 0;
@@ -1303,7 +1376,7 @@ public:
 	{
 		return Create(pOwner, pHandler, nDelay, nResolution, TRUE);
 	}
-	VOID Destroy() throw()
+	VOID Destroy()
 	{
 		CObjectPtr<CTimedEventDaemon> pTimedEventDaemon;
 		UINT_PTR nEvent;
@@ -1330,7 +1403,7 @@ protected:
 
 public:
 // CSimpleTimedEventT
-	CSimpleTimedEventT() throw()
+	CSimpleTimedEventT()
 	{
 		__super::Initialize(CTimedEventDaemon::GetDefaultTimedEventDaemon());
 	}
@@ -1390,14 +1463,14 @@ public:
 
 	public:
 	// CCheck
-		CCheck() throw() :
+		CCheck() :
 			m_nThreadIdentifier(0)
 		{
-			ATLTRACE(atlTraceRefcount, 5, _T("this 0x%p\n"), this);
+			_Z5_THIS();
 		}
-		~CCheck() throw()
+		~CCheck()
 		{
-			ATLTRACE(atlTraceRefcount, 5, _T("this 0x%p\n"), this);
+			_Z5_THIS();
 			_A(!m_TimeoutEvent.IsActive());
 		}
 		VOID Initialize(const CString& sDescription, ULONG nTimeout)
@@ -1424,7 +1497,7 @@ private:
 
 public:
 // CDebugTimeCheck
-	static ULONG GetDefaultTimeout() throw()
+	static ULONG GetDefaultTimeout()
 	{
 		static const ULONG g_nTimeout = 5000;
 		return g_nTimeout;
@@ -1437,7 +1510,7 @@ public:
 	{
 		m_pCheck.Construct()->Initialize(CString(pszDescription), nTimeout);
 	}
-	~CDebugTimeCheck() throw()
+	~CDebugTimeCheck()
 	{
 		if(m_pCheck)
 			m_pCheck->Terminate();
@@ -1534,7 +1607,7 @@ __declspec(selectany) CTimedEventDaemon* CRoCriticalSections::g_pTimedEventDaemo
 ////////////////////////////////////////////////////////////
 // CRoCriticalSection, CRoCriticalSectionLock
 
-#if defined(_M_IX86) && (defined(_DEBUG) || _TRACE)
+#if defined(_DEBUG) || _TRACE
 
 #pragma warning(disable: 4748) // warning C4748: /GS can not protect parameters and local variables from local buffer overrun because optimizations are disabled in function
 #pragma optimize("", off)
@@ -1558,7 +1631,7 @@ public:
 
 	public:
 	// CLockContext
-		CLockContext(CRoCriticalSection* pCriticalSection, CONTEXT& ThreadContext, ULONG nTimeout) throw() :
+		CLockContext(CRoCriticalSection* pCriticalSection, CONTEXT& ThreadContext, ULONG nTimeout) :
 			m_CriticalSection(*pCriticalSection),
 			m_nThreadIdentifier(GetCurrentThreadId()),
 			m_ThreadContext(ThreadContext),
@@ -1586,15 +1659,23 @@ private:
 			CONTEXT LockedThreadContext = m_LockThreadContext;
 			CONTEXT LockingThreadContext = LockContext.m_ThreadContext;
 			CComCritSecLock<CComAutoCriticalSection> Lock(CDebugSymbols::GetGlobalCriticalSection());
-			ATLCORETRACE3(LockedThreadContext)(atlTraceGeneral, 2, _T("Thread %d locked the critical section 0x%08X, lock time call stack follows:\n"), nLockThreadIdentifier, this);
-			CDebugTraceCallStack::TraceCallStack(LockedThreadContext, 15, NULL);
+			#if defined(_DEBUG)
+				// NOTE: Debug builds don't have functions inlined so lock time stack is likely to be damaged anyway, let us just skip it
+				LockedThreadContext.ContextFlags = 0;
+			#endif // defined(_DEBUG)
+			if(LockedThreadContext.ContextFlags)
+			{
+				ATLCORETRACE3(LockedThreadContext)(atlTraceGeneral, 2, _T("Thread %d locked the critical section 0x%p, lock time call stack follows:\n"), nLockThreadIdentifier, this);
+				CDebugTraceCallStack::TraceCallStack(nLockThreadIdentifier, LockedThreadContext);
+			} else
+				ATLCORETRACE3(LockedThreadContext)(atlTraceGeneral, 2, _T("Thread %d locked the critical section 0x%p\n"), nLockThreadIdentifier, this);
 			ATLCORETRACE1(atlTraceGeneral, 2, _T("Thread %d current stack follows:\n"), nLockThreadIdentifier, this);
-			CDebugTraceCallStack::TraceCallStack(nLockThreadIdentifier, 15);
-			ATLCORETRACE3(LockingThreadContext)(atlTraceGeneral, 2, _T("Thread %d is trying to lock the critical section 0x%08X, call stack follows:\n"), LockContext.m_nThreadIdentifier, this);
-			CDebugTraceCallStack::TraceCallStack(LockingThreadContext, 15, NULL);
+			CDebugTraceCallStack::TraceCallStack(nLockThreadIdentifier);
+			ATLCORETRACE3(LockingThreadContext)(atlTraceGeneral, 2, _T("Thread %d is trying to lock the critical section 0x%p, call stack follows:\n"), LockContext.m_nThreadIdentifier, this);
+			CDebugTraceCallStack::TraceCallStack(LockContext.m_nThreadIdentifier, LockingThreadContext);
 			#pragma region MiniDump
-			#if !defined(_WIN64) 
-				#if !defined(_DEBUG) && defined(_TRACE) && _TRACE
+			#if defined(_WINDLL) && !defined(_WIN64) 
+				#if !defined(_DEBUG) && _TRACE
 					if(nTimeoutCount == 3)
 					{
 						typedef HRESULT (STDAPICALLTYPE *WRITEMINIDUMP)();
@@ -1626,15 +1707,15 @@ private:
 								ATLCORETRACE3(LockedThreadContext)(atlTraceGeneral, 2, _T("Failed to CreateProcess: 0x%08X\n"), nLockThreadIdentifier, AtlHresultFromLastError());
 						}
 					}
-				#endif // !defined(_DEBUG) && defined(_TRACE) && _TRACE
-			#endif // defined(_WIN64)
+				#endif // !defined(_DEBUG) && _TRACE
+			#endif // defined(_WINDLL) && !defined(_WIN64)
 			#pragma endregion
 			#if defined(_DEBUG)
 				_CrtDbgBreak(); // Break into debugger to investigate the issue
 			#endif // defined(_DEBUG)
 		}
 	}
-	static VOID CALLBACK LockTimeout(UINT_PTR nEvent, UINT, DWORD_PTR nParameter, DWORD_PTR, DWORD_PTR) throw()
+	static VOID CALLBACK LockTimeout(UINT_PTR nEvent, UINT, DWORD_PTR nParameter, DWORD_PTR, DWORD_PTR)
 	{
 		CLockContext* pLockContext = (CLockContext*) nParameter;
 		_A(pLockContext);
@@ -1652,20 +1733,20 @@ private:
 
 public:
 // CRoCriticalSection
-	CRoCriticalSection() throw()
+	CRoCriticalSection()
 	{
 		m_nLockThreadIdentifier = 0;
 		ZeroMemory(&m_LockThreadContext, sizeof m_LockThreadContext);
 	}
-	~CRoCriticalSection() throw()
+	~CRoCriticalSection()
 	{
 		_A(m_sec.LockCount < 0);
 	}
-	HRESULT Lock() throw()
+	HRESULT Lock()
 	{
 		_ATLTRY
 		{
-			CONTEXT ThreadContext = { CONTEXT_FULL };
+			CONTEXT ThreadContext;
 			if(!GetCurrentThreadContext(&ThreadContext))
 				ThreadContext.ContextFlags = 0;
 			CObjectPtr<CTimedEventDaemon> pTimedEventDaemon = CRoCriticalSections::GetTimedEventDaemon();
@@ -1683,15 +1764,6 @@ public:
 			const CInterlockedT<LONG>& nRecursionCount = reinterpret_cast<CInterlockedT<LONG>&>(m_sec.RecursionCount);
 			if(nRecursionCount == (LONG) 1) // First lock
 			{
-				// NOTE: Stack walk out to step out of this function and lock helper class method
-				//       Number of required step out steps depends on compiler settings and
-				//       is 3 for debug builds to step out of this function, lock helper Lock and constructor
-				//       and is 1 for release builds with inline any suitable option
-				CDebugSymbols::GlobalStackWalk(NULL, ThreadContext);
-				#if defined(_DEBUG)
-					CDebugSymbols::GlobalStackWalk(NULL, ThreadContext);
-					CDebugSymbols::GlobalStackWalk(NULL, ThreadContext);
-				#endif // defined(_DEBUG)
 				CComCritSecLock<CComAutoCriticalSection> GlobalLock(g_CriticalSection);
 				m_nLockThreadIdentifier = GetCurrentThreadId();
 				m_LockThreadContext = ThreadContext;
@@ -1706,7 +1778,7 @@ public:
 		}
 		return S_OK;
 	}
-	HRESULT Unlock() throw()
+	HRESULT Unlock()
 	{
 		{
 			CComCritSecLock<CComAutoCriticalSection> GlobalLock(g_CriticalSection);
@@ -1715,7 +1787,7 @@ public:
 			if(nRecursionCount == (LONG) 1) // Last lock
 			{
 				m_nLockThreadIdentifier = 0;
-				ZeroMemory(&m_LockThreadContext, sizeof m_LockThreadContext);
+				m_LockThreadContext.ContextFlags = 0; //ZeroMemory(&m_LockThreadContext, sizeof m_LockThreadContext);
 			}
 		}
 		return __super::Unlock();
@@ -1729,14 +1801,14 @@ public:
 __declspec(selectany) CComAutoCriticalSection CRoCriticalSection::g_CriticalSection;
 
 #if !defined(_WIN64) && defined(_WINDLL)
-	#if !defined(_DEBUG) && defined(_TRACE) && _TRACE
+	#if !defined(_DEBUG) && _TRACE
 
 		#define AVAILABILITY_INTERNALWRITEMINIDUMP
 
 		//#pragma comment(linker, "/EXPORT:WriteMiniDump=_WriteMiniDump@16,PRIVATE")
 
 		//extern "C" // __declspec(dllexport) 
-		ATLINLINE HRESULT STDMETHODCALLTYPE InternalWriteMiniDump(HWND hParentWindow, HINSTANCE hInstance, LPSTR pszCommandLine, INT nShowCommand) throw()
+		ATLINLINE HRESULT STDMETHODCALLTYPE InternalWriteMiniDump(HWND hParentWindow, HINSTANCE hInstance, LPSTR pszCommandLine, INT nShowCommand)
 		{
 			_ATLTRY
 			{
@@ -1751,7 +1823,7 @@ __declspec(selectany) CComAutoCriticalSection CRoCriticalSection::g_CriticalSect
 				Process.Attach(OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, nProcessIdentifier));
 				__E(Process);
 				TCHAR pszDirectory[MAX_PATH] = { 0 };
-				if(GetOsVersion() >= 0x00060000)
+				if(IsWindowsVistaOrGreater())
 				{
 					_W(SHGetSpecialFolderPath(NULL, pszDirectory, CSIDL_COMMON_APPDATA, TRUE));
 				} else
@@ -1785,28 +1857,8 @@ __declspec(selectany) CComAutoCriticalSection CRoCriticalSection::g_CriticalSect
 			return S_OK;
 		}
 
-	#endif // !defined(_DEBUG) && defined(_TRACE) && _TRACE
+	#endif // !defined(_DEBUG) && _TRACE
 #endif // !defined(_WIN64) && defined(_WINDLL)
-
-template <typename _CriticalSection>
-inline DWORD WINAPI DeadlockCriticalSectionThreadProcT(VOID* pvParameter) throw()
-{
-	_CriticalSection& CriticalSection = *(reinterpret_cast<_CriticalSection*>(pvParameter));
-	CComCritSecLock<_CriticalSection> Lock(CriticalSection);
-	_A(FALSE);
-	return 0;
-}
-
-template <typename _CriticalSection>
-inline VOID DeadlockCriticalSectionT(_CriticalSection& CriticalSection) throw()
-{
-	CComCritSecLock<_CriticalSection> Lock(CriticalSection);
-	DWORD nThreadIdentifier = 0;
-	CHandle ThreadHandle(CreateThreadT<_CriticalSection>(NULL, 0, DeadlockCriticalSectionThreadProcT<_CriticalSection>, &CriticalSection, 0, &nThreadIdentifier));
-	ATLTRACE(atlTraceGeneral, 1, _T("Deadlocked in threads %d and %d (spawned)\n"), GetCurrentThreadId(), nThreadIdentifier);
-	WaitForSingleObject(ThreadHandle, INFINITE);
-	_A(FALSE);
-}
 
 #pragma optimize("", on)
 #pragma warning(default: 4748)
@@ -1815,60 +1867,75 @@ inline VOID DeadlockCriticalSectionT(_CriticalSection& CriticalSection) throw()
 
 typedef CComAutoCriticalSection CRoCriticalSection;
 
-#endif // defined(_M_IX86) && (defined(_DEBUG) || _TRACE)
+#endif // defined(_DEBUG) || _TRACE
 
 typedef CComAutoCriticalSection CRoLightCriticalSection;
 
 #if TRUE
 
-template <typename _CriticalSection>
+template <typename CCriticalSection>
+inline BOOL TryLock(CCriticalSection& CriticalSection);
+
+#if _WIN32_WINNT >= 0x0400
+	template <>
+	inline BOOL TryLock<CComCriticalSection>(CComCriticalSection& CriticalSection)
+	{
+		return TryEnterCriticalSection(&CriticalSection.m_sec);
+	}
+	template <>
+	inline BOOL TryLock<CRoCriticalSection>(CRoCriticalSection& CriticalSection)
+	{
+		return TryEnterCriticalSection(&CriticalSection.m_sec);
+	}
+#endif // _WIN32_WINNT >= 0x0400
+
+template <typename CCriticalSection>
 class CRoCriticalSectionLockT
 {
 private:
-	_CriticalSection& m_CriticalSection;
+	CCriticalSection& m_CriticalSection;
 	BOOL m_bLocked;
 
-	CRoCriticalSectionLockT(const CRoCriticalSectionLockT&) throw();
-	CRoCriticalSectionLockT& operator = (const CRoCriticalSectionLockT&) throw();
+	CRoCriticalSectionLockT(const CRoCriticalSectionLockT&);
+	CRoCriticalSectionLockT& operator = (const CRoCriticalSectionLockT&);
 
 public:
 // CRoCriticalSectionLockT
-	CRoCriticalSectionLockT(_CriticalSection& CriticalSection, BOOL bInitialLock = TRUE) throw() :
+	CRoCriticalSectionLockT(CCriticalSection& CriticalSection, BOOL bInitialLock = TRUE) :
 		m_CriticalSection(CriticalSection),
 		m_bLocked(FALSE)
 	{
 		if(bInitialLock)
 			Lock();
 	}
-	~CRoCriticalSectionLockT() throw()
+	~CRoCriticalSectionLockT()
 	{
 		if(m_bLocked)
 			Unlock();
 	}
-	VOID Lock() throw()
+	VOID Lock()
 	{
 		_A(!m_bLocked);
 		_V(m_CriticalSection.Lock());
 		m_bLocked = TRUE;
 	}
-	#if _WIN32_WINNT >= 0x0400
-		BOOL TryLock() throw()
-		{
-			_A(!m_bLocked);
-			// SUGG: Take advantage of m_CriticalSection's TryLock if available
-			_A(sizeof m_CriticalSection >= sizeof (CRITICAL_SECTION));
-			CRITICAL_SECTION* pInternalCriticalSection = reinterpret_cast<CRITICAL_SECTION*>(&m_CriticalSection);
-			if(!TryEnterCriticalSection(pInternalCriticalSection))
-				return FALSE;
-			m_bLocked = TRUE;
-			return TRUE;
-		}
-	#endif // _WIN32_WINNT >= 0x0400
-	VOID Unlock() throw()
+	BOOL TryLock()
+	{
+		_A(!m_bLocked);
+		if(!::TryLock(m_CriticalSection))
+			return FALSE;
+		m_bLocked = TRUE;
+		return TRUE;
+	}
+	VOID Unlock()
 	{
 		ATLASSUME(m_bLocked);
 		m_CriticalSection.Unlock();
 		m_bLocked = FALSE;
+	}
+	BOOL IsLocked() const
+	{
+		return m_bLocked;
 	}
 };
 
@@ -1883,57 +1950,80 @@ typedef CComCritSecLock<CRoCriticalSection> CRoCriticalSectionLock;
 typedef CComCritSecLock<CRoLightCriticalSection> CRoLightCriticalSectionLock;
 
 /////////////////////////////////////////////////////////////////////////////
-// CComCritSecUnlock
+// DeadlockCriticalSectionT
 
 template <typename _CriticalSection>
+inline DWORD WINAPI DeadlockCriticalSectionThreadProcT(_CriticalSection* pCriticalSection)
+{
+	CComCritSecLock<_CriticalSection> Lock(*pCriticalSection);
+	_A(FALSE);
+	return 0;
+}
+
+template <typename _CriticalSection>
+inline VOID DeadlockCriticalSectionT(_CriticalSection& CriticalSection)
+{
+	CComCritSecLock<_CriticalSection> Lock(CriticalSection);
+	// WARN: GetThreadId is WinVista+, so we have to use CreateThreadT instead of AtlCreateThread
+	DWORD nThreadIdentifier;
+	CHandle ThreadHandle;
+	ThreadHandle.Attach(CreateThreadT<_CriticalSection>(NULL, 0, DeadlockCriticalSectionThreadProcT<_CriticalSection>, &CriticalSection, 0, &nThreadIdentifier));
+	ATLTRACE(atlTraceGeneral, 1, _T("Deadlocked in threads %d and %d (spawned)\n"), GetCurrentThreadId(), nThreadIdentifier);
+	WaitForSingleObject(ThreadHandle, INFINITE);
+	_A(FALSE);
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// CComCritSecUnlock
+
+template <typename CCriticalSection>
 class CComCritSecUnlock
 {
 private:
-	_CriticalSection& m_CriticalSection;
+	CCriticalSection& m_CriticalSection;
 	BOOL m_bUnlocked;
 
-	CComCritSecUnlock(const CComCritSecUnlock&) throw();
-	CComCritSecUnlock& operator = (const CComCritSecUnlock&) throw();
+	CComCritSecUnlock(const CComCritSecUnlock&);
+	CComCritSecUnlock& operator = (const CComCritSecUnlock&);
 
 public:
 // CComCritSecUnlock
-	CComCritSecUnlock(_CriticalSection& CriticalSection, BOOL bInitialUnlock = TRUE) throw() :
+	CComCritSecUnlock(CCriticalSection& CriticalSection, BOOL bInitialUnlock = TRUE) :
 		m_CriticalSection(CriticalSection),
 		m_bUnlocked(FALSE)
 	{
 		if(bInitialUnlock)
 			Unlock();
 	}
-	~CComCritSecUnlock() throw()
+	~CComCritSecUnlock()
 	{
 		if(m_bUnlocked)
 			Lock();
 	}
-	VOID Unlock() throw()
+	VOID Unlock()
 	{
 		_A(!m_bUnlocked);
 		_V(m_CriticalSection.Unlock());
 		m_bUnlocked = TRUE;
 	}
-	VOID Lock() throw()
+	VOID Lock()
 	{
 		_A(m_bUnlocked);
 		m_CriticalSection.Lock();
 		m_bUnlocked = FALSE;
 	}
-#if _WIN32_WINNT >= 0x0400
-	BOOL TryLock() throw()
+	BOOL TryLock()
 	{
 		_A(m_bUnlocked);
-		// SUGG: Take advantage of m_CriticalSection's TryLock if available
-		_A(sizeof m_CriticalSection == sizeof (CRITICAL_SECTION));
-		CRITICAL_SECTION* pInternalCriticalSection = reinterpret_cast<CRITICAL_SECTION*>(&m_CriticalSection);
-		if(!TryEnterCriticalSection(pInternalCriticalSection))
+		if(!::TryLock(m_CriticalSection))
 			return FALSE;
 		m_bUnlocked = FALSE;
 		return TRUE;
 	}
-#endif // _WIN32_WINNT >= 0x0400
+	BOOL IsLocked() const
+	{
+		return m_bLocked;
+	}
 };
 
 typedef CComCritSecUnlock<CRoCriticalSection> CRoCriticalSectionUnlock;
@@ -1945,6 +2035,8 @@ typedef CComCritSecUnlock<CRoCriticalSection> CRoCriticalSectionUnlock;
 //
 // NOTE: Requires Windows Vista or Windows Server 2008
 
+#if _WIN32_WINNT >= 0x0600
+
 class CApiComReleaseReaderWriterLock
 {
 protected:
@@ -1952,57 +2044,59 @@ protected:
 
 public:
 // CApiComReleaseReaderWriterLock
-	CApiComReleaseReaderWriterLock() throw()
+	CApiComReleaseReaderWriterLock()
 	{
 		memset(&m_Lock, 0, sizeof m_Lock);
 	}
-	~CApiComReleaseReaderWriterLock() throw()
+	~CApiComReleaseReaderWriterLock()
 	{
 	}
-	VOID Initialize() throw()
+	VOID Initialize()
 	{
 		InitializeSRWLock(&m_Lock);
 	}
-	VOID Terminate() throw()
+	VOID Terminate()
 	{
 	}
-	BOOL VerifyAcquiredExclusive() const throw()
+	BOOL VerifyAcquiredExclusive() const
 	{
 		return TRUE; // No way to verify
 	}
-	VOID AcquireExclusive() throw()
+	VOID AcquireExclusive()
 	{
 		AcquireSRWLockExclusive(&m_Lock);
 	}
-#if _WIN32_WINNT >= _WIN32_WINNT_WIN7
-	BOOLEAN TryAcquireExclusive() throw()
+	#if _WIN32_WINNT >= _WIN32_WINNT_WIN7
+		BOOLEAN TryAcquireExclusive()
 	{
 		return TryAcquireSRWLockExclusive(&m_Lock);
 	}
-#endif // _WIN32_WINNT >= _WIN32_WINNT_WIN7
-	VOID ReleaseExclusive() throw()
+	#endif // _WIN32_WINNT >= _WIN32_WINNT_WIN7
+	VOID ReleaseExclusive()
 	{
 		ReleaseSRWLockExclusive(&m_Lock);
 	}
-	BOOL VerifyAcquiredShared() const throw()
+	BOOL VerifyAcquiredShared() const
 	{
 		return TRUE; // No way to verify
 	}
-	VOID AcquireShared() throw()
+	VOID AcquireShared()
 	{
 		AcquireSRWLockShared(&m_Lock);
 	}
-#if _WIN32_WINNT >= _WIN32_WINNT_WIN7
-	BOOLEAN TryAcquireShared() throw()
+	#if _WIN32_WINNT >= _WIN32_WINNT_WIN7
+		BOOLEAN TryAcquireShared()
 	{
 		return TryAcquireSRWLockShared(&m_Lock);
 	}
-#endif // _WIN32_WINNT >= _WIN32_WINNT_WIN7
-	VOID ReleaseShared() throw()
+	#endif // _WIN32_WINNT >= _WIN32_WINNT_WIN7
+	VOID ReleaseShared()
 	{
 		ReleaseSRWLockShared(&m_Lock);
 	}
 };
+
+#endif // _WIN32_WINNT >= 0x0600
 
 ////////////////////////////////////////////////////////////
 // CNativeComReleaseReaderWriterLock
@@ -2015,25 +2109,25 @@ protected:
 
 public:
 // CNativeComReleaseReaderWriterLockT
-	CNativeComReleaseReaderWriterLockT() throw() :
+	CNativeComReleaseReaderWriterLockT() :
 		m_nLock(0)
 	{
 	}
-	~CNativeComReleaseReaderWriterLockT() throw()
+	~CNativeComReleaseReaderWriterLockT()
 	{
 	}
-	VOID Initialize() throw()
+	VOID Initialize()
 	{
 		m_nLock = 0;
 	}
-	VOID Terminate() throw()
+	VOID Terminate()
 	{
 	}
-	BOOL VerifyAcquiredExclusive() const throw()
+	BOOL VerifyAcquiredExclusive() const
 	{
 		return TRUE; // No way to reliably verify
 	}
-	VOID AcquireExclusiveNoSpin() throw()
+	VOID AcquireExclusiveNoSpin()
 	{
 		for(; ; )
 		{
@@ -2043,7 +2137,7 @@ public:
 			SwitchToThread();
 		}
 	}
-	VOID AcquireExclusiveSpin(UINT nSpinCount) throw()
+	VOID AcquireExclusiveSpin(UINT nSpinCount)
 	{
 		for(UINT nSpinIndex = 0; ; nSpinIndex++)
 		{
@@ -2056,27 +2150,27 @@ public:
 			nSpinIndex = 0;
 		}
 	}
-	VOID AcquireExclusive() throw()
+	VOID AcquireExclusive()
 	{
 		(t_nDefaultSpinCount > 0) ? AcquireExclusiveSpin(t_nDefaultSpinCount) : AcquireExclusiveNoSpin();
 	}
-	BOOLEAN TryAcquireExclusive() throw()
+	BOOLEAN TryAcquireExclusive()
 	{
 		if(m_nLock.ExchangeAdd(-0x10000) == 0)
 			return TRUE;
 		m_nLock.ExchangeAdd(+0x10000);
 		return FALSE;
 	}
-	VOID ReleaseExclusive() throw()
+	VOID ReleaseExclusive()
 	{
 		_A(m_nLock < -0x10000 / 2);
 		m_nLock.ExchangeAdd(+0x10000);
 	}
-	BOOL VerifyAcquiredShared() const throw()
+	BOOL VerifyAcquiredShared() const
 	{
 		return TRUE; // No way to reliably verify
 	}
-	VOID AcquireSharedNoSpin() throw()
+	VOID AcquireSharedNoSpin()
 	{
 		for(; ; )
 		{
@@ -2086,7 +2180,7 @@ public:
 			SwitchToThread();
 		}
 	}
-	VOID AcquireSharedSpin(UINT nSpinCount) throw()
+	VOID AcquireSharedSpin(UINT nSpinCount)
 	{
 		for(UINT nSpinIndex = 0; ; nSpinIndex++)
 		{
@@ -2099,18 +2193,18 @@ public:
 			nSpinIndex = 0;
 		}
 	}
-	VOID AcquireShared() throw()
+	VOID AcquireShared()
 	{
 		(t_nDefaultSpinCount > 0) ? AcquireSharedSpin(t_nDefaultSpinCount) : AcquireSharedNoSpin();
 	}
-	BOOLEAN TryAcquireShared() throw()
+	BOOLEAN TryAcquireShared()
 	{
 		if(m_nLock.Increment() > 0)
 			return TRUE;
 		m_nLock.Decrement();
 		return FALSE;
 	}
-	VOID ReleaseShared() throw()
+	VOID ReleaseShared()
 	{
 		m_nLock.Decrement();
 	}
@@ -2142,14 +2236,14 @@ private:
 
 	public:
 	// CAcquirement
-		static BOOL IsEqualThreadIdentifier(const CAcquirement& Acquirement, DWORD nThreadIdentifier) throw()
+		static BOOL IsEqualThreadIdentifier(const CAcquirement& Acquirement, DWORD nThreadIdentifier)
 		{
 			return Acquirement.m_nThreadIdentifier == nThreadIdentifier;
 		}
-		CAcquirement() throw()
+		CAcquirement()
 		{
 		}
-		CAcquirement(DWORD nThreadIdentifier, BOOL bExclusive) throw() :
+		CAcquirement(DWORD nThreadIdentifier, BOOL bExclusive) :
 			m_nThreadIdentifier(nThreadIdentifier),
 			m_bExclusive(bExclusive)
 		{
@@ -2167,14 +2261,14 @@ private:
 
 	public:
 	// CAcquirementList
-		BOOL IsEmpty() const throw()
+		BOOL IsEmpty() const
 		{
 			m_DataReaderWriterLock.AcquireShared();
 			const BOOL bResult = __super::IsEmpty();
 			m_DataReaderWriterLock.ReleaseShared();
 			return bResult;
 		}
-		BOOL Find(DWORD nThreadIdentifier = GetCurrentThreadId()) const throw()
+		BOOL Find(DWORD nThreadIdentifier = GetCurrentThreadId()) const
 		{
 			POSITION Position = NULL;
 			m_DataReaderWriterLock.AcquireShared();
@@ -2182,7 +2276,7 @@ private:
 			m_DataReaderWriterLock.ReleaseShared();
 			return Position != NULL;
 		}
-		BOOL Find(BOOL& bExclusive, DWORD nThreadIdentifier = GetCurrentThreadId()) const throw()
+		BOOL Find(BOOL& bExclusive, DWORD nThreadIdentifier = GetCurrentThreadId()) const
 		{
 			POSITION Position = NULL;
 			m_DataReaderWriterLock.AcquireShared();
@@ -2192,13 +2286,13 @@ private:
 			m_DataReaderWriterLock.ReleaseShared();
 			return Position != NULL;
 		}
-		VOID Add(BOOL bExclusive, DWORD nThreadIdentifier = GetCurrentThreadId()) throw()
+		VOID Add(BOOL bExclusive, DWORD nThreadIdentifier = GetCurrentThreadId())
 		{
 			m_DataReaderWriterLock.AcquireExclusive();
 			__super::AddTail(CAcquirement(nThreadIdentifier, bExclusive));
 			m_DataReaderWriterLock.ReleaseExclusive();
 		}
-		BOOL RemoveLast(DWORD nThreadIdentifier = GetCurrentThreadId()) throw()
+		BOOL RemoveLast(DWORD nThreadIdentifier = GetCurrentThreadId())
 		{
 			POSITION Position;
 			m_DataReaderWriterLock.AcquireExclusive();
@@ -2214,35 +2308,35 @@ protected:
 
 public:
 // CComDebugReaderWriterLock
-	CComDebugReaderWriterLock() throw()
+	CComDebugReaderWriterLock()
 	{
 	}
-	~CComDebugReaderWriterLock() throw()
+	~CComDebugReaderWriterLock()
 	{
 	}
-	VOID Initialize() throw()
+	VOID Initialize()
 	{
 		__super::Initialize();
 		_A(m_AcquirementList.IsEmpty());
 	}
-	VOID Terminate() throw()
+	VOID Terminate()
 	{
 		_A(m_AcquirementList.IsEmpty());
 	}
-	BOOL VerifyAcquiredExclusive() const throw()
+	BOOL VerifyAcquiredExclusive() const
 	{
 		BOOL bExclusive;
 		if(!m_AcquirementList.Find(bExclusive))
 			return FALSE;
 		return bExclusive;
 	}
-	VOID AcquireExclusive() throw()
+	VOID AcquireExclusive()
 	{
 		_A(!m_AcquirementList.Find());
 		__super::AcquireExclusive();
 		m_AcquirementList.Add(TRUE);
 	}
-	BOOLEAN TryAcquireExclusive() throw()
+	BOOLEAN TryAcquireExclusive()
 	{
 		_A(!m_AcquirementList.Find());
 		if(!__super::TryAcquireExclusive())
@@ -2250,26 +2344,26 @@ public:
 		m_AcquirementList.Add(TRUE);
 		return TRUE;
 	}
-	VOID ReleaseExclusive() throw()
+	VOID ReleaseExclusive()
 	{
 		_W(m_AcquirementList.RemoveLast());
 		__super::ReleaseExclusive();
 		_A(!m_AcquirementList.Find());
 	}
-	BOOL VerifyAcquiredShared() const throw()
+	BOOL VerifyAcquiredShared() const
 	{
 		BOOL bExclusive;
 		if(!m_AcquirementList.Find(bExclusive))
 			return FALSE;
 		return !bExclusive;
 	}
-	VOID AcquireShared() throw()
+	VOID AcquireShared()
 	{
 		_A(!m_AcquirementList.Find());
 		__super::AcquireShared();
 		m_AcquirementList.Add(FALSE);
 	}
-	BOOLEAN TryAcquireShared() throw()
+	BOOLEAN TryAcquireShared()
 	{
 		_A(!m_AcquirementList.Find());
 		if(!__super::TryAcquireShared())
@@ -2277,7 +2371,7 @@ public:
 		m_AcquirementList.Add(FALSE);
 		return TRUE;
 	}
-	VOID ReleaseShared() throw()
+	VOID ReleaseShared()
 	{
 		_W(m_AcquirementList.RemoveLast());
 		__super::ReleaseShared();
@@ -2302,11 +2396,11 @@ private:
 
 public:
 // CComAutoReaderWriterLock
-	CComAutoReaderWriterLock() throw()
+	CComAutoReaderWriterLock()
 	{
 		__super::Initialize();
 	}
-	~CComAutoReaderWriterLock() throw()
+	~CComAutoReaderWriterLock()
 	{
 		__super::Terminate();
 	}
@@ -2321,31 +2415,31 @@ private:
 	_ReaderWriterLock& m_Lock;
 	BOOL m_bLocked;
 
-	CComReaderWriterLockExclusiveLockT(const CComReaderWriterLockExclusiveLockT&) throw();
-	CComReaderWriterLockExclusiveLockT& operator = (const CComReaderWriterLockExclusiveLockT&) throw();
+	CComReaderWriterLockExclusiveLockT(const CComReaderWriterLockExclusiveLockT&);
+	CComReaderWriterLockExclusiveLockT& operator = (const CComReaderWriterLockExclusiveLockT&);
 
 public:
 // CComReaderWriterLockExclusiveLockT
-	CComReaderWriterLockExclusiveLockT(_ReaderWriterLock& ReaderWriterLock, BOOL bInitialLock = TRUE) throw() :
+	CComReaderWriterLockExclusiveLockT(_ReaderWriterLock& ReaderWriterLock, BOOL bInitialLock = TRUE) :
 		m_Lock(ReaderWriterLock),
 		m_bLocked(FALSE)
 	{
 		if(bInitialLock)
 			Lock();
 	}
-	~CComReaderWriterLockExclusiveLockT() throw()
+	~CComReaderWriterLockExclusiveLockT()
 	{
 		if(m_bLocked)
 			Unlock();
 	}
-	VOID Lock() throw()
+	VOID Lock()
 	{
 		_A(!m_bLocked);
 		m_Lock.AcquireExclusive();
 		m_bLocked = TRUE;
 	}
 //#if _WIN32_WINNT >= _WIN32_WINNT_WIN7
-	BOOL TryLock() throw()
+	BOOL TryLock()
 	{
 		_A(!m_bLocked);
 		if(!m_Lock.TryAcquireExclusive())
@@ -2354,7 +2448,7 @@ public:
 		return TRUE;
 	}
 //#endif // _WIN32_WINNT >= _WIN32_WINNT_WIN7
-	VOID Unlock() throw()
+	VOID Unlock()
 	{
 		ATLASSUME(m_bLocked);
 		m_Lock.ReleaseExclusive();
@@ -2369,37 +2463,37 @@ private:
 	_ReaderWriterLock& m_Lock;
 	BOOL m_bUnlocked;
 
-	CComReaderWriterLockExclusiveUnlockT(const CComReaderWriterLockExclusiveUnlockT&) throw();
-	CComReaderWriterLockExclusiveUnlockT& operator = (const CComReaderWriterLockExclusiveUnlockT&) throw();
+	CComReaderWriterLockExclusiveUnlockT(const CComReaderWriterLockExclusiveUnlockT&);
+	CComReaderWriterLockExclusiveUnlockT& operator = (const CComReaderWriterLockExclusiveUnlockT&);
 
 public:
 // CComReaderWriterLockExclusiveUnlockT
-	CComReaderWriterLockExclusiveUnlockT(_ReaderWriterLock& ReaderWriterLock, BOOL bInitialUnlock = TRUE) throw() :
+	CComReaderWriterLockExclusiveUnlockT(_ReaderWriterLock& ReaderWriterLock, BOOL bInitialUnlock = TRUE) :
 		m_Lock(ReaderWriterLock),
 		m_bUnlocked(FALSE)
 	{
 		if(bInitialUnlock)
 			Unlock();
 	}
-	~CComReaderWriterLockExclusiveUnlockT() throw()
+	~CComReaderWriterLockExclusiveUnlockT()
 	{
 		if(m_bUnlocked)
 			Lock();
 	}
-	VOID Unlock() throw()
+	VOID Unlock()
 	{
 		_A(!m_bUnlocked);
 		m_Lock.ReleaseExclusive();
 		m_bUnlocked = TRUE;
 	}
-	VOID Lock() throw()
+	VOID Lock()
 	{
 		ATLASSUME(m_bUnlocked);
 		m_Lock.AcquireExclusive();
 		m_bUnlocked = FALSE;
 	}
 //#if _WIN32_WINNT >= _WIN32_WINNT_WIN7
-	BOOL TryLock() throw()
+	BOOL TryLock()
 	{
 		_A(!m_bLocked);
 		if(!m_Lock.TryAcquireExclusive())
@@ -2417,31 +2511,31 @@ private:
 	_ReaderWriterLock& m_Lock;
 	BOOL m_bLocked;
 
-	CComReaderWriterLockSharedLockT(const CComReaderWriterLockSharedLockT&) throw();
-	CComReaderWriterLockSharedLockT& operator = (const CComReaderWriterLockSharedLockT&) throw();
+	CComReaderWriterLockSharedLockT(const CComReaderWriterLockSharedLockT&);
+	CComReaderWriterLockSharedLockT& operator = (const CComReaderWriterLockSharedLockT&);
 
 public:
 // CComReaderWriterLockSharedLockT
-	CComReaderWriterLockSharedLockT(_ReaderWriterLock& ReaderWriterLock, BOOL bInitialLock = TRUE) throw() :
+	CComReaderWriterLockSharedLockT(_ReaderWriterLock& ReaderWriterLock, BOOL bInitialLock = TRUE) :
 		m_Lock(ReaderWriterLock),
 		m_bLocked(FALSE)
 	{
 		if(bInitialLock)
 			Lock();
 	}
-	~CComReaderWriterLockSharedLockT() throw()
+	~CComReaderWriterLockSharedLockT()
 	{
 		if(m_bLocked)
 			Unlock();
 	}
-	VOID Lock() throw()
+	VOID Lock()
 	{
 		_A(!m_bLocked);
 		m_Lock.AcquireShared();
 		m_bLocked = TRUE;
 	}
 //#if _WIN32_WINNT >= _WIN32_WINNT_WIN7
-	BOOL TryLock() throw()
+	BOOL TryLock()
 	{
 		_A(!m_bLocked);
 		if(!m_Lock.TryAcquireShared())
@@ -2450,7 +2544,7 @@ public:
 		return TRUE;
 	}
 //#endif // _WIN32_WINNT >= _WIN32_WINNT_WIN7
-	VOID Unlock() throw()
+	VOID Unlock()
 	{
 		ATLASSUME(m_bLocked);
 		m_Lock.ReleaseShared();
@@ -2465,37 +2559,37 @@ private:
 	_ReaderWriterLock& m_Lock;
 	BOOL m_bUnlocked;
 
-	CComReaderWriterLockSharedUnlockT(const CComReaderWriterLockSharedUnlockT&) throw();
-	CComReaderWriterLockSharedUnlockT& operator = (const CComReaderWriterLockSharedUnlockT&) throw();
+	CComReaderWriterLockSharedUnlockT(const CComReaderWriterLockSharedUnlockT&);
+	CComReaderWriterLockSharedUnlockT& operator = (const CComReaderWriterLockSharedUnlockT&);
 
 public:
 // CComReaderWriterLockSharedUnlockT
-	CComReaderWriterLockSharedUnlockT(_ReaderWriterLock& ReaderWriterLock, BOOL bInitialUnlock = TRUE) throw() :
+	CComReaderWriterLockSharedUnlockT(_ReaderWriterLock& ReaderWriterLock, BOOL bInitialUnlock = TRUE) :
 		m_Lock(ReaderWriterLock),
 		m_bUnlocked(FALSE)
 	{
 		if(bInitialUnlock)
 			Unlock();
 	}
-	~CComReaderWriterLockSharedUnlockT() throw()
+	~CComReaderWriterLockSharedUnlockT()
 	{
 		if(m_bUnlocked)
 			Lock();
 	}
-	VOID Unlock() throw()
+	VOID Unlock()
 	{
 		_A(!m_bUnlocked);
 		m_Lock.ReleaseShared();
 		m_bUnlocked = TRUE;
 	}
-	VOID Lock() throw()
+	VOID Lock()
 	{
 		ATLASSUME(m_bUnlocked);
 		m_Lock.AcquireShared();
 		m_bUnlocked = FALSE;
 	}
 //#if _WIN32_WINNT >= _WIN32_WINNT_WIN7
-	BOOL TryLock() throw()
+	BOOL TryLock()
 	{
 		_A(!m_bLocked);
 		if(!m_Lock.TryAcquireShared())
