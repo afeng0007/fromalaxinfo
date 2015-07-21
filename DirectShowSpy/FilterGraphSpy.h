@@ -402,6 +402,273 @@ public:
 		}
 	};
 
+	////////////////////////////////////////////////////////
+	// CLogFilter
+
+	class __declspec(uuid("{DC544824-CC2C-4CEF-AABC-9FA815530733}")) CLogFilterBase;
+
+	class ATL_NO_VTABLE CLogFilter :
+		public CComObjectRootEx<CComMultiThreadModelNoCS>,
+		public CComCoClass<CLogFilter, &__uuidof(CLogFilterBase)>,
+		public CTransformationFilterT<CLogFilter>,
+		public CBasePersistT<CLogFilter>
+	{
+	public:
+		//enum { IDR =  };
+
+	//DECLARE_REGISTRY_RESOURCEID(IDR)
+
+	DECLARE_PROTECT_FINAL_CONSTRUCT()
+
+	//DECLARE_QI_TRACE(CLogFilter)
+
+	BEGIN_COM_MAP(CLogFilter)
+		COM_INTERFACE_ENTRY(IBaseFilter)
+		COM_INTERFACE_ENTRY(IMediaFilter)
+		COM_INTERFACE_ENTRY_IID(__uuidof(IPersist), IBaseFilter)
+	END_COM_MAP()
+
+	BEGIN_PROP_MAP(CLogFilter)
+	END_PROP_MAP()
+
+	public:
+
+		////////////////////////////////////////////////////////
+		// CInputPin
+
+		class ATL_NO_VTABLE CInputPin :
+			public CComObjectRootEx<CComMultiThreadModelNoCS>,
+			public CInputPinT<CInputPin, CLogFilter>
+		{
+		public:
+
+		//DECLARE_QI_TRACE(CInspectionFilter::CLogFilter)
+
+		BEGIN_COM_MAP(CInputPin)
+			COM_INTERFACE_ENTRY(IPin)
+			COM_INTERFACE_ENTRY(IMemInputPin)
+		END_COM_MAP()
+
+		public:
+		// CInputPin
+			CInputPin()
+			{
+				_Z5_THIS();
+			}
+			~CInputPin()
+			{
+				_Z5_THIS();
+			}
+			BOOL CheckMediaType(const CMediaType& pMediaType) const
+			{
+				_A(pMediaType);
+				return TRUE;
+			}
+			VOID ResetPeerPin()
+			{
+				CRoCriticalSectionLock DataLock(GetDataCriticalSection());
+				__super::ResetPeerPin();
+				GetFilter()->DisconnectPin(GetFilter()->GetOutputPin());
+			}
+		};
+
+		////////////////////////////////////////////////////////
+		// COutputPin
+
+		class ATL_NO_VTABLE COutputPin :
+			public CComObjectRootEx<CComMultiThreadModelNoCS>,
+			public COutputPinT<COutputPin, CLogFilter>,
+			public CUpstreamMediaPositionAwareOutputPinT<COutputPin>
+		{
+		public:
+
+		//DECLARE_QI_TRACE(CInspectionFilter::COutputPin)
+
+		BEGIN_COM_MAP(COutputPin)
+			COM_INTERFACE_ENTRY(IPin)
+			COM_INTERFACE_ENTRY_FUNC(__uuidof(IMediaSeeking), 0, QueryUpstreamMediaPositionInterface)
+			COM_INTERFACE_ENTRY_FUNC(__uuidof(IMediaPosition), 0, QueryUpstreamMediaPositionInterface)
+			COM_INTERFACE_ENTRY_FUNC(__uuidof(IDispatch), 0, QueryUpstreamMediaPositionInterface)
+		END_COM_MAP()
+
+		public:
+		// COutputPin
+			COutputPin()
+			{
+				_Z5_THIS();
+			}
+			~COutputPin()
+			{
+				_Z5_THIS();
+			}
+			HRESULT FinalConstruct()
+			{
+				_ATLTRY
+				{
+					CreateUpstreamMediaPosition();
+				}
+				_ATLCATCH(Exception)
+				{
+					_C(Exception);
+				}
+				return S_OK;
+			}
+			VOID FinalRelease()
+			{
+				DestroyUpstreamMediaPosition();
+			}
+			VOID EnumerateMediaTypes(CRoListT<CMediaType>& MediaTypeList) const
+			{
+				CRoCriticalSectionLock DataLock(GetDataCriticalSection());
+				const CMediaType& pInputMediaType = GetFilter()->GetInputPin()->GetMediaTypeReference();
+				if(pInputMediaType)
+					_W(MediaTypeList.AddTail(pInputMediaType));
+			}
+			BOOL CheckMediaType(const CMediaType& pMediaType) const
+			{
+				_A(pMediaType);
+				const CObjectPtr<CInputPin>& pInputPin = GetFilter()->GetInputPin();
+				CRoCriticalSectionLock DataLock(GetDataCriticalSection());
+				const CComPtr<IPin>& pInputPeerPin = pInputPin->GetPeerPinReference();
+				if(!pInputPeerPin)
+					return FALSE; // No Input Connected
+				const CMediaType& pInputMediaType = pInputPin->GetMediaTypeReference();
+				if(!pInputMediaType.Compare(pMediaType))
+					return FALSE; // Input Media Type Mismatch
+				return TRUE;
+			}
+			BOOL DecideMemAllocator(const CMediaType& pMediaType)
+			{
+				_A(VerifyCriticalSectionLocked(GetDataCriticalSection()));
+				_A(GetPeerMemInputPinReference());
+				const CObjectPtr<CInputPin>& pInputPin = GetFilter()->GetInputPin();
+				const CComPtr<IMemAllocator>& pMemAllocator = pInputPin->GetMemAllocatorReference();
+				const HRESULT nNotifyAllocatorResult = GetPeerMemInputPinReference()->NotifyAllocator(pMemAllocator, pInputPin->GetMemAllocatorReadOnly());
+				_Z45_DSHRESULT(nNotifyAllocatorResult);
+				if(FAILED(nNotifyAllocatorResult))
+					return FALSE;
+				SetMemAllocator(pMemAllocator);
+				return TRUE;
+			}
+		};
+
+	private:
+		CObjectPtr<CInputPin> m_pInputPin;
+		CObjectPtr<COutputPin> m_pOutputPin;
+
+	public:
+	// CLogFilter
+		CLogFilter() :
+			CBasePersistT<CLogFilter>(GetDataCriticalSection())
+		{
+			_Z4_THIS();
+		}
+		~CLogFilter()
+		{
+			_Z4_THIS();
+		}
+		HRESULT FinalConstruct()
+		{
+			_ATLTRY
+			{
+				m_pInputPin.Construct()->Initialize(this, L"Input");
+				m_pOutputPin.Construct()->Initialize(this, L"Output");
+				AddPins(2, (IPin*) m_pInputPin, (IPin*) m_pOutputPin);
+			}
+			_ATLCATCH(Exception)
+			{
+				_C(Exception);
+			}
+			return S_OK;
+		}
+		VOID FinalRelease()
+		{
+			m_pInputPin.Release();
+			m_pOutputPin.Release();
+		}
+		VOID DeliverEndOfStream(CInputPin*)
+		{
+			_Z2(atlTraceGeneral, 2, _T("this 0x%p, \"%ls\"\n"), this, GetName());
+			CRoCriticalSectionLock ReceiveLock(GetReceiveCriticalSection());
+			m_pOutputPin->DeliverEndOfStream();
+		}
+ 		VOID DeliverBeginFlush(CInputPin*)
+		{
+			_Z2(atlTraceGeneral, 2, _T("this 0x%p, \"%ls\"\n"), this, GetName());
+			m_pOutputPin->DeliverBeginFlush();
+		}
+		VOID DeliverEndFlush(CInputPin*)
+		{
+			_Z2(atlTraceGeneral, 2, _T("this 0x%p, \"%ls\"\n"), this, GetName());
+			m_pOutputPin->DeliverEndFlush();
+		}
+		VOID DeliverNewSegment(CInputPin*, REFERENCE_TIME nStartTime, REFERENCE_TIME nStopTime, DOUBLE fRate)
+		{
+			_Z2(atlTraceGeneral, 2, _T("this 0x%p, \"%ls\", nStartTime %s, nStopTime %s, fRate %.3f\n"), this, GetName(), _FilterGraphHelper::FormatReferenceTime(nStartTime), _FilterGraphHelper::FormatReferenceTime(nStopTime), fRate);
+			m_pOutputPin->DeliverNewSegment(nStartTime, nStopTime, fRate);
+		}
+		VOID CueFilter()
+		{
+			_Z2(atlTraceGeneral, 2, _T("this 0x%p, \"%ls\"\n"), this, GetName());
+			CRoCriticalSectionLock ReceiveLock(GetReceiveCriticalSection());
+			StartStreaming();
+		}
+		VOID RunFilter(REFERENCE_TIME nStartTime)
+		{
+			_Z2(atlTraceGeneral, 2, _T("this 0x%p, \"%ls\"\n"), this, GetName());
+			nStartTime;
+		}
+		VOID PauseFilter()
+		{
+			_Z2(atlTraceGeneral, 2, _T("this 0x%p, \"%ls\"\n"), this, GetName());
+		}
+		VOID StopFilter()
+		{
+			_Z2(atlTraceGeneral, 2, _T("this 0x%p, \"%ls\"\n"), this, GetName());
+			CRoCriticalSectionLock ReceiveLock(GetReceiveCriticalSection());
+			StopStreaming();
+		}
+		VOID ReceiveMediaSample(CInputPin* pInputPin, IMediaSample2* pMediaSample, HRESULT& nReceiveResult)
+		{
+			_A(pInputPin == m_pInputPin);
+			_A(pMediaSample);
+			CRoCriticalSectionLock ReceiveLock(GetReceiveCriticalSection());
+			if(!IsStreaming())
+				return;
+			CMediaSampleProperties Properties(pMediaSample);
+			{
+				CRoArrayT<CString> Array1, Array2;
+				Array2.Add(AtlFormatString(_T("%d"), GetTickCount()));
+				Array2.Add(GetName());
+				Array1.Add(AtlFormatString(_T("dwSampleFlags %s"), _FilterGraphHelper::FormatSampleFlags(Properties.dwSampleFlags)));
+				Array2.Add(AtlFormatString(_T("0x%X"), Properties.dwSampleFlags));
+				if(Properties.dwSampleFlags & AM_SAMPLE_TIMEVALID)
+				{
+					Array1.Add(AtlFormatString(_T("tStart %s"), _FilterGraphHelper::FormatReferenceTime(Properties.tStart)));
+					Array2.Add(AtlFormatString(_T("%I64d"), Properties.tStart));
+					if(Properties.dwSampleFlags & AM_SAMPLE_STOPVALID)
+					{
+						Array1.Add(AtlFormatString(_T("tStop %s (+ %s)"), _FilterGraphHelper::FormatReferenceTime(Properties.tStop), _FilterGraphHelper::FormatReferenceTime(Properties.tStop - Properties.tStart)));
+						Array2.Add(AtlFormatString(_T("%I64d"), Properties.tStop));
+						Array2.Add(AtlFormatString(_T("%I64d"), Properties.tStop - Properties.tStart));
+					}
+				}
+				Array1.Add(AtlFormatString(_T("lActual %s"), _StringHelper::FormatNumber(Properties.lActual)));
+				_Z2(atlTraceGeneral, 2, _T("this 0x%p, \"%ls\", %s") _T("\t\t%s\t") _T("\n"), this, GetName(), _StringHelper::Join(Array1, _T(", ")), _StringHelper::Join(Array2, _T("\t")));
+			}
+			HandleMediaTypeChange<CInputPin, COutputPin>(Properties, m_pInputPin, m_pOutputPin);
+			DeliverMediaSample(m_pOutputPin->GetPeerMemInputPin(), pMediaSample, nReceiveResult);
+		}
+		const CObjectPtr<CInputPin>& GetInputPin() const
+		{
+			return m_pInputPin;
+		}
+		const CObjectPtr<COutputPin>& GetOutputPin() const
+		{
+			return m_pOutputPin;
+		}
+	};
+
 private:
 	BOOL m_bIsAggregated;
 	HINSTANCE m_hQuartzModule;
@@ -1029,6 +1296,39 @@ public:
 				_Z4(atlTraceGeneral, 4, _T("pOutputPin \"%ls\", pInputPin \"%ls\", pMediaType 0x%p\n"), _FilterGraphHelper::GetPinFullName(pOutputPin), _FilterGraphHelper::GetPinFullName(pInputPin), pMediaType);
 				if(pMediaType)
 					_FilterGraphHelper::TraceMediaType(pMediaType);
+				#pragma region Log Filter
+				// NOTE: This inserts additional filter without graph owner's will, for troubleshooting purposes; CLogFilter logs streaming details
+				#if FALSE
+					const CComPtr<IBaseFilter> pOutputBaseFilter = _FilterGraphHelper::GetPinFilter(pOutputPin);
+					const CComPtr<IBaseFilter> pInputBaseFilter = _FilterGraphHelper::GetPinFilter(pInputPin);
+					class __declspec(uuid("{09075D10-D7EC-420f-A8F9-940E1602A371}")) AudioSplitter;
+					if(_FilterGraphHelper::GetFilterClassIdentifier(pOutputBaseFilter) == __uuidof(AudioSplitter) || _FilterGraphHelper::GetFilterClassIdentifier(pInputBaseFilter) == __uuidof(AudioSplitter))
+						_ATLTRY
+						{
+							_A(_FilterGraphHelper::GetPinDirection(pOutputPin) == PINDIR_OUTPUT);
+							CObjectPtr<CLogFilter> pLogFilter;
+							pLogFilter.Construct();
+							CString sName = AtlFormatString(_T("Log (%s; %s)"), _FilterGraphHelper::GetFilterName(pOutputBaseFilter), _FilterGraphHelper::GetFilterName(pInputBaseFilter));
+							__C(m_pInnerFilterGraph2->AddFilter(pLogFilter, CStringW(sName)));
+							_ATLTRY
+							{
+								__C(m_pInnerFilterGraph2->ConnectDirect(pOutputPin, pLogFilter->GetInputPin(), pMediaType));
+								__C(m_pInnerFilterGraph2->ConnectDirect(pLogFilter->GetOutputPin(), pInputPin, pMediaType));
+								_Z4(atlTraceGeneral, 4, _T("this 0x%p, pLogFilter->GetName() \"%ls\"\n"), this, pLogFilter->GetName());
+								return S_OK;
+							}
+							_ATLCATCHALL()
+							{
+								__C(m_pInnerFilterGraph2->RemoveFilter(pLogFilter));
+								_ATLRETHROW;
+							}
+						}
+						_ATLCATCHALL()
+						{
+							_Z_EXCEPTION();
+						}
+				#endif
+				#pragma endregion 
 			}
 			_ATLCATCHALL()
 			{
