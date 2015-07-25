@@ -191,24 +191,7 @@ public:
 		CMenuHandle Menu = GetSystemMenu(FALSE);
 		_W(Menu.AppendMenu(MF_SEPARATOR));
 		_W(Menu.AppendMenu(MF_STRING, ID_APP_ABOUT, _T("&About...")));
-		{
-			CString sCaption;
-			GetWindowText(sCaption);
-			CRoArrayT<CString> Array;
-			#if defined(_WIN64)
-				Array.Add(_T("64-bit"));
-			#else
-				if(SafeIsWow64Process())
-					Array.Add(_T("32-bit"));
-			#endif // defined(_WIN64)
-			if(GetOsVersion() >= 0x00060000 && IsAdministrator())
-				Array.Add(_T("Administrator"));
-			if(!Array.IsEmpty())
-			{
-				sCaption.Append(AtlFormatString(_T(" (%s)"), _StringHelper::Join(Array, _T(", "))));
-				SetWindowText(sCaption);
-			}
-		}
+		CAboutDialog::UpdateCaption(*this);
 		m_EntryListView.Initialize(GetDlgItem(IDC_MAIN_ENTRY));
 		//m_EntryListView.SetColumnWidth(0, LVSCW_AUTOSIZE_USEHEADER);
 		m_ProbeButton = GetDlgItem(IDC_MAIN_PROBE);

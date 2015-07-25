@@ -4,7 +4,7 @@
 
 #include "stdafx.h"
 #include "resource.h"
-#include "RotView_i.h"
+//#include "Module_i.h"
 #include "MainDialog.h"
 
 ////////////////////////////////////////////////////////////
@@ -22,18 +22,18 @@ public:
 
 public:
 // CRotViewModule
-	CRotViewModule() throw()
+	CRotViewModule()
 	{
 		AtlTraceSetDefaultSettings();
-		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		_Z4_THIS();
 		_W(CExceptionFilter::Initialize());
 	}
-	~CRotViewModule() throw()
+	~CRotViewModule()
 	{
-		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		_Z4_THIS();
 		CExceptionFilter::Terminate();
 	}
-	HRESULT PreMessageLoop(INT nShowCommand) throw()
+	HRESULT PreMessageLoop(INT nShowCommand)
 	{
 		_ATLTRY
 		{
@@ -48,7 +48,7 @@ public:
 		}
 		return S_OK;
 	}
-	VOID RunMessageLoop() throw()
+	VOID RunMessageLoop()
 	{
 		Lock();
 		{
@@ -62,7 +62,7 @@ public:
 		}
 		Unlock();
 	}
-	HRESULT PostMessageLoop() throw()
+	HRESULT PostMessageLoop()
 	{
 		_ATLTRY
 		{
