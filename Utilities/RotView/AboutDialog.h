@@ -1,9 +1,13 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2012-2013
+// Copyright (C) Roman Ryltsov, 2006-2015
 // Created by Roman Ryltsov roman@alax.info
+//
+// A permission to use the source code is granted as long as reference to 
+// source website http://alax.info is retained.
 
 #pragma once
 
+#include <atlsecurity.h>
 #include <atlctrls.h>
 #include <atlctrlx.h>
 #include "rocontrols.h"
@@ -34,34 +38,63 @@ protected:
 
 public:
 // CAboutDialog
-	static CFontHandle CreateTitleFont() throw()
+	static CFontHandle CreateTitleFont()
 	{
 		CLogFont LogFont;
 		LogFont.lfHeight = -MulDiv(12, GetDeviceCaps(CClientDC(GetDesktopWindow()), LOGPIXELSY), 72);
 		LogFont.lfWeight = FW_BOLD;
 		LogFont.lfItalic = TRUE;
-		_tcsncpy_s(LogFont.lfFaceName, _countof(LogFont.lfFaceName), _T("Arial"), _TRUNCATE);
+		_tcsncpy_s(LogFont.lfFaceName, _T("Arial"), _TRUNCATE);
 		CFont Font;
 		_W(Font.CreateFontIndirect(&LogFont));
 		return Font.Detach();
 	}
-	static CFontHandle CreateDisclaimerFont() throw()
+	static CFontHandle CreateDisclaimerFont()
 	{
 		CLogFont LogFont;
 		LogFont.lfHeight = -MulDiv(7, GetDeviceCaps(CClientDC(GetDesktopWindow()), LOGPIXELSY), 72);
 		LogFont.lfWeight = FW_NORMAL;
-		_tcsncpy_s(LogFont.lfFaceName, _countof(LogFont.lfFaceName), _T("Lucida Console"), _TRUNCATE);
+		_tcsncpy_s(LogFont.lfFaceName, _T("Lucida Console"), _TRUNCATE);
 		CFont Font;
 		_W(Font.CreateFontIndirect(&LogFont));
 		return Font.Detach();
 	}
-	CAboutDialog() throw()
+	CAboutDialog()
 	{
-		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		_Z4_THIS();
 	}
-	~CAboutDialog() throw()
+	~CAboutDialog()
 	{
-		_Z4(atlTraceRefcount, 4, _T("this 0x%p\n"), this);
+		_Z4_THIS();
+	}
+	static BOOL IsAdministrator()
+	{
+		bool bIsMember = FALSE;
+		return CAccessToken().CheckTokenMembership(Sids::Admins(), &bIsMember) && bIsMember;
+	}
+	static VOID UpdateCaption(CWindow Window)
+	{
+		CString sCaption;
+		_W(Window.GetWindowText(sCaption));
+		CRoArrayT<CString> SpecifierArray;
+		#if defined(_WIN64)
+			SpecifierArray.Add(_T("64-bit"));
+		#else
+			if(SafeIsWow64Process())
+				SpecifierArray.Add(_T("32-bit"));
+		#endif // defined(_WIN64)
+		if(IsWindowsVistaOrGreater() && IsAdministrator())
+			SpecifierArray.Add(_T("Administrator"));
+		if(!SpecifierArray.IsEmpty())
+			sCaption = AtlFormatString(_T("%s (%s)"), sCaption, _StringHelper::Join(SpecifierArray, _T(", ")));
+		#if _TRACE
+			sCaption.Append(_T(" // "));
+			#if _DEVELOPMENT
+				sCaption.Append(_T("Dev "));
+			#endif // _DEVELOPMENT
+			sCaption.Append(_VersionInfoHelper::GetVersionString(_VersionInfoHelper::GetFileVersion(_VersionInfoHelper::GetModulePath())));
+		#endif // _TRACE
+		Window.SetWindowText(sCaption);
 	}
 
 // Window message handlers
@@ -110,36 +143,20 @@ public:
 		_W(m_WebsiteHyperStatic.SubclassWindow(GetDlgItem(IDC_ABOUT_WEBSITE)));
 		_W(m_EmailHyperStatic.SubclassWindow(GetDlgItem(IDC_ABOUT_EMAIL)));
 		#pragma endregion 
-		#pragma region Caption
-		{
-			#if _TRACE || defined(_WIN64)
-				CString sCaption;
-				_W(GetWindowText(sCaption));
-				sCaption.Append(_T(" // "));
-				#if _DEVELOPMENT
-					sCaption.Append(_T("Dev "));
-				#endif // _DEVELOPMENT
-				sCaption.Append(_VersionInfoHelper::GetVersionString(_VersionInfoHelper::GetFileVersion(_VersionInfoHelper::GetModulePath())));
-				#if defined(_WIN64)
-					sCaption.Append(_T(" (x64)"));
-				#endif // defined(_WIN64)
-				_W(SetWindowText(sCaption));
-			#endif // _TRACE || defined(_WIN64)
-		}
-		#pragma endregion 
+		UpdateCaption(*this);
 		#pragma region Window Position and Focus
 		_W(CenterWindow(GetParent()));
 		GetDlgItem(IDOK).SetFocus();
 		#pragma endregion 
 		return FALSE;
 	}
-	LRESULT OnDestroy() throw()
+	LRESULT OnDestroy()
 	{
 		_W(m_TitleFont.DeleteObject());
 		_W(m_DisclaimerFont.DeleteObject());
 		return 0;
 	}
-	LRESULT OnCommand(UINT, INT nIdentifier, HWND) throw()
+	LRESULT OnCommand(UINT, INT nIdentifier, HWND)
 	{
 		_W(EndDialog(nIdentifier));
 		return 0;

@@ -22,10 +22,10 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="RotView.cpp">
+    <ClCompile Include="Application.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="RotView_i.c">
+    <ClCompile Include="Module_i.c">
       <Filter>Generated Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -39,35 +39,35 @@
     <ClInclude Include="Resource.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="RotView_i.h">
-      <Filter>Generated Files</Filter>
-    </ClInclude>
     <ClInclude Include="MainDialog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="AboutDialog.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Module_i.h">
+      <Filter>Generated Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="RotView.rc">
-      <Filter>Resource Files</Filter>
-    </ResourceCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="RotView.rgs">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="Module.ico">
       <Filter>Resource Files</Filter>
     </None>
     <None Include="Information.ico">
       <Filter>Resource Files</Filter>
     </None>
+    <None Include="Module.rgs">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="RotView.idl">
+    <Midl Include="Module.idl">
       <Filter>Source Files</Filter>
     </Midl>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Module.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>
