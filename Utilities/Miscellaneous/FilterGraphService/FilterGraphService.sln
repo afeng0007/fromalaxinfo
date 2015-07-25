@@ -1,0 +1,29 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2013
+VisualStudioVersion = 12.0.40629.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FilterGraphService", "FilterGraphService\FilterGraphService.vcxproj", "{1F7532DB-B525-4032-B85D-9B82153EBD9B}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FilterGraphServicePS", "FilterGraphService\FilterGraphServicePS.vcxproj", "{F7822DC8-8C80-42B9-A755-1957B15E0878}"
+	ProjectSection(ProjectDependencies) = postProject
+		{1F7532DB-B525-4032-B85D-9B82153EBD9B} = {1F7532DB-B525-4032-B85D-9B82153EBD9B}
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1F7532DB-B525-4032-B85D-9B82153EBD9B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{1F7532DB-B525-4032-B85D-9B82153EBD9B}.Debug|Win32.Build.0 = Debug|Win32
+		{1F7532DB-B525-4032-B85D-9B82153EBD9B}.Release|Win32.ActiveCfg = Release|Win32
+		{1F7532DB-B525-4032-B85D-9B82153EBD9B}.Release|Win32.Build.0 = Release|Win32
+		{F7822DC8-8C80-42B9-A755-1957B15E0878}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F7822DC8-8C80-42B9-A755-1957B15E0878}.Release|Win32.ActiveCfg = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

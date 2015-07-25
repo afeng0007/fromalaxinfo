@@ -1,0 +1,19 @@
+////////////////////////////////////////////////////////////
+// Copyright (C) Roman Ryltsov, 2015
+// Created by Roman Ryltsov roman@alax.info
+
+// This file will be processed by the MIDL tool to
+// produce the type library (FilterGraphService.tlb) and marshalling code.
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	uuid(3A3DE4B5-936B-4820-9F69-3CDC17E464F8),
+	version(1.0),
+]
+library AlaxInfoFilterGraphService
+{
+	importlib("stdole2.tlb");
+};
+
