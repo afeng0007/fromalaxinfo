@@ -64,25 +64,21 @@ public:
 			if(pQualProp)
 				_ATLTRY
 				{
-					INT nFramesDroppedInRenderer, nFramesDrawn, nAvgFrameRate, nJitter, nAvgSyncOffset, nDevSyncOffset;
+					PropertyBagNeeded(pPropertyBag);
 					// NOTE: IQualProp methods are not implemented on EVR even though the interface itself is exposed
-					const HRESULT nGetAvgFrameRateResult = pQualProp->get_AvgFrameRate(&nAvgFrameRate);
-					if(SUCCEEDED(nGetAvgFrameRateResult))
-					{
-						__C(pQualProp->get_FramesDroppedInRenderer(&nFramesDroppedInRenderer));
-						__C(pQualProp->get_FramesDrawn(&nFramesDrawn));
-						//__C(pQualProp->get_AvgFrameRate(&nAvgFrameRate));
-						__C(pQualProp->get_Jitter(&nJitter));
-						__C(pQualProp->get_AvgSyncOffset(&nAvgSyncOffset));
-						__C(pQualProp->get_DevSyncOffset(&nDevSyncOffset));
-						PropertyBagNeeded(pPropertyBag);
+					INT nFramesDroppedInRenderer, nFramesDrawn, nAvgFrameRate, nJitter, nAvgSyncOffset, nDevSyncOffset;
+					if(SUCCEEDED(pQualProp->get_FramesDroppedInRenderer(&nFramesDroppedInRenderer)))
 						pPropertyBag->WriteValue(_T("FramesDroppedInRenderer"), CComVariant((LONG) nFramesDroppedInRenderer));
+					if(SUCCEEDED(pQualProp->get_FramesDrawn(&nFramesDrawn)))
 						pPropertyBag->WriteValue(_T("FramesDrawn"), CComVariant((LONG) nFramesDrawn));
+					if(SUCCEEDED(pQualProp->get_AvgFrameRate(&nAvgFrameRate)))
 						pPropertyBag->WriteValue(_T("AvgFrameRate"), CComVariant((DOUBLE) nAvgFrameRate / 100));
+					if(SUCCEEDED(pQualProp->get_Jitter(&nJitter)))
 						pPropertyBag->WriteValue(_T("Jitter"), CComVariant((LONG) nJitter));
+					if(SUCCEEDED(pQualProp->get_AvgSyncOffset(&nAvgSyncOffset)))
 						pPropertyBag->WriteValue(_T("AvgSyncOffset"), CComVariant((LONG) nAvgSyncOffset));
+					if(SUCCEEDED(pQualProp->get_DevSyncOffset(&nDevSyncOffset)))
 						pPropertyBag->WriteValue(_T("DevSyncOffset"), CComVariant((LONG) nDevSyncOffset));
-					}
 				}
 				_ATLCATCHALL()
 				{
@@ -94,44 +90,47 @@ public:
 			if(pAmAudioRendererStats)
 				_ATLTRY
 				{
+					PropertyBagNeeded(pPropertyBag);
 					DWORD nDummy;
 					DWORD nBreakCount, nSlaveMode, nSilenceDuration, nLastBufferDuration, nDiscontinuityCount, nSlaveRate, nDropWriteDuration;
 					DWORD nHighestSlaveError, nLowestSlaveError, nLastHighSlaveError, nLastLowSlaveError;
 					DWORD nAccumulatedError, nBufferFullness;
-					//DWORD nJitter;
-					__C(pAmAudioRendererStats->GetStatParam(AM_AUDREND_STAT_PARAM_BREAK_COUNT, &nBreakCount, &nDummy));
-					__C(pAmAudioRendererStats->GetStatParam(AM_AUDREND_STAT_PARAM_SLAVE_MODE, &nSlaveMode, &nDummy));
-					__C(pAmAudioRendererStats->GetStatParam(AM_AUDREND_STAT_PARAM_SILENCE_DUR, &nSilenceDuration, &nDummy));
-					__C(pAmAudioRendererStats->GetStatParam(AM_AUDREND_STAT_PARAM_LAST_BUFFER_DUR, &nLastBufferDuration, &nDummy));
-					__C(pAmAudioRendererStats->GetStatParam(AM_AUDREND_STAT_PARAM_DISCONTINUITIES, &nDiscontinuityCount, &nDummy));
-					if(nSlaveMode)
+					DWORD nJitter;
+					if(SUCCEEDED(pAmAudioRendererStats->GetStatParam(AM_AUDREND_STAT_PARAM_BREAK_COUNT, &nBreakCount, &nDummy)))
+						pPropertyBag->WriteValue(_T("BreakCount"), CComVariant((LONG) nBreakCount));
+					if(SUCCEEDED(pAmAudioRendererStats->GetStatParam(AM_AUDREND_STAT_PARAM_SLAVE_MODE, &nSlaveMode, &nDummy)))
 					{
-						__C(pAmAudioRendererStats->GetStatParam(AM_AUDREND_STAT_PARAM_SLAVE_RATE, &nSlaveRate, &nDummy));
-						__C(pAmAudioRendererStats->GetStatParam(AM_AUDREND_STAT_PARAM_SLAVE_DROPWRITE_DUR, &nDropWriteDuration, &nDummy));
-						__C(pAmAudioRendererStats->GetStatParam(AM_AUDREND_STAT_PARAM_SLAVE_HIGHLOWERROR, &nHighestSlaveError, &nLowestSlaveError));
-						__C(pAmAudioRendererStats->GetStatParam(AM_AUDREND_STAT_PARAM_SLAVE_LASTHIGHLOWERROR, &nLastHighSlaveError, &nLastLowSlaveError));
-						__C(pAmAudioRendererStats->GetStatParam(AM_AUDREND_STAT_PARAM_SLAVE_ACCUMERROR, &nAccumulatedError, &nDummy));
+						pPropertyBag->WriteValue(_T("SlaveMode"), CComVariant((LONG) nSlaveMode));
+						if(nSlaveMode)
+						{
+							if(SUCCEEDED(pAmAudioRendererStats->GetStatParam(AM_AUDREND_STAT_PARAM_SLAVE_RATE, &nSlaveRate, &nDummy)))
+								pPropertyBag->WriteValue(_T("SlaveRate"), CComVariant((LONG) nSlaveRate));
+							if(SUCCEEDED(pAmAudioRendererStats->GetStatParam(AM_AUDREND_STAT_PARAM_SLAVE_DROPWRITE_DUR, &nDropWriteDuration, &nDummy)))
+								pPropertyBag->WriteValue(_T("DropWriteDuration"), CComVariant((LONG) nDropWriteDuration));
+							if(SUCCEEDED(pAmAudioRendererStats->GetStatParam(AM_AUDREND_STAT_PARAM_SLAVE_HIGHLOWERROR, &nHighestSlaveError, &nLowestSlaveError)))
+							{
+								pPropertyBag->WriteValue(_T("HighestSlaveError"), CComVariant((LONG) nHighestSlaveError));
+								pPropertyBag->WriteValue(_T("LowestSlaveError"), CComVariant((LONG) nLowestSlaveError));
+							}
+							if(SUCCEEDED(pAmAudioRendererStats->GetStatParam(AM_AUDREND_STAT_PARAM_SLAVE_LASTHIGHLOWERROR, &nLastHighSlaveError, &nLastLowSlaveError)))
+							{
+								pPropertyBag->WriteValue(_T("LastHighSlaveError"), CComVariant((LONG) nLastHighSlaveError));
+								pPropertyBag->WriteValue(_T("LastLowSlaveError"), CComVariant((LONG) nLastLowSlaveError));
+							}
+							if(SUCCEEDED(pAmAudioRendererStats->GetStatParam(AM_AUDREND_STAT_PARAM_SLAVE_ACCUMERROR, &nAccumulatedError, &nDummy)))
+								pPropertyBag->WriteValue(_T("AccumulatedError"), CComVariant((LONG) nAccumulatedError));
+						}
 					}
-					__C(pAmAudioRendererStats->GetStatParam(AM_AUDREND_STAT_PARAM_BUFFERFULLNESS, &nBufferFullness, &nDummy));
-					//__C(pAmAudioRendererStats->GetStatParam(AM_AUDREND_STAT_PARAM_JITTER, &nJitter, &nDummy));
-					PropertyBagNeeded(pPropertyBag);
-					pPropertyBag->WriteValue(_T("BreakCount"), CComVariant((LONG) nBreakCount));
-					pPropertyBag->WriteValue(_T("SlaveMode"), CComVariant((LONG) nSlaveMode));
-					pPropertyBag->WriteValue(_T("SilenceDuration"), CComVariant((LONG) nSilenceDuration));
-					pPropertyBag->WriteValue(_T("LastBufferDuration"), CComVariant((LONG) nLastBufferDuration));
-					pPropertyBag->WriteValue(_T("DiscontinuityCount"), CComVariant((LONG) nDiscontinuityCount));
-					if(nSlaveMode)
-					{
-						pPropertyBag->WriteValue(_T("SlaveRate"), CComVariant((LONG) nSlaveRate));
-						pPropertyBag->WriteValue(_T("DropWriteDuration"), CComVariant((LONG) nDropWriteDuration));
-						pPropertyBag->WriteValue(_T("HighestSlaveError"), CComVariant((LONG) nHighestSlaveError));
-						pPropertyBag->WriteValue(_T("LowestSlaveError"), CComVariant((LONG) nLowestSlaveError));
-						pPropertyBag->WriteValue(_T("LastHighSlaveError"), CComVariant((LONG) nLastHighSlaveError));
-						pPropertyBag->WriteValue(_T("LastLowSlaveError"), CComVariant((LONG) nLastLowSlaveError));
-						pPropertyBag->WriteValue(_T("AccumulatedError"), CComVariant((LONG) nAccumulatedError));
-					}
-					pPropertyBag->WriteValue(_T("BufferFullness"), CComVariant((LONG) nBufferFullness));
-					//pPropertyBag->WriteValue(_T("Jitter"), CComVariant((LONG) nJitter));
+					if(SUCCEEDED(pAmAudioRendererStats->GetStatParam(AM_AUDREND_STAT_PARAM_SILENCE_DUR, &nSilenceDuration, &nDummy)))
+						pPropertyBag->WriteValue(_T("SilenceDuration"), CComVariant((LONG) nSilenceDuration));
+					if(SUCCEEDED(pAmAudioRendererStats->GetStatParam(AM_AUDREND_STAT_PARAM_LAST_BUFFER_DUR, &nLastBufferDuration, &nDummy)))
+						pPropertyBag->WriteValue(_T("LastBufferDuration"), CComVariant((LONG) nLastBufferDuration));
+					if(SUCCEEDED(pAmAudioRendererStats->GetStatParam(AM_AUDREND_STAT_PARAM_DISCONTINUITIES, &nDiscontinuityCount, &nDummy)))
+						pPropertyBag->WriteValue(_T("DiscontinuityCount"), CComVariant((LONG) nDiscontinuityCount));
+					if(SUCCEEDED(pAmAudioRendererStats->GetStatParam(AM_AUDREND_STAT_PARAM_BUFFERFULLNESS, &nBufferFullness, &nDummy)))
+						pPropertyBag->WriteValue(_T("BufferFullness"), CComVariant((LONG) nBufferFullness));
+					if(SUCCEEDED(pAmAudioRendererStats->GetStatParam(AM_AUDREND_STAT_PARAM_JITTER, &nJitter, &nDummy)))
+						pPropertyBag->WriteValue(_T("Jitter"), CComVariant((LONG) nJitter));
 				}
 				_ATLCATCHALL()
 				{
