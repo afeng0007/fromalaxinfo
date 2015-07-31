@@ -1,3 +1,11 @@
 HKCR
 {
+	NoRemove AppID
+	{
+		'{9C4402F4-5831-4593-B788-917609D12169}' = s 'Alax.Info FilterGraphService Sample'
+		'FilterGraphService.exe'
+		{
+			val AppID = s '{9C4402F4-5831-4593-B788-917609D12169}'
+		}
+	}
 }
