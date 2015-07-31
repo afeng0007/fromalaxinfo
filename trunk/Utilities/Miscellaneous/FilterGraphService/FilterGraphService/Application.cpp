@@ -30,6 +30,17 @@ public:
 		// Suggested - PKT Level Authentication, 
 		// Impersonation Level of RPC_C_IMP_LEVEL_IDENTIFY 
 		// and an appropriate Non NULL Security Descriptor.
+		_ATLTRY
+		{
+			static const DWORD g_nAuthenticationLevel = RPC_C_AUTHN_LEVEL_PKT;
+			static const DWORD g_nImpersonationLevel = RPC_C_IMP_LEVEL_IMPERSONATE;
+			static const DWORD g_nAuthenticationCapabilities = EOAC_NONE;
+			ATLENSURE_SUCCEEDED(CoInitializeSecurity(NULL, -1, NULL, NULL, g_nAuthenticationLevel, g_nImpersonationLevel, NULL, g_nAuthenticationCapabilities, NULL));
+		}
+		_ATLCATCHALL()
+		{
+			ATLTRACE(_T("An exception has been caught\n"));
+		}
 		return S_OK;
 	}
 	HRESULT RegisterClassObjects(DWORD nClassContext, DWORD nFlags)
