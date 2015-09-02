@@ -38,12 +38,12 @@ CSIDL_HISTORY: C:\Users\Roman\AppData\Local\Microsoft\Windows\History
 CSIDL_COMMON_APPDATA: C:\ProgramData
 CSIDL_WINDOWS: C:\Windows
 CSIDL_SYSTEM: C:\Windows\system32
-CSIDL_PROGRAM_FILES: C:\Program Files (x86)
+CSIDL_PROGRAM_FILES: C:\Program Files
 CSIDL_MYPICTURES: C:\Users\Roman\Pictures
 CSIDL_PROFILE: C:\Users\Roman
 CSIDL_SYSTEMX86: C:\Windows\SysWOW64
 CSIDL_PROGRAM_FILESX86: C:\Program Files (x86)
-CSIDL_PROGRAM_FILES_COMMON: C:\Program Files (x86)\Common Files
+CSIDL_PROGRAM_FILES_COMMON: C:\Program Files\Common Files
 CSIDL_PROGRAM_FILES_COMMONX86: C:\Program Files (x86)\Common Files
 CSIDL_COMMON_TEMPLATES: C:\ProgramData\Microsoft\Windows\Templates
 CSIDL_COMMON_DOCUMENTS: C:\Users\Public\Documents
@@ -104,10 +104,10 @@ FOLDERID_Profile: C:\Users\Roman
 FOLDERID_Pictures: C:\Users\Roman\Pictures
 FOLDERID_ProgramFilesX86: C:\Program Files (x86)
 FOLDERID_ProgramFilesCommonX86: C:\Program Files (x86)\Common Files
-FOLDERID_ProgramFilesX64 not found (0x80070002)
-FOLDERID_ProgramFilesCommonX64 not found (0x80070002)
-FOLDERID_ProgramFiles: C:\Program Files (x86)
-FOLDERID_ProgramFilesCommon: C:\Program Files (x86)\Common Files
+FOLDERID_ProgramFilesX64: C:\Program Files
+FOLDERID_ProgramFilesCommonX64: C:\Program Files\Common Files
+FOLDERID_ProgramFiles: C:\Program Files
+FOLDERID_ProgramFilesCommon: C:\Program Files\Common Files
 FOLDERID_UserProgramFiles: C:\Users\Roman\AppData\Local\Programs
 FOLDERID_UserProgramFilesCommon: C:\Users\Roman\AppData\Local\Programs\Common
 FOLDERID_AdminTools: C:\Users\Roman\AppData\Roaming\Microsoft\Windows\Start Menu\Programs\Administrative Tools
