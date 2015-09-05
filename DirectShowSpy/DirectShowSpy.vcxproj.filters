@@ -42,15 +42,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="FilterGraphSpy.rgs">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="FilterMapperSpy.rgs">
-      <Filter>Resource Files</Filter>
-    </None>
-    <None Include="GenericClass.rgs">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="..\..\Repository-Private\Utilities\EmailTools\_Bin\Win32\Release\EmailTools\EmailTools.tlb">
       <Filter>Resource Files</Filter>
     </None>
@@ -64,6 +55,9 @@
       <Filter>Source Files</Filter>
     </None>
     <None Include="..\..\Repository-Private\Utilities\EmailTools\_Bin\EmailTools-Win32.tlb" />
+    <None Include="GenericClass %28Both%29.rgs">
+      <Filter>Resource Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AboutDialog.h">
@@ -115,6 +109,9 @@
       <Filter>Generated Files</Filter>
     </ClInclude>
     <ClInclude Include="MediaSampleTrace.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="FilterGraphTable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

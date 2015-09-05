@@ -275,4 +275,58 @@ library AlaxInfoDirectShowSpy
 	{
 		[default] interface IUnknown; //IPropertyPage;
 	};
+	[
+		object,
+		uuid(ECDC55A1-FFD7-4999-BAB5-579D5773F0B6),
+		dual,
+		oleautomation,
+		nonextensible,
+		pointer_default(unique)
+	]
+	interface IFilterGraphTableItem : IDispatch
+	{
+		[id(DISPID_VALUE), propget] HRESULT FilterGraph([out, retval] IUnknown** ppFilterGraphUnknown);
+		[id(DISPID_VALUE), propput] HRESULT FilterGraph([in] IUnknown* pFilterGraphUnknown);
+		[id(1), propget] HRESULT Time([out, retval] DATE* pfTime);
+	};
+	[
+		uuid(7B2E1768-3037-4975-ABA1-BA626397BF08)
+	]
+	coclass FilterGraphTableItem
+	{
+		[default] interface IFilterGraphTableItem;
+	};
+	[
+		object,
+		uuid(15078C09-6D0C-4284-924C-F6CD13CA39F6),
+		dual,
+		oleautomation,
+		nonextensible,
+		pointer_default(unique)
+	]
+	interface IFilterGraphTable : IDispatch
+	{
+		[id(DISPID_NEWENUM), propget, restricted] HRESULT _NewEnum([out, retval] IUnknown** ppEnum);
+		[id(DISPID_VALUE), propget] HRESULT Item([in] VARIANT vIndex, [out, retval] VARIANT* pvItem);
+		[id(1), propget] HRESULT Count([out, retval] LONG* pnCount);
+	};
+	[
+		uuid(44EF31BC-CC5F-4163-8832-BDC79ED59162)
+	]
+	coclass FilterGraphTable
+	{
+		[default] interface IFilterGraphTable;
+	};
+	[
+		object,
+		uuid(D9A734F0-3230-4574-81FA-71DE297ACDF8),
+		dual,
+		oleautomation,
+		nonextensible,
+		pointer_default(unique)
+	]
+	interface IFilterGraphTableActiveObject : IDispatch
+	{
+		[id(1)] HRESULT GetFilterGraphs([out] LONG* pnProcessIdentifier, [out] VARIANT* pvArray);
+	};
 };

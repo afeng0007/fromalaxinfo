@@ -20,6 +20,7 @@
 #include "Common.h"
 #include "RunPropertyBag.h"
 #include "MediaSampleTrace.h"
+#include "FilterGraphTable.h"
 
 HRESULT FilterGraphHelper_OpenGraphStudioNext(LONG nParentWindowHandle, LPCWSTR pszMonikerDisplayName, VARIANT_BOOL* pbResult);
 HRESULT FilterGraphHelper_OpenGraphEdit(LONG nParentWindowHandle, LPCWSTR pszMonikerDisplayName, VARIANT_BOOL* pbResult);
@@ -680,6 +681,7 @@ private:
 	CComPtr<IMediaEventEx> m_pInnerMediaEventEx;
 	_FilterGraphHelper::CRotRunningFilterGraph m_RunningFilterGraph;
 	INT m_nRunningFilterGraphReference;
+	CLocalObjectPtr<CFilterGraphTableItem> m_pFilterGraphTableItem;
 	SYSTEMTIME m_Time;
 	CStringW m_sMonikerDisplayName;
 	CComPtr<IUnknown> m_pTemporaryUnknown;
@@ -711,7 +713,7 @@ private:
 		GetLocalTime(&Time);
 		CStringW sMonikerDisplayName;
 		static CConstIntegerRegistryValue g_nEnableRotMonikerItemNameSuffix(_T("Enable ROT Moniker Item Name Suffix")); // 0 Default (Enabled), 1 Disabled, 2 Enabled
-		if(g_nEnableRotMonikerItemNameSuffix != 1)
+		if(g_nEnableRotMonikerItemNameSuffix != 1) // Disabled
 		{
 			TCHAR pszPath[MAX_PATH] = { 0 };
 			_W(GetModuleFileName(NULL, pszPath, DIM(pszPath)));
@@ -726,6 +728,20 @@ private:
 			m_Time = Time;
 			m_sMonikerDisplayName = sMonikerDisplayName;
 		}
+		#pragma region Filter Graph Table Item
+		static CConstIntegerRegistryValue g_nAutomaticFilterGraphTableItem(_T("Automatic Filter Graph Table Item")); // 0 Default (Disabled), 1 Disabled, 2 Enabled
+		if(g_nAutomaticFilterGraphTableItem == 2) // Enabled
+			_ATLTRY
+			{
+				_A(!m_pFilterGraphTableItem->IsFilterGraphAvailable());
+				m_pFilterGraphTableItem->SetFilterGraph(this);
+				Release();
+			}
+			_ATLCATCHALL()
+			{
+				_Z_EXCEPTION();
+			}
+		#pragma endregion
 		if(!m_bIsAggregated)
 		{
 			m_nRunningFilterGraphReference++;
@@ -743,6 +759,20 @@ private:
 	{
 		if(!m_RunningFilterGraph.GetCookie())
 			return;
+		#pragma region Filter Graph Table Item
+		_ATLTRY
+		{
+			if(m_pFilterGraphTableItem->IsFilterGraphAvailable())
+			{
+				AddRef();
+				m_pFilterGraphTableItem->SetFilterGraph(NULL);
+			}
+		}
+		_ATLCATCHALL()
+		{
+			_Z_EXCEPTION();
+		}
+		#pragma endregion
 		if(m_nRunningFilterGraphReference != 2)
 			AddRef();
 		_Z4(atlTraceRefcount, 4, _T("this 0x%p, m_dwRef 0x%x\n"), this, m_dwRef);
@@ -1026,57 +1056,6 @@ public:
 			nCreatedFilterResult = pAmGraphBuilderCallback->CreatedFilter(pBaseFilter);
 			return TRUE;
 		}
-		return FALSE;
-	}
-	static BOOL LookupEventCodeName(LONG nEventCode, LPCSTR& pszName)
-	{
-		// NOTE: See Windows SDK evcode.h
-		static const struct { LONG nEventCode; LPCSTR pszName; } g_pMap[] = 
-		{
-			#define A(x) { x, #x },
-			A(EC_COMPLETE)
-			A(EC_USERABORT)
-			A(EC_ERRORABORT)
-			A(EC_TIME)
-			A(EC_REPAINT)
-			A(EC_STREAM_ERROR_STOPPED)
-			A(EC_STREAM_ERROR_STILLPLAYING)
-			A(EC_ERROR_STILLPLAYING)
-			A(EC_PALETTE_CHANGED)
-			A(EC_VIDEO_SIZE_CHANGED)
-			A(EC_QUALITY_CHANGE)
-			A(EC_SHUTTING_DOWN)
-			A(EC_CLOCK_CHANGED)
-			A(EC_PAUSED)
-			A(EC_OPENING_FILE)
-			A(EC_BUFFERING_DATA)
-			A(EC_FULLSCREEN_LOST)
-			A(EC_ACTIVATE)
-			A(EC_NEED_RESTART)
-			A(EC_WINDOW_DESTROYED)
-			A(EC_DISPLAY_CHANGED)
-			A(EC_STARVATION)
-			A(EC_OLE_EVENT)
-			A(EC_NOTIFY_WINDOW)
-			A(EC_STREAM_CONTROL_STOPPED)
-			A(EC_STREAM_CONTROL_STARTED)
-			A(EC_END_OF_SEGMENT)
-			A(EC_SEGMENT_STARTED)
-			A(EC_LENGTH_CHANGED)
-			A(EC_DEVICE_LOST)
-			A(EC_SAMPLE_NEEDED)
-			A(EC_PROCESSING_LATENCY)
-			A(EC_SAMPLE_LATENCY)
-			A(EC_SCRUB_TIME)
-			A(EC_STEP_COMPLETE)
-			#undef A
-		};
-		for(SIZE_T nIndex = 0; nIndex < DIM(g_pMap); nIndex++)
-			if(g_pMap[nIndex].nEventCode == nEventCode)
-			{
-				pszName = g_pMap[nIndex].pszName;
-				return TRUE;
-			}
 		return FALSE;
 	}
 	CStringW GetMonikerDisplayName() const
@@ -1559,14 +1538,7 @@ public:
 // IMediaEventSink
     STDMETHOD(Notify)(LONG nEventCode, LONG_PTR nParameter1, LONG_PTR nParameter2)
 	{
-		#if TRUE
-			LPCSTR pszEventName = NULL;
-			if(LookupEventCodeName(nEventCode, pszEventName))
-			{
-				_Z4(atlTraceCOM, 4, _T("nEventCode %hs (0x%02X), nParameter1 0x%p, nParameter2 0x%p\n"), pszEventName, nEventCode, nParameter1, nParameter2);
-			} else
-		#endif
-		_Z4(atlTraceCOM, 4, _T("nEventCode 0x%02X, nParameter1 0x%p, nParameter2 0x%p\n"), nEventCode, nParameter1, nParameter2);
+		_Z4(atlTraceCOM, 4, _T("nEventCode %s, nParameter1 0x%p, nParameter2 0x%p\n"), _FilterGraphHelper::FormatEventCode(nEventCode), nParameter1, nParameter2);
 		#if defined(_M_IX86)
 			// WARN: Guarding section around might be preventing from walknig frame up the stack
 			if(nEventCode == EC_ERRORABORT) // || nEventCode == EC_VIDEO_SIZE_CHANGED)
@@ -1592,7 +1564,7 @@ public:
 		_Z4(atlTraceCOM, nTimeout ? 4 : 5, _T("nTimeout %d\n"), nTimeout);
 		const HRESULT nGetEventResult = m_pInnerMediaEventEx->GetEvent(pnEventCode, pnParameter1, pnParameter2, nTimeout);
 		if(pnEventCode && pnParameter1 && pnParameter2)
-			_Z4(atlTraceCOM, (nGetEventResult != E_ABORT) ? 4 : 5, _T("nGetEventResult 0x%x, *pnEventCode 0x%02X, *pnParameter1 0x%p, *pnParameter2 0x%p\n"), nGetEventResult, *pnEventCode, *pnParameter1, *pnParameter2);
+			_Z4(atlTraceCOM, (nGetEventResult != E_ABORT) ? 4 : 5, _T("nGetEventResult 0x%08X, *pnEventCode %s, *pnParameter1 0x%p, *pnParameter2 0x%p\n"), nGetEventResult, _FilterGraphHelper::FormatEventCode(*pnEventCode), *pnParameter1, *pnParameter2);
 		return nGetEventResult;
 	}
 	STDMETHOD(WaitForCompletion)(LONG nTimeout, LONG* pnEventCode)
@@ -1600,36 +1572,22 @@ public:
 		_Z4(atlTraceCOM, 4, _T("nTimeout %d\n"), nTimeout);
 		const HRESULT nWaitForCompletionResult = m_pInnerMediaEventEx->WaitForCompletion(nTimeout, pnEventCode);
 		if(pnEventCode)
-			_Z4(atlTraceCOM, 4, _T("nWaitForCompletionResult 0x%x, *pnEventCode 0x%02X\n"), nWaitForCompletionResult, *pnEventCode);
+			_Z4(atlTraceCOM, 4, _T("nWaitForCompletionResult 0x%08X, *pnEventCode %s\n"), nWaitForCompletionResult, _FilterGraphHelper::FormatEventCode(*pnEventCode));
 		return nWaitForCompletionResult;
 	}
 	STDMETHOD(CancelDefaultHandling)(LONG nEventCode)
 	{
-		#if TRUE
-			LPCSTR pszEventName = NULL;
-			if(LookupEventCodeName(nEventCode, pszEventName))
-			{
-				_Z4(atlTraceCOM, 4, _T("nEventCode %hs (0x%02X)\n"), pszEventName, nEventCode);
-			} else
-		#endif
-		_Z4(atlTraceCOM, 4, _T("nEventCode 0x%02X\n"), nEventCode);
+		_Z4(atlTraceCOM, 4, _T("nEventCode %s\n"), _FilterGraphHelper::FormatEventCode(nEventCode));
 		return m_pInnerMediaEventEx->CancelDefaultHandling(nEventCode);
 	}
 	STDMETHOD(RestoreDefaultHandling)(LONG nEventCode)
 	{
-		#if TRUE
-			LPCSTR pszEventName = NULL;
-			if(LookupEventCodeName(nEventCode, pszEventName))
-			{
-				_Z4(atlTraceCOM, 4, _T("nEventCode %hs (0x%02X)\n"), pszEventName, nEventCode);
-			} else
-		#endif
-		_Z4(atlTraceCOM, 4, _T("nEventCode 0x%02X\n"), nEventCode);
+		_Z4(atlTraceCOM, 4, _T("nEventCode %s\n"), _FilterGraphHelper::FormatEventCode(nEventCode));
 		return m_pInnerMediaEventEx->RestoreDefaultHandling(nEventCode);
 	}
 	STDMETHOD(FreeEventParams)(LONG nEventCode, LONG_PTR nParameter1, LONG_PTR nParameter2)
 	{
-		_Z4(atlTraceCOM, 4, _T("nEventCode 0x%02X, nParameter1 0x%p, nParameter2 0x%p\n"), nEventCode, nParameter1, nParameter2);
+		_Z4(atlTraceCOM, 4, _T("nEventCode %s, nParameter1 0x%p, nParameter2 0x%p\n"), _FilterGraphHelper::FormatEventCode(nEventCode), nParameter1, nParameter2);
 		return m_pInnerMediaEventEx->FreeEventParams(nEventCode, nParameter1, nParameter2);
 	}
        

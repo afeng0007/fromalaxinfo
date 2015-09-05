@@ -455,9 +455,7 @@
     <None Include="..\..\Repository-Private\Utilities\EmailTools\_Bin\Win32\Release\EmailTools\EmailTools.tlb" />
     <None Include="Module.def" />
     <None Include="Module.rgs" />
-    <None Include="FilterGraphSpy.rgs" />
-    <None Include="FilterMapperSpy.rgs" />
-    <None Include="GenericClass.rgs" />
+    <None Include="GenericClass %28Both%29.rgs" />
     <None Include="GenericPropertyPage.rgs" />
   </ItemGroup>
   <ItemGroup>
@@ -471,6 +469,7 @@
     <ClInclude Include="FilterGraphHelper.h" />
     <ClInclude Include="FilterGraphList.h" />
     <ClInclude Include="FilterGraphSpy.h" />
+    <ClInclude Include="FilterGraphTable.h" />
     <ClInclude Include="FilterMapperSpy.h" />
     <ClInclude Include="GraphBuilderCallbackPropertySheet.h" />
     <ClInclude Include="MediaSampleTrace.h" />
