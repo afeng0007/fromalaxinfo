@@ -1,0 +1,135 @@
+Logical Processors:
+
+Mask: 0x00000003
+Relationship: RelationProcessorCore (0x0)
+ProcessorCore.Flags: 0x01
+
+Mask: 0x00000003
+Relationship: RelationCache (0x2)
+Cache.Level: 1
+Cache.Associativity: 8
+Cache.LineSize: 64 (0x40)
+Cache.Size: 32768 (0x8000)
+Cache.Type: CacheData (0x2)
+
+Mask: 0x00000003
+Relationship: RelationCache (0x2)
+Cache.Level: 1
+Cache.Associativity: 4
+Cache.LineSize: 64 (0x40)
+Cache.Size: 32768 (0x8000)
+Cache.Type: CacheInstruction (0x1)
+
+Mask: 0x00000003
+Relationship: RelationCache (0x2)
+Cache.Level: 2
+Cache.Associativity: 8
+Cache.LineSize: 64 (0x40)
+Cache.Size: 262144 (0x40000)
+Cache.Type: CacheUnified (0x0)
+
+Mask: 0x0000000c
+Relationship: RelationProcessorCore (0x0)
+ProcessorCore.Flags: 0x01
+
+Mask: 0x0000000c
+Relationship: RelationCache (0x2)
+Cache.Level: 1
+Cache.Associativity: 8
+Cache.LineSize: 64 (0x40)
+Cache.Size: 32768 (0x8000)
+Cache.Type: CacheData (0x2)
+
+Mask: 0x0000000c
+Relationship: RelationCache (0x2)
+Cache.Level: 1
+Cache.Associativity: 4
+Cache.LineSize: 64 (0x40)
+Cache.Size: 32768 (0x8000)
+Cache.Type: CacheInstruction (0x1)
+
+Mask: 0x0000000c
+Relationship: RelationCache (0x2)
+Cache.Level: 2
+Cache.Associativity: 8
+Cache.LineSize: 64 (0x40)
+Cache.Size: 262144 (0x40000)
+Cache.Type: CacheUnified (0x0)
+
+Mask: 0x00000030
+Relationship: RelationProcessorCore (0x0)
+ProcessorCore.Flags: 0x01
+
+Mask: 0x00000030
+Relationship: RelationCache (0x2)
+Cache.Level: 1
+Cache.Associativity: 8
+Cache.LineSize: 64 (0x40)
+Cache.Size: 32768 (0x8000)
+Cache.Type: CacheData (0x2)
+
+Mask: 0x00000030
+Relationship: RelationCache (0x2)
+Cache.Level: 1
+Cache.Associativity: 4
+Cache.LineSize: 64 (0x40)
+Cache.Size: 32768 (0x8000)
+Cache.Type: CacheInstruction (0x1)
+
+Mask: 0x00000030
+Relationship: RelationCache (0x2)
+Cache.Level: 2
+Cache.Associativity: 8
+Cache.LineSize: 64 (0x40)
+Cache.Size: 262144 (0x40000)
+Cache.Type: CacheUnified (0x0)
+
+Mask: 0x000000ff
+Relationship: RelationProcessorPackage (0x3)
+
+Mask: 0x000000c0
+Relationship: RelationProcessorCore (0x0)
+ProcessorCore.Flags: 0x01
+
+Mask: 0x000000c0
+Relationship: RelationCache (0x2)
+Cache.Level: 1
+Cache.Associativity: 8
+Cache.LineSize: 64 (0x40)
+Cache.Size: 32768 (0x8000)
+Cache.Type: CacheData (0x2)
+
+Mask: 0x000000c0
+Relationship: RelationCache (0x2)
+Cache.Level: 1
+Cache.Associativity: 4
+Cache.LineSize: 64 (0x40)
+Cache.Size: 32768 (0x8000)
+Cache.Type: CacheInstruction (0x1)
+
+Mask: 0x000000c0
+Relationship: RelationCache (0x2)
+Cache.Level: 2
+Cache.Associativity: 8
+Cache.LineSize: 64 (0x40)
+Cache.Size: 262144 (0x40000)
+Cache.Type: CacheUnified (0x0)
+
+Mask: 0x000000ff
+Relationship: RelationCache (0x2)
+Cache.Level: 3
+Cache.Associativity: 16
+Cache.LineSize: 64 (0x40)
+Cache.Size: 8388608 (0x800000)
+Cache.Type: CacheUnified (0x0)
+
+Mask: 0x000000ff
+Relationship: RelationNumaNode (0x1)
+NumaNode.NodeNumber: 0x0
+
+Record Count per Relationship:
+  RelationProcessorCore (0x0): 4
+  RelationNumaNode (0x1): 1
+  RelationCache (0x2): 13
+  RelationProcessorPackage (0x3): 1
+  RelationGroup (0x4): 0

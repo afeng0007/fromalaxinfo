@@ -1,0 +1,105 @@
+Logical Processors:
+
+Mask: 0x00000001
+Relationship: RelationProcessorCore (0x0)
+ProcessorCore.Flags: 0x00
+
+Mask: 0x00000001
+Relationship: RelationCache (0x2)
+Cache.Level: 1
+Cache.Associativity: 8
+Cache.LineSize: 64 (0x40)
+Cache.Size: 32768 (0x8000)
+Cache.Type: CacheData (0x2)
+
+Mask: 0x00000001
+Relationship: RelationCache (0x2)
+Cache.Level: 1
+Cache.Associativity: 8
+Cache.LineSize: 64 (0x40)
+Cache.Size: 32768 (0x8000)
+Cache.Type: CacheInstruction (0x1)
+
+Mask: 0x00000002
+Relationship: RelationProcessorCore (0x0)
+ProcessorCore.Flags: 0x00
+
+Mask: 0x00000002
+Relationship: RelationCache (0x2)
+Cache.Level: 1
+Cache.Associativity: 8
+Cache.LineSize: 64 (0x40)
+Cache.Size: 32768 (0x8000)
+Cache.Type: CacheData (0x2)
+
+Mask: 0x00000002
+Relationship: RelationCache (0x2)
+Cache.Level: 1
+Cache.Associativity: 8
+Cache.LineSize: 64 (0x40)
+Cache.Size: 32768 (0x8000)
+Cache.Type: CacheInstruction (0x1)
+
+Mask: 0x00000003
+Relationship: RelationCache (0x2)
+Cache.Level: 2
+Cache.Associativity: 24
+Cache.LineSize: 64 (0x40)
+Cache.Size: 6291456 (0x600000)
+Cache.Type: CacheUnified (0x0)
+
+Mask: 0x00000004
+Relationship: RelationProcessorCore (0x0)
+ProcessorCore.Flags: 0x00
+
+Mask: 0x00000004
+Relationship: RelationCache (0x2)
+Cache.Level: 1
+Cache.Associativity: 8
+Cache.LineSize: 64 (0x40)
+Cache.Size: 32768 (0x8000)
+Cache.Type: CacheData (0x2)
+
+Mask: 0x00000004
+Relationship: RelationCache (0x2)
+Cache.Level: 1
+Cache.Associativity: 8
+Cache.LineSize: 64 (0x40)
+Cache.Size: 32768 (0x8000)
+Cache.Type: CacheInstruction (0x1)
+
+Mask: 0x0000000f
+Relationship: RelationProcessorPackage (0x3)
+
+Mask: 0x00000008
+Relationship: RelationProcessorCore (0x0)
+ProcessorCore.Flags: 0x00
+
+Mask: 0x00000008
+Relationship: RelationCache (0x2)
+Cache.Level: 1
+Cache.Associativity: 8
+Cache.LineSize: 64 (0x40)
+Cache.Size: 32768 (0x8000)
+Cache.Type: CacheData (0x2)
+
+Mask: 0x00000008
+Relationship: RelationCache (0x2)
+Cache.Level: 1
+Cache.Associativity: 8
+Cache.LineSize: 64 (0x40)
+Cache.Size: 32768 (0x8000)
+Cache.Type: CacheInstruction (0x1)
+
+Mask: 0x0000000c
+Relationship: RelationCache (0x2)
+Cache.Level: 2
+Cache.Associativity: 24
+Cache.LineSize: 64 (0x40)
+Cache.Size: 6291456 (0x600000)
+Cache.Type: CacheUnified (0x0)
+
+Mask: 0x0000000f
+Relationship: RelationNumaNode (0x1)
+NumaNode.NodeNumber: 0x0
+
