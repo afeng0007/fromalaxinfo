@@ -51,7 +51,10 @@ int _tmain(int argc, _TCHAR* argv[])
 			__E(ReadFile(hInput, pnData, (DWORD) g_nDataCapacity, &nDataSize, NULL));
 			if(!nDataSize)
 				break;
-			__E(WriteFile(hOutput, pnData, nDataSize, NULL, NULL));
+			// NOTE: nWriteDataSize is mandatory
+			//       https://social.msdn.microsoft.com/Forums/vstudio/en-US/e519816e-57c6-4b5d-9269-3ad1494eedbf/writefile-on-a-console-handle-always-fails-why?forum=vcgeneral
+			DWORD nWriteDataSize = 0;
+			__E(WriteFile(hOutput, pnData, nDataSize, &nWriteDataSize, NULL));
 			__C(File.Write(pnData, nDataSize));
 		}
 	}
