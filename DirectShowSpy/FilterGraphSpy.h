@@ -1539,15 +1539,21 @@ public:
     STDMETHOD(Notify)(LONG nEventCode, LONG_PTR nParameter1, LONG_PTR nParameter2)
 	{
 		_Z4(atlTraceCOM, 4, _T("nEventCode %s, nParameter1 0x%p, nParameter2 0x%p\n"), _FilterGraphHelper::FormatEventCode(nEventCode), nParameter1, nParameter2);
-		#if defined(_M_IX86)
-			// WARN: Guarding section around might be preventing from walknig frame up the stack
+		//#if defined(_M_IX86)
+			// WARN: Guarding section around might be preventing from walking frame up the stack
+			// WARN: No guarding section however might cause hosting application crash, within RtlCaptureContext API unfortunately
 			if(nEventCode == EC_ERRORABORT) // || nEventCode == EC_VIDEO_SIZE_CHANGED)
-			{
-				CONTEXT ThreadContext = { CONTEXT_FULL };
-				GetCurrentThreadContext(&ThreadContext);
-				CDebugTraceCallStack::TraceCallStack(ThreadContext, 32); //(nEventCode == EC_ERRORABORT) ? 32 : 8);
-			}
-		#endif // defined(_M_IX86)
+				_ATLTRY
+				{
+					CONTEXT ThreadContext = { CONTEXT_FULL };
+					GetCurrentThreadContext(&ThreadContext);
+					CDebugTraceCallStack::TraceCallStack(ThreadContext, 32); //(nEventCode == EC_ERRORABORT) ? 32 : 8);
+				}
+				_ATLCATCHALL()
+				{
+					_Z_EXCEPTION();
+				}
+		//#endif // defined(_M_IX86)
 		if(!m_pInnerMediaEventSink)
 			return S_FALSE;
 		return m_pInnerMediaEventSink->Notify(nEventCode, nParameter1, nParameter2);
