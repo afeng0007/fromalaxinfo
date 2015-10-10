@@ -5,6 +5,7 @@
 #pragma once
 
 #include <mmdeviceapi.h>
+#include <mmreg.h>
 #include <functiondiscoverykeys.h>
 #include <propkey.h>
 #include <devpkey.h>
@@ -39,6 +40,23 @@ private:
 
 public:
 // CMainDialog
+	static BOOL IsWaveFormatExKey(const PROPERTYKEY& Key)
+	{
+		if(Key == PKEY_AudioEngine_DeviceFormat)
+			return TRUE;
+		if(Key == PKEY_AudioEngine_OEMFormat)
+			return TRUE;
+		class __declspec(uuid("{3D6E1656-2E50-4C4C-8D85-D0ACAE3C6C68}")) A;
+		if(Key.fmtid == __uuidof(A) && (Key.pid == 2 || Key.pid == 3))
+			return TRUE;
+		class __declspec(uuid("{E4870E26-3CC5-4CD2-BA46-CA0A9A70ED04}")) B;
+		if(Key.fmtid == __uuidof(B) && Key.pid == 0) // PKEY_AudioEngine_??? endpointkeys.h
+			return TRUE;
+		class __declspec(uuid("{624F56DE-FD24-473E-814A-DE40AACAED16}")) C;
+		if(Key.fmtid == __uuidof(C) && Key.pid == 3)
+			return TRUE;
+		return FALSE;
+	}
 
 // Window message handelrs
 	LRESULT OnInitDialog(HWND, LPARAM) throw()
@@ -72,33 +90,20 @@ public:
 						CComHeapPtr<WCHAR> pszIdentifier;
 						__C(pMmDevice->GetId(&pszIdentifier));
 						sText.AppendFormat(_T("\t") _T("Identifier\t%ls\r\n"), pszIdentifier);
+						#pragma region State
 						DWORD nState = 0;
 						__C(pMmDevice->GetState(&nState));
-						CRoArrayT<CString> StateStringArray;
-						#pragma region State Strings
-						const DWORD& nValue = nState;
-						static const struct
+						static const CFlagNameT<DWORD> g_pDeviceStateMap[] = 
 						{
-							DWORD nValue;
-							LPCTSTR pszName;
-						} g_pMap[] = 
-						{
-							{ DEVICE_STATE_ACTIVE, _T("DEVICE_STATE_ACTIVE") },
-							{ DEVICE_STATE_DISABLED, _T("DEVICE_STATE_DISABLED") },
-							{ DEVICE_STATE_NOTPRESENT, _T("DEVICE_STATE_NOTPRESENT") },
-							{ DEVICE_STATE_UNPLUGGED, _T("DEVICE_STATE_UNPLUGGED") },
+							#define A(x) { x, #x },
+							A(DEVICE_STATE_ACTIVE)
+							A(DEVICE_STATE_DISABLED)
+							A(DEVICE_STATE_NOTPRESENT)
+							A(DEVICE_STATE_UNPLUGGED)
+							#undef A
 						};
-						DWORD nMask = 0;
-						for(SIZE_T nIndex = 0; nIndex < DIM(g_pMap); nIndex++)
-						{
-							if(nValue & g_pMap[nIndex].nValue)
-								_W(StateStringArray.Add(g_pMap[nIndex].pszName) >= 0);
-							nMask |= g_pMap[nIndex].nValue;
-						}
-						if(nValue & ~nMask)
-							_W(StateStringArray.Add(AtlFormatString(_T("0x%x"), nValue & ~nMask)) >= 0);
-						#pragma endregion 
-						sText.AppendFormat(_T("\t") _T("State\t%s\t0x%02x\r\n"), _StringHelper::Join(StateStringArray, _T(" | ")), nState);
+						sText.AppendFormat(_T("\t") _T("State\t%s\t0x%02X\r\n"), FormatFlagsT(g_pDeviceStateMap, nState), nState);
+						#pragma endregion State
 						#pragma region Property Store
 						sText.AppendFormat(_T("\t") _T("Properties:\r\n"));
 						CComPtr<IPropertyStore> pPropertyStore;
@@ -118,9 +123,14 @@ public:
 									CString sKeyName;
 									// NOTE: This is brought to you by regexp .+{PKEY_[^,]+}.+ -> A(\1)
 									#pragma region Named SDK constants
-#define A(x) { &x, #x },
-#define B(x) { &reinterpret_cast<const PROPERTYKEY&>(x), #x },
-									static const struct { const PROPERTYKEY* pKey; LPCSTR pszName; } g_pMap[] = {
+									#define A(x) { &x, #x },
+									#define B(x) { &reinterpret_cast<const PROPERTYKEY&>(x), #x },
+									static const struct 
+									{ 
+										const PROPERTYKEY* pKey; 
+										LPCSTR pszName; 
+									} g_pMap[] = 
+									{
 										#pragma region functiondiscoverykeys.h
 										A(PKEY_NAME)
 										A(PKEY_Device_DeviceDesc)
@@ -1143,8 +1153,8 @@ public:
 										B(DEVPKEY_DeviceDisplay_AlwaysShowDeviceAsConnected)
 										#pragma endregion
 									};
-#undef A
-#undef B
+									#undef A
+									#undef B
 									#pragma endregion
 									for(SIZE_T nIndex = 0; nIndex < DIM(g_pMap); nIndex++)
 										if(g_pMap[nIndex].pKey->fmtid == Key.fmtid && g_pMap[nIndex].pKey->pid == Key.pid)
@@ -1208,6 +1218,7 @@ public:
 									}
 									#pragma endregion 
 									#pragma endregion 
+									#pragma region Variant Type
 									static const CEnumerationNameT<VARTYPE> g_pVarTypeMap[] = 
 									{
 										#define A(x) { x, #x },
@@ -1257,12 +1268,57 @@ public:
 										A(VT_VERSIONED_STREAM)
 										#undef A
 									};
-									sText.Append(_StringHelper::Join<CString>(5, _T("\t"), 
+									#pragma endregion 
+									#pragma region Detail
+									CString sDetail;
+									if(Key == PKEY_AudioEndpoint_FormFactor && Value.vt == VT_UI4)
+									{
+										static const CEnumerationNameT<UINT32> g_pMap[] = 
+										{
+											#define A(x) { x, #x },
+											A(RemoteNetworkDevice)
+											A(Speakers)
+											A(LineLevel)
+											A(Headphones)
+											A(Microphone)
+											A(Headset)
+											A(Handset)
+											A(UnknownDigitalPassthrough)
+											A(SPDIF)
+											A(DigitalAudioDisplayDevice)
+											A(UnknownFormFactor)
+											#undef A
+										};
+										sDetail = FormatEnumerationT(g_pMap, Value.uintVal);
+									} else
+									if(IsWaveFormatExKey(Key) && Value.vt == VT_BLOB && Value.blob.cbSize >= sizeof (WAVEFORMATEX))
+									{
+										const WAVEFORMATEX* pWaveFormatEx = (const WAVEFORMATEX*) Value.blob.pBlobData;
+										CRoArrayT<CString> Array;
+										Array.Add(AtlFormatString(_T("wFormatTag 0x%02X"), pWaveFormatEx->wFormatTag));
+										Array.Add(AtlFormatString(_T("nChannels %d"), pWaveFormatEx->nChannels));
+										Array.Add(AtlFormatString(_T("nSamplesPerSec %d"), pWaveFormatEx->nSamplesPerSec));
+										Array.Add(AtlFormatString(_T("nAvgBytesPerSec %d"), pWaveFormatEx->nAvgBytesPerSec));
+										Array.Add(AtlFormatString(_T("nBlockAlign %d"), pWaveFormatEx->nBlockAlign));
+										Array.Add(AtlFormatString(_T("wBitsPerSample %d"), pWaveFormatEx->wBitsPerSample));
+										Array.Add(AtlFormatString(_T("cbSize %d"), pWaveFormatEx->cbSize));
+										if(Value.blob.cbSize >= sizeof (WAVEFORMATEXTENSIBLE) && pWaveFormatEx->wFormatTag == WAVE_FORMAT_EXTENSIBLE)
+										{
+											const WAVEFORMATEXTENSIBLE* pWaveFormatExtensible = (const WAVEFORMATEXTENSIBLE*) pWaveFormatEx;
+											Array.Add(AtlFormatString(_T("wValidBitsPerSample %d"), pWaveFormatExtensible->Samples.wValidBitsPerSample));
+											Array.Add(AtlFormatString(_T("dwChannelMask 0x%02X"), pWaveFormatExtensible->dwChannelMask));
+											Array.Add(AtlFormatString(_T("SubFormat %ls"), _PersistHelper::StringFromIdentifier(pWaveFormatExtensible->SubFormat)));
+										}
+										sDetail = _StringHelper::Join(Array, _T("; "));
+									}
+									#pragma endregion
+									sText.Append(_StringHelper::Join<CString>(6, _T("\t"), 
 										_T(""),
 										_T(""),
 										sKeyName, 
 										sValue,
 										FormatEnumerationT(g_pVarTypeMap, Value.vt),
+										sDetail,
 										0) + _T("\r\n"));
 								}
 								_ATLCATCHALL()
@@ -1275,20 +1331,20 @@ public:
 							_ATLCATCH(Exception)
 							{
 								_Z_ATLEXCEPTION(Exception);
-								sText.AppendFormat(_T("\t\t") _T("Error 0x%08x\r\n"), (HRESULT) Exception);
+								sText.AppendFormat(_T("\t\t") _T("Error 0x%08X\r\n"), (HRESULT) Exception);
 							}
 						#pragma endregion 
 					}
 					_ATLCATCH(Exception)
 					{
 						_Z_ATLEXCEPTION(Exception);
-						sText.AppendFormat(_T("\t") _T("Error 0x%08x\r\n"), (HRESULT) Exception);
+						sText.AppendFormat(_T("\t") _T("Error 0x%08X\r\n"), (HRESULT) Exception);
 					}
 			}
 			_ATLCATCH(Exception)
 			{
 				_Z_ATLEXCEPTION(Exception);
-				sText.AppendFormat(_T("Error 0x%08x\r\n"), (HRESULT) Exception);
+				sText.AppendFormat(_T("Error 0x%08X\r\n"), (HRESULT) Exception);
 			}
 			#pragma endregion 
 			m_TextEdit = GetDlgItem(IDC_TEXT);
