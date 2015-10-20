@@ -1,0 +1,40 @@
+////////////////////////////////////////////////////////////
+// Copyright (C) Roman Ryltsov, 2015
+// Created by Roman Ryltsov roman@alax.info
+// 
+// A permission to use the source code is granted as long as reference to 
+// source website http://alax.info is retained.
+//
+// This file will be processed by the MIDL tool to
+// produce the type library (Server.tlb) and marshalling code.
+
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	uuid(AE2714E3-E8BE-44C7-B737-5510E5F8ABED),
+	version(1.0),
+]
+library ServerLib
+{
+	importlib("stdole2.tlb");
+	[
+		object,
+		uuid(95BB6D72-D503-465F-821D-BE902EB6FB78),
+		dual,
+		nonextensible,
+		pointer_default(unique)
+	]
+	interface ITestObject : IDispatch
+	{
+		[id(1)] HRESULT TestMethod([out] BSTR* psPath, [out] LONG* pnBitness);
+	};
+	[
+		uuid(D9DB1521-0310-448D-A008-5D8CED320DC3)		
+	]
+	coclass TestObject
+	{
+		[default] interface ITestObject;
+	};
+};
+
