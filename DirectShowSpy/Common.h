@@ -42,7 +42,7 @@ public:
 
 public:
 // CProcessTokenPrivileges
-	CProcessTokenPrivileges() throw() :
+	CProcessTokenPrivileges() :
 		m_bTakeOwnershipPrivilegeEnabled(FALSE),
 		m_bRestorePrivilegeEnabled(FALSE)
 	{
@@ -65,6 +65,14 @@ public:
 		m_bTakeOwnershipPrivilegeEnabled = TRUE;
 		__E(m_ProcessToken.EnablePrivilege(SE_RESTORE_NAME));
 		m_bRestorePrivilegeEnabled = TRUE;
+	}
+	BOOL IsTakeOwnershipPrivilegeEnabled() const
+	{
+		return m_bTakeOwnershipPrivilegeEnabled;
+	}
+	BOOL IsRestorePrivilegeEnabled() const
+	{
+		return m_bRestorePrivilegeEnabled;
 	}
 };
 

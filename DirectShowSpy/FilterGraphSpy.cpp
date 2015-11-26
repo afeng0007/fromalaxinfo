@@ -15,6 +15,9 @@
 
 #include "stdafx.h"
 #include "resource.h"
+#include "FilterGraphSpy.h"
+#include "FilterMapperSpy.h"
+#include "SystemDeviceEnumeratorSpy.h"
 
 ////////////////////////////////////////////////////////////
 // DoGraphBuilderCallbackPropertySheetModal

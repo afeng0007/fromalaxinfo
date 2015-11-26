@@ -16,7 +16,7 @@
 #pragma once
 
 #include "rodshow.h"
-#include <..\Samples\multimedia\directshow\misc\mapper\fil_data.h>
+#include "fil_data.h" //<..\Samples\multimedia\directshow\misc\mapper\fil_data.h>
 #include "Module_i.h"
 #include "Common.h"
 
@@ -30,7 +30,8 @@ class ATL_NO_VTABLE CFilterMapperSpyT :
 	public CTransparentCoClassT<T, t_pFilterMapperClassIdentifier>,
 	public IDispatchImpl<IFilterMapperSpy>,
 	public IAMFilterData,
-	public IFilterMapper2
+	public IFilterMapper,
+	public IFilterMapper3
 {
 	typedef CFilterMapperSpyT<T, t_pFilterMapperClassIdentifier> CFilterMapperSpy;
 
@@ -43,12 +44,14 @@ DECLARE_PROTECT_FINAL_CONSTRUCT()
 
 DECLARE_GET_CONTROLLING_UNKNOWN()
 
-DECLARE_QI_TRACE(CFilterMapperSpy)
+DECLARE_QI_TRACE(CFilterMapperSpyT)
 
-BEGIN_COM_MAP(CFilterMapperSpy)
+BEGIN_COM_MAP(CFilterMapperSpyT)
 	COM_INTERFACE_ENTRY(IFilterMapperSpy)
 	COM_INTERFACE_ENTRY(IAMFilterData)
+	COM_INTERFACE_ENTRY(IFilterMapper3)
 	COM_INTERFACE_ENTRY(IFilterMapper2)
+	COM_INTERFACE_ENTRY(IFilterMapper)
 	COM_INTERFACE_ENTRY_AGGREGATE_BLIND(m_pInnerUnknown)
 	//COM_INTERFACE_ENTRY(IDispatch)
 END_COM_MAP()
@@ -57,18 +60,19 @@ private:
 	BOOL m_bIsAggregated;
 	HINSTANCE m_hQuartzModule;
 	CComPtr<IUnknown> m_pInnerUnknown;
-	CComPtr<IFilterMapper2> m_pFilterMapper2;
+	CComPtr<IFilterMapper3> m_pFilterMapper3;
+	CComPtr<IFilterMapper> m_pFilterMapper;
 	CComPtr<IAMFilterData> m_pAmFilterData;
 
 	static VOID Trace(const REGFILTER2* pFilterInformation)
 	{
 		_A(pFilterInformation);
-		_Z4(atlTraceCOM, 4, _T("pFilterInformation { dwVersion %d, dwMerit 0x%08x, cPins2 %d }\n"), pFilterInformation->dwVersion, pFilterInformation->dwMerit, pFilterInformation->cPins2);
+		_Z4(atlTraceCOM, 4, _T("pFilterInformation { dwVersion %d, dwMerit 0x%08X, cPins2 %d }\n"), pFilterInformation->dwVersion, pFilterInformation->dwMerit, pFilterInformation->cPins2);
 		if(pFilterInformation->dwVersion == 2)
 			for(ULONG nPinIndex = 0; nPinIndex < pFilterInformation->cPins2; nPinIndex++)
 			{
 				const REGFILTERPINS2& Pin = pFilterInformation->rgPins2[nPinIndex];
-				_Z4(atlTraceCOM, 4, _T("pFilterInformation->rgPins2[%d] { dwFlags 0x%x, cInstances %d, nMediaTypes %d, nMediums %d }\n"), nPinIndex, Pin.dwFlags, Pin.cInstances, Pin.nMediaTypes, Pin.nMediums, Pin.clsPinCategory ? (LPCWSTR) _PersistHelper::StringFromIdentifier(*Pin.clsPinCategory) : L"NULL");
+				_Z4(atlTraceCOM, 4, _T("pFilterInformation->rgPins2[%d] { dwFlags 0x%X, cInstances %d, nMediaTypes %d, nMediums %d }\n"), nPinIndex, Pin.dwFlags, Pin.cInstances, Pin.nMediaTypes, Pin.nMediums, Pin.clsPinCategory ? (LPCWSTR) _PersistHelper::StringFromIdentifier(*Pin.clsPinCategory) : L"NULL");
 				for(UINT nIndex = 0; nIndex < Pin.nMediaTypes; nIndex++)
 				{
 					const REGPINTYPES& Type = Pin.lpMediaType[nIndex];
@@ -77,18 +81,18 @@ private:
 				for(UINT nIndex = 0; nIndex < Pin.nMediums; nIndex++)
 				{
 					const REGPINMEDIUM& Medium = Pin.lpMedium[nIndex];
-					_Z4(atlTraceCOM, 4, _T("pFilterInformation->rgPins2[...].lpMedium[%d] { clsMedium %ls, dw1 0x%x, dw2 0x%x }\n"), nIndex, _PersistHelper::StringFromIdentifier(Medium.clsMedium), Medium.dw1, Medium.dw2);
+					_Z4(atlTraceCOM, 4, _T("pFilterInformation->rgPins2[...].lpMedium[%d] { clsMedium %ls, dw1 0x%X, dw2 0x%X }\n"), nIndex, _PersistHelper::StringFromIdentifier(Medium.clsMedium), Medium.dw1, Medium.dw2);
 				}
 			}
 	}
-	BOOL IsAggregated() const throw()
+	BOOL IsAggregated() const
 	{
 		return (ULONG) m_dwRef >= 0x00001000;
 	}
 
 public:
 // CFilterMapperSpyT
-	static LPCTSTR GetOriginalLibraryName() throw()
+	static LPCTSTR GetOriginalLibraryName()
 	{
 		return _T("quartz.dll");
 	}
@@ -96,7 +100,7 @@ public:
 	{
 		return _StringHelper::GetLine(T::IDR, 2);
 	}
-	static HRESULT WINAPI UpdateRegistry(BOOL bRegister) throw()
+	static HRESULT WINAPI UpdateRegistry(BOOL bRegister)
 	{
 		_Z2(atlTraceRegistrar, 2, _T("bRegister %d\n"), bRegister);
 		_ATLTRY
@@ -109,23 +113,23 @@ public:
 		}
 		return S_OK;
 	}
-	CFilterMapperSpyT() throw() :
+	CFilterMapperSpyT() :
 		m_hQuartzModule(NULL)
 	{
 		_Z4_THIS();
 	}
-	~CFilterMapperSpyT() throw()
+	~CFilterMapperSpyT()
 	{
 		_Z4_THIS();
 	}
-	HRESULT FinalConstruct() throw()
+	HRESULT FinalConstruct()
 	{
 		_ATLTRY
 		{
 			m_bIsAggregated = IsAggregated();
 			TCHAR pszPath[MAX_PATH] = { 0 };
 			_W(GetModuleFileName(NULL, pszPath, DIM(pszPath)));
-			_Z4(atlTraceRefcount, 4, _T("pszPath \"%s\", this 0x%08x, m_dwRef %d, m_bIsAggregated %d\n"), pszPath, this, m_dwRef, m_bIsAggregated);
+			_Z4(atlTraceRefcount, 4, _T("pszPath \"%s\", this 0x%p, m_dwRef %d, m_bIsAggregated %d\n"), pszPath, this, m_dwRef, m_bIsAggregated);
 			const HINSTANCE hModule = CoLoadLibrary(const_cast<LPOLESTR>((LPCOLESTR) CT2COLE(GetOriginalLibraryName())), TRUE);
 			_ATLTRY
 			{
@@ -139,14 +143,18 @@ public:
 				{
 					CComPtr<IUnknown> pUnknown;
 					__C(pClassFactory->CreateInstance(pControllingUnknown, __uuidof(IUnknown), (VOID**) &pUnknown));
-					const CComQIPtr<IFilterMapper2> pFilterMapper2 = pUnknown;
-					__D(pFilterMapper2, E_NOINTERFACE);
-					pFilterMapper2.p->Release();
+					const CComQIPtr<IFilterMapper3> pFilterMapper3 = pUnknown;
+					__D(pFilterMapper3, E_NOINTERFACE);
+					pFilterMapper3.p->Release();
+					const CComQIPtr<IFilterMapper> pFilterMapper = pUnknown;
+					__D(pFilterMapper, E_NOINTERFACE);
+					pFilterMapper.p->Release();
 					const CComQIPtr<IAMFilterData> pAmFilterData = pUnknown;
 					__D(pAmFilterData, E_NOINTERFACE);
 					pAmFilterData.p->Release();
 					m_pInnerUnknown = pUnknown;
-					m_pFilterMapper2 = pFilterMapper2;
+					m_pFilterMapper3 = pFilterMapper3;
+					m_pFilterMapper = pFilterMapper;
 					m_pAmFilterData = pAmFilterData;
 				}
 			}
@@ -164,23 +172,28 @@ public:
 		}
 		return S_OK;
 	}
-	VOID FinalRelease() throw()
+	VOID FinalRelease()
 	{
-		_Z5(atlTraceRefcount, 5, _T("m_dwRef 0x%x\n"), m_dwRef);
+		_Z5(atlTraceRefcount, 5, _T("m_dwRef 0x%X\n"), m_dwRef);
 		CComPtr<IUnknown> pControllingUnknown = GetControllingUnknown();
-		if(m_pFilterMapper2)
+		if(m_pFilterMapper3)
 		{
 			pControllingUnknown.p->AddRef();
-			m_pFilterMapper2 = NULL;
+			m_pFilterMapper3.Release();
+		}
+		if(m_pFilterMapper)
+		{
+			pControllingUnknown.p->AddRef();
+			m_pFilterMapper.Release();
 		}
 		if(m_pAmFilterData)
 		{
 			pControllingUnknown.p->AddRef();
-			m_pAmFilterData = NULL;
+			m_pAmFilterData.Release();
 		}
 		_ATLTRY
 		{
-			m_pInnerUnknown = NULL;
+			m_pInnerUnknown.Release();
 		}
 		_ATLCATCHALL()
 		{
@@ -198,7 +211,7 @@ public:
 // IFilterMapperSpy
 
 // IAMFilterData
-	STDMETHOD(ParseFilterData)(BYTE* pnFilterData, ULONG nFilterDataSize, BYTE** ppFilterInformation) throw()
+	STDMETHOD(ParseFilterData)(BYTE* pnFilterData, ULONG nFilterDataSize, BYTE** ppFilterInformation) override
 	{
 		_Z4(atlTraceCOM, 4, _T("nFilterDataSize %d\n"), nFilterDataSize);
 		const HRESULT nResult = m_pAmFilterData->ParseFilterData(pnFilterData, nFilterDataSize, ppFilterInformation);
@@ -213,7 +226,7 @@ public:
 			}
 		return nResult;
 	}
-	STDMETHOD(CreateFilterData)(REGFILTER2* pFilterInformation, BYTE** ppnFilterData, ULONG* pnFilterDataSize) throw()
+	STDMETHOD(CreateFilterData)(REGFILTER2* pFilterInformation, BYTE** ppnFilterData, ULONG* pnFilterDataSize) override
 	{
 		_Z4(atlTraceCOM, 4, _T("...\n"));
 		if(pFilterInformation)
@@ -228,18 +241,25 @@ public:
 		return m_pAmFilterData->CreateFilterData(pFilterInformation, ppnFilterData, pnFilterDataSize);
 	}
 
-// IFilterMapper2
-	STDMETHOD(CreateCategory)(REFCLSID CategoryIdentifier, DWORD nMerit, LPCWSTR pszDescription) throw()
+// IFilterMapper3
+	STDMETHOD(GetICreateDevEnum)(ICreateDevEnum** ppEnum) override
 	{
-		_Z4(atlTraceCOM, 4, _T("CategoryIdentifier %ls, nMerit 0x%08x, pszDescription \"%s\"\n"), _PersistHelper::StringFromIdentifier(CategoryIdentifier), nMerit, CString(pszDescription));
-		return m_pFilterMapper2->CreateCategory(CategoryIdentifier, nMerit, pszDescription);
+		_Z4(atlTraceCOM, 4, _T("...\n"));
+		return m_pFilterMapper3->GetICreateDevEnum(ppEnum);
 	}
-	STDMETHOD(UnregisterFilter)(const CLSID* pCategoryIdentifier, LPCOLESTR pszInstance, REFCLSID FilterClassIdentifier) throw()
+
+// IFilterMapper2
+	STDMETHOD(CreateCategory)(REFCLSID CategoryIdentifier, DWORD nMerit, LPCWSTR pszDescription) override
+	{
+		_Z4(atlTraceCOM, 4, _T("CategoryIdentifier %ls, nMerit 0x%08X, pszDescription \"%s\"\n"), _PersistHelper::StringFromIdentifier(CategoryIdentifier), nMerit, CString(pszDescription));
+		return m_pFilterMapper3->CreateCategory(CategoryIdentifier, nMerit, pszDescription);
+	}
+	STDMETHOD(UnregisterFilter)(const CLSID* pCategoryIdentifier, LPCOLESTR pszInstance, REFCLSID FilterClassIdentifier) override
 	{
 		_Z4(atlTraceCOM, 4, _T("pCategoryIdentifier %ls, pszInstance %s, FilterClassIdentifier %ls\n"), pCategoryIdentifier ? (LPCWSTR) _PersistHelper::StringFromIdentifier(*pCategoryIdentifier) : L"NULL", pszInstance ? (LPCTSTR) AtlFormatString(_T("\"%s\""), CString(pszInstance)) : _T("NULL"), _PersistHelper::StringFromIdentifier(FilterClassIdentifier));
-		return m_pFilterMapper2->UnregisterFilter(pCategoryIdentifier, pszInstance, FilterClassIdentifier);
+		return m_pFilterMapper3->UnregisterFilter(pCategoryIdentifier, pszInstance, FilterClassIdentifier);
 	}
-	STDMETHOD(RegisterFilter)(REFCLSID FilterClassIdentifier, LPCWSTR pszName, IMoniker** ppMoniker, const CLSID* pCategoryIdentifier, LPCOLESTR pszInstance, const REGFILTER2* pFilterInformation) throw()
+	STDMETHOD(RegisterFilter)(REFCLSID FilterClassIdentifier, LPCWSTR pszName, IMoniker** ppMoniker, const CLSID* pCategoryIdentifier, LPCOLESTR pszInstance, const REGFILTER2* pFilterInformation) override
 	{
 		_Z4(atlTraceCOM, 4, _T("FilterClassIdentifier %ls, pszName \"%s\", pCategoryIdentifier %ls, pszInstance %s\n"), _PersistHelper::StringFromIdentifier(FilterClassIdentifier), CString(pszName), pCategoryIdentifier ? (LPCWSTR) _PersistHelper::StringFromIdentifier(*pCategoryIdentifier) : L"NULL", pszInstance ? (LPCTSTR) AtlFormatString(_T("\"%s\""), CString(pszInstance)) : _T("NULL"));
 		if(pFilterInformation)
@@ -251,11 +271,11 @@ public:
 			{
 				_Z_EXCEPTION();
 			}
-		return m_pFilterMapper2->RegisterFilter(FilterClassIdentifier, pszName, ppMoniker, pCategoryIdentifier, pszInstance, pFilterInformation);
+		return m_pFilterMapper3->RegisterFilter(FilterClassIdentifier, pszName, ppMoniker, pCategoryIdentifier, pszInstance, pFilterInformation);
 	}
-	STDMETHOD(EnumMatchingFilters)(IEnumMoniker** ppEnumMoniker, DWORD nFlags, BOOL bExactMatch, DWORD nMinimalMerit, BOOL bInputNeeded, DWORD nInputTypeCount, const GUID* pInputTypes, const REGPINMEDIUM* pInputMedium, const CLSID* pInputPinCategory, BOOL bRender, BOOL bOutputNeeded, DWORD nOutputTypeCount, const GUID* pOutputTypes, const REGPINMEDIUM* pOutputMedium, const CLSID* pOutputPinCategory) throw()
+	STDMETHOD(EnumMatchingFilters)(IEnumMoniker** ppEnumMoniker, DWORD nFlags, BOOL bExactMatch, DWORD nMinimalMerit, BOOL bInputNeeded, DWORD nInputTypeCount, const GUID* pInputTypes, const REGPINMEDIUM* pInputMedium, const CLSID* pInputPinCategory, BOOL bRender, BOOL bOutputNeeded, DWORD nOutputTypeCount, const GUID* pOutputTypes, const REGPINMEDIUM* pOutputMedium, const CLSID* pOutputPinCategory) override
 	{
-		_Z4(atlTraceCOM, 4, _T("nFlags 0x%x, bExactMatch %d, nMinimalMerit 0x%08x, bInputNeeded %d, nInputTypeCount %d, pInputPinCategory %ls, bRender %d, bOutputNeeded %d, nOutputTypeCount %d, pOutputPinCategory %ls\n"), nFlags, bExactMatch, nMinimalMerit, bInputNeeded, nInputTypeCount, pInputPinCategory ? (LPCWSTR) _PersistHelper::StringFromIdentifier(*pInputPinCategory) : L"NULL", bRender, bOutputNeeded, nOutputTypeCount, pOutputPinCategory ? (LPCWSTR) _PersistHelper::StringFromIdentifier(*pOutputPinCategory) : L"NULL");
+		_Z4(atlTraceCOM, 4, _T("nFlags 0x%X, bExactMatch %d, nMinimalMerit 0x%08X, bInputNeeded %d, nInputTypeCount %d, pInputPinCategory %ls, bRender %d, bOutputNeeded %d, nOutputTypeCount %d, pOutputPinCategory %ls\n"), nFlags, bExactMatch, nMinimalMerit, bInputNeeded, nInputTypeCount, pInputPinCategory ? (LPCWSTR) _PersistHelper::StringFromIdentifier(*pInputPinCategory) : L"NULL", bRender, bOutputNeeded, nOutputTypeCount, pOutputPinCategory ? (LPCWSTR) _PersistHelper::StringFromIdentifier(*pOutputPinCategory) : L"NULL");
 		for(DWORD nInputTypeIndex = 0; nInputTypeIndex < nInputTypeCount; nInputTypeIndex++)
 		{
 			const GUID& MajorType = pInputTypes[2 * nInputTypeIndex + 0];
@@ -263,7 +283,7 @@ public:
 			_Z4(atlTraceCOM, 4, _T("nInputTypeIndex %d, MajorType %ls, Subtype %ls\n"), nInputTypeIndex, _PersistHelper::StringFromIdentifier(MajorType), _PersistHelper::StringFromIdentifier(Subtype));
 		}
 		if(pInputMedium)
-			_Z4(atlTraceCOM, 4, _T("pInputMedium { clsMedium %ls, dw1 0x%x, dw2 0x%x }\n"), _PersistHelper::StringFromIdentifier(pInputMedium->clsMedium), pInputMedium->dw1, pInputMedium->dw2);
+			_Z4(atlTraceCOM, 4, _T("pInputMedium { clsMedium %ls, dw1 0x%X, dw2 0x%X }\n"), _PersistHelper::StringFromIdentifier(pInputMedium->clsMedium), pInputMedium->dw1, pInputMedium->dw2);
 		for(DWORD nOutputTypeIndex = 0; nOutputTypeIndex < nOutputTypeCount; nOutputTypeIndex++)
 		{
 			const GUID& MajorType = pOutputTypes[2 * nOutputTypeIndex + 0];
@@ -271,17 +291,20 @@ public:
 			_Z4(atlTraceCOM, 4, _T("nOutputTypeIndex %d, MajorType %ls, Subtype %ls\n"), nOutputTypeIndex, _PersistHelper::StringFromIdentifier(MajorType), _PersistHelper::StringFromIdentifier(Subtype));
 		}
 		if(pOutputMedium)
-			_Z4(atlTraceCOM, 4, _T("pOutputMedium { clsMedium %ls, dw1 0x%x, dw2 0x%x }\n"), _PersistHelper::StringFromIdentifier(pOutputMedium->clsMedium), pOutputMedium->dw1, pOutputMedium->dw2);
-		const HRESULT nResult = m_pFilterMapper2->EnumMatchingFilters(ppEnumMoniker, nFlags, bExactMatch, nMinimalMerit, bInputNeeded, nInputTypeCount, pInputTypes, pInputMedium, pInputPinCategory, bRender, bOutputNeeded, nOutputTypeCount, pOutputTypes, pOutputMedium, pOutputPinCategory);
+			_Z4(atlTraceCOM, 4, _T("pOutputMedium { clsMedium %ls, dw1 0x%X, dw2 0x%X }\n"), _PersistHelper::StringFromIdentifier(pOutputMedium->clsMedium), pOutputMedium->dw1, pOutputMedium->dw2);
+		const HRESULT nResult = m_pFilterMapper3->EnumMatchingFilters(ppEnumMoniker, nFlags, bExactMatch, nMinimalMerit, bInputNeeded, nInputTypeCount, pInputTypes, pInputMedium, pInputPinCategory, bRender, bOutputNeeded, nOutputTypeCount, pOutputTypes, pOutputMedium, pOutputPinCategory);
 		if(SUCCEEDED(nResult))
 			_ATLTRY
 			{
 				const CComPtr<IEnumMoniker>& pEnumMoniker = reinterpret_cast<const CComPtr<IEnumMoniker>&>(*ppEnumMoniker);
 				__C(pEnumMoniker->Reset());
-				CComPtr<IMoniker> pMoniker;
-				while(pEnumMoniker->Next(1, &pMoniker, NULL) == S_OK)
+				for(; ; )
 				{
-					_Z4(atlTraceCOM, 4, _T("pMoniker %ls\n"), _FilterGraphHelper::GetMonikerDisplayName(pMoniker));
+					CComPtr<IMoniker> pMoniker;
+					ULONG nElementCount;
+					if(pEnumMoniker->Next(1, &pMoniker, &nElementCount) != S_OK)
+						break;
+					_Z4(atlTraceGeneral, 4, _T("pMoniker %ls\n"), _FilterGraphHelper::GetMonikerDisplayName(pMoniker));
 					CComPtr<IBindCtx> pBindCtx;
 					__C(CreateBindCtx(0, &pBindCtx));
 					CComPtr<IPropertyBag> pPropertyBag;
@@ -290,7 +313,6 @@ public:
 					const CStringW sDescription = _FilterGraphHelper::ReadPropertyBagString(pPropertyBag, OLESTR("Description"));
 					const CStringW sDevicePath = _FilterGraphHelper::ReadPropertyBagString(pPropertyBag, OLESTR("DevicePath"));
 					_Z4(atlTraceCOM, 4, _T("sFriendlyName \"%ls\", sDescription \"%ls\", sDevicePath \"%ls\"\n"), sFriendlyName, sDescription, sDevicePath);
-					pMoniker.Release();
 				}
 				__C(pEnumMoniker->Reset());
 			}
@@ -299,6 +321,48 @@ public:
 				_Z_EXCEPTION();
 			}
 		return nResult;
+	}
+
+// IFilterMapper
+	STDMETHOD(RegisterFilter)(CLSID FilterClassIdentifier, LPCWSTR pszName, DWORD nMerit) override
+	{
+		_Z4(atlTraceCOM, 4, _T("...\n"));
+		return m_pFilterMapper->RegisterFilter(FilterClassIdentifier, pszName, nMerit);
+	}
+	STDMETHOD(RegisterFilterInstance)(CLSID FilterClassIdentifier, LPCWSTR pszName, CLSID* pMediaResourceIdentifier) override
+	{
+		_Z4(atlTraceCOM, 4, _T("...\n"));
+		return m_pFilterMapper->RegisterFilterInstance(FilterClassIdentifier, pszName, pMediaResourceIdentifier);
+	}
+	STDMETHOD(RegisterPin)(CLSID Filter, LPCWSTR pszName, BOOL bRendered, BOOL bOutput, BOOL bZero, BOOL bMany, CLSID ConnectsToFilter, LPCWSTR pszConnectsToPin) override
+	{
+		_Z4(atlTraceCOM, 4, _T("...\n"));
+		return m_pFilterMapper->RegisterPin(Filter, pszName, bRendered, bOutput, bZero, bMany, ConnectsToFilter, pszConnectsToPin);
+	}
+	STDMETHOD(RegisterPinType)(CLSID FilterClassIdentifier, LPCWSTR pszName, CLSID MajorType, CLSID Subtype) override
+	{
+		_Z4(atlTraceCOM, 4, _T("...\n"));
+		return m_pFilterMapper->RegisterPinType(FilterClassIdentifier, pszName, MajorType, Subtype);
+	}
+	STDMETHOD(UnregisterFilter)(CLSID FilterClassIdentifier) override
+	{
+		_Z4(atlTraceCOM, 4, _T("...\n"));
+		return m_pFilterMapper->UnregisterFilter(FilterClassIdentifier);
+	}
+	STDMETHOD(UnregisterFilterInstance)(CLSID MediaResourceIdentifier) override
+	{
+		_Z4(atlTraceCOM, 4, _T("...\n"));
+		return m_pFilterMapper->UnregisterFilterInstance(MediaResourceIdentifier);
+	}
+	STDMETHOD(UnregisterPin)(CLSID FilterClassIdentifier, LPCWSTR pszName) override
+	{
+		_Z4(atlTraceCOM, 4, _T("...\n"));
+		return m_pFilterMapper->UnregisterPin(FilterClassIdentifier, pszName);
+	}
+	STDMETHOD(EnumMatchingFilters)(IEnumRegFilters** ppEnum, DWORD nMerit, BOOL bInputNeeded, CLSID clsInMaj, CLSID clsInSub, BOOL bRender, BOOL bOutputNeeded, CLSID clsOutMaj, CLSID clsOutSub) override
+	{
+		_Z4(atlTraceCOM, 4, _T("...\n"));
+		return m_pFilterMapper->EnumMatchingFilters(ppEnum, nMerit, bInputNeeded, clsInMaj, clsInSub, bRender, bOutputNeeded, clsOutMaj, clsOutSub);
 	}
 };
 
