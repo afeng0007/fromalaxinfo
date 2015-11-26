@@ -411,7 +411,7 @@ public:
 	class ATL_NO_VTABLE CLogFilter :
 		public CComObjectRootEx<CComMultiThreadModelNoCS>,
 		public CComCoClass<CLogFilter, &__uuidof(CLogFilterBase)>,
-		public CTransformationFilterT<CLogFilter>,
+		public CTransformFilterT<CLogFilter>,
 		public CBasePersistT<CLogFilter>
 	{
 	public:

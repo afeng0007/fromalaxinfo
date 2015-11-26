@@ -274,7 +274,8 @@ public:
 				for(; ; )
 				{
 					CComPtr<IMoniker> pMoniker;
-					if(pEnumMoniker->Next(1, &pMoniker, NULL) != S_OK)
+					ULONG nElementCount;
+					if(pEnumMoniker->Next(1, &pMoniker, &nElementCount) != S_OK)
 						break;
 					_ATLTRY
 					{

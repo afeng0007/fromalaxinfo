@@ -43,9 +43,9 @@ DECLARE_PROTECT_FINAL_CONSTRUCT()
 
 DECLARE_GET_CONTROLLING_UNKNOWN()
 
-DECLARE_QI_TRACE(CSystemDeviceEnumeratorSpy)
+DECLARE_QI_TRACE(CSystemDeviceEnumeratorSpyT)
 
-BEGIN_COM_MAP(CSystemDeviceEnumeratorSpy)
+BEGIN_COM_MAP(CSystemDeviceEnumeratorSpyT)
 	COM_INTERFACE_ENTRY(ISystemDeviceEnumeratorSpy)
 	COM_INTERFACE_ENTRY(ICreateDevEnum)
 	COM_INTERFACE_ENTRY_FUNC(CLSID_SystemDeviceEnum, 0, QuerySystemDeviceEnumInterface)
@@ -94,7 +94,7 @@ public:
 		}
 
 	// IPropertyBag
-		STDMETHOD(Read)(LPCOLESTR pszPropertyName, VARIANT* pvValue, IErrorLog* pErrorLog) throw()
+		STDMETHOD(Read)(LPCOLESTR pszPropertyName, VARIANT* pvValue, IErrorLog* pErrorLog) override
 		{
 			_Z4(atlTraceCOM, 4, _T("pszPropertyName %s\n"), CString(pszPropertyName));
 			_ATLTRY
@@ -103,7 +103,7 @@ public:
 				#pragma region DevicePath Fix for Skype 6.0.0.126
 				//if(nResult == HRESULT_FROM_WIN32(ERROR_FILE_NOT_FOUND) && pszPropertyName && _wcsicmp(pszPropertyName, L"DevicePath") == 0 && pvValue)
 				//{
-				//	_Z4(atlTraceGeneral, 4, _T("nResult 0x%08x\n"), nResult);
+				//	_Z4(atlTraceGeneral, 4, _T("nResult 0x%08X\n"), nResult);
 				//	CComVariant vValue = L"\\\\?\\fake";
 				//	_V(vValue.Detach(pvValue));
 				//	nResult = S_OK;
@@ -115,10 +115,10 @@ public:
 					CComVariant vStringValue;
 					if(SUCCEEDED(vStringValue.ChangeType(VT_BSTR, pvValue)))
 						sValue = CString(vStringValue.bstrVal);
-					_Z4(atlTraceGeneral, 4, _T("nResult 0x%08x, pvValue->vt 0x%x, %s\n"), nResult, pvValue->vt, sValue);
+					_Z4(atlTraceGeneral, 4, _T("nResult 0x%08X, pvValue->vt 0x%X, %s\n"), nResult, pvValue->vt, sValue);
 				} else
 				{
-					_Z4(atlTraceGeneral, 4, _T("nResult 0x%08x\n"), nResult);
+					_Z4(atlTraceGeneral, 4, _T("nResult 0x%08X\n"), nResult);
 				}
 				return nResult;
 			}
@@ -128,13 +128,13 @@ public:
 			}
 			return S_OK;
 		}
-		STDMETHOD(Write)(LPCOLESTR pszPropertyName, VARIANT* pvValue) throw()
+		STDMETHOD(Write)(LPCOLESTR pszPropertyName, VARIANT* pvValue) override
 		{
-			_Z4(atlTraceCOM, 4, _T("pszPropertyName %s, pvValue->vt 0x%x\n"), CString(pszPropertyName), pvValue->vt);
+			_Z4(atlTraceCOM, 4, _T("pszPropertyName %s, pvValue->vt 0x%X\n"), CString(pszPropertyName), pvValue->vt);
 			_ATLTRY
 			{
 				const HRESULT nResult = m_pPropertyBag->Write(pszPropertyName, pvValue);
-				_Z4(atlTraceGeneral, 4, _T("nResult 0x%08x\n"), nResult);
+				_Z4(atlTraceGeneral, 4, _T("nResult 0x%08X\n"), nResult);
 				return nResult;
 			}
 			_ATLCATCH(Exception)
@@ -145,13 +145,13 @@ public:
 		}
 
 	// IPropertyBag2
-		STDMETHOD(Read)(ULONG cProperties, PROPBAG2 *pPropBag, IErrorLog *pErrLog, VARIANT *pvarValue, HRESULT *phrError) throw()
+		STDMETHOD(Read)(ULONG cProperties, PROPBAG2 *pPropBag, IErrorLog *pErrLog, VARIANT *pvarValue, HRESULT *phrError) override
 		{
 			_Z4(atlTraceCOM, 4, _T("...\n"));
 			_ATLTRY
 			{
 				const HRESULT nResult = m_pPropertyBag2->Read(cProperties, pPropBag, pErrLog, pvarValue, phrError);
-				_Z4(atlTraceGeneral, 4, _T("nResult 0x%08x\n"), nResult);
+				_Z4(atlTraceGeneral, 4, _T("nResult 0x%08X\n"), nResult);
 				return nResult;
 			}
 			_ATLCATCH(Exception)
@@ -160,13 +160,13 @@ public:
 			}
 			return S_OK;
 		}
-		STDMETHOD(Write)(ULONG cProperties, PROPBAG2 *pPropBag, VARIANT *pvarValue) throw()
+		STDMETHOD(Write)(ULONG cProperties, PROPBAG2 *pPropBag, VARIANT *pvarValue) override
 		{
 			_Z4(atlTraceCOM, 4, _T("...\n"));
 			_ATLTRY
 			{
 				const HRESULT nResult = m_pPropertyBag2->Write(cProperties, pPropBag, pvarValue);
-				_Z4(atlTraceGeneral, 4, _T("nResult 0x%08x\n"), nResult);
+				_Z4(atlTraceGeneral, 4, _T("nResult 0x%08X\n"), nResult);
 				return nResult;
 			}
 			_ATLCATCH(Exception)
@@ -175,13 +175,13 @@ public:
 			}
 			return S_OK;
 		}
-		STDMETHOD(CountProperties)(ULONG *pcProperties) throw()
+		STDMETHOD(CountProperties)(ULONG *pcProperties) override
 		{
 			_Z4(atlTraceCOM, 4, _T("...\n"));
 			_ATLTRY
 			{
 				const HRESULT nResult = m_pPropertyBag2->CountProperties(pcProperties);
-				_Z4(atlTraceGeneral, 4, _T("nResult 0x%08x\n"), nResult);
+				_Z4(atlTraceGeneral, 4, _T("nResult 0x%08X\n"), nResult);
 				return nResult;
 			}
 			_ATLCATCH(Exception)
@@ -190,13 +190,13 @@ public:
 			}
 			return S_OK;
 		}
-		STDMETHOD(GetPropertyInfo)(ULONG iProperty, ULONG cProperties, PROPBAG2* pPropBag, ULONG *pcProperties) throw()
+		STDMETHOD(GetPropertyInfo)(ULONG iProperty, ULONG cProperties, PROPBAG2* pPropBag, ULONG *pcProperties) override
 		{
 			_Z4(atlTraceCOM, 4, _T("...\n"));
 			_ATLTRY
 			{
 				const HRESULT nResult = m_pPropertyBag2->GetPropertyInfo(iProperty, cProperties, pPropBag, pcProperties);
-				_Z4(atlTraceGeneral, 4, _T("nResult 0x%08x\n"), nResult);
+				_Z4(atlTraceGeneral, 4, _T("nResult 0x%08X\n"), nResult);
 				return nResult;
 			}
 			_ATLCATCH(Exception)
@@ -205,13 +205,13 @@ public:
 			}
 			return S_OK;
 		}
-		STDMETHOD(LoadObject)(LPCOLESTR pstrName, DWORD dwHint, IUnknown *pUnkObject, IErrorLog *pErrLog) throw()
+		STDMETHOD(LoadObject)(LPCOLESTR pstrName, DWORD dwHint, IUnknown *pUnkObject, IErrorLog *pErrLog) override
 		{
 			_Z4(atlTraceCOM, 4, _T("...\n"));
 			_ATLTRY
 			{
 				const HRESULT nResult = m_pPropertyBag2->LoadObject(pstrName, dwHint, pUnkObject, pErrLog);
-				_Z4(atlTraceGeneral, 4, _T("nResult 0x%08x\n"), nResult);
+				_Z4(atlTraceGeneral, 4, _T("nResult 0x%08X\n"), nResult);
 				return nResult;
 			}
 			_ATLCATCH(Exception)
@@ -260,36 +260,36 @@ public:
 		}
 
 	// IPersist
-		STDMETHOD(GetClassID)(CLSID* pClassIdentifier) throw()
+		STDMETHOD(GetClassID)(CLSID* pClassIdentifier) override
 		{
 			_Z4(atlTraceCOM, 4, _T("...\n"));
 			return m_pMoniker->GetClassID(pClassIdentifier);
 		}
 
     // IPersistStream
-		STDMETHOD(IsDirty)() throw()
+		STDMETHOD(IsDirty)() override
 		{
 			_Z4(atlTraceCOM, 4, _T("...\n"));
 			return m_pMoniker->IsDirty();
 		}
-		STDMETHOD(Load)(IStream* pStream) throw()
+		STDMETHOD(Load)(IStream* pStream) override
 		{
 			_Z4(atlTraceCOM, 4, _T("...\n"));
 			return m_pMoniker->Load(pStream);
 		}
-		STDMETHOD(Save)(IStream* pStream, BOOL bClearDirty) throw()
+		STDMETHOD(Save)(IStream* pStream, BOOL bClearDirty) override
 		{
 			_Z4(atlTraceCOM, 4, _T("...\n"));
 			return m_pMoniker->Save(pStream, bClearDirty);
 		}
-		STDMETHOD(GetSizeMax)(ULARGE_INTEGER* pnMaximalSize) throw()
+		STDMETHOD(GetSizeMax)(ULARGE_INTEGER* pnMaximalSize) override
 		{
 			_Z4(atlTraceCOM, 4, _T("...\n"));
 			return m_pMoniker->GetSizeMax(pnMaximalSize);
 		}
 
 	// IMoniker
-		STDMETHOD(BindToObject)(IBindCtx* pBindCtx, IMoniker* pLeftMoniker, REFIID InterfaceIdentifier, VOID** ppvObject) throw()
+		STDMETHOD(BindToObject)(IBindCtx* pBindCtx, IMoniker* pLeftMoniker, REFIID InterfaceIdentifier, VOID** ppvObject) override
 		{
 			_Z4(atlTraceCOM, 4, _T("pBindCtx 0x%p, pLeftMoniker 0x%p, InterfaceIdentifier %ls\n"), pBindCtx, pLeftMoniker, _PersistHelper::StringFromInterfaceIdentifier(InterfaceIdentifier));
 			_ATLTRY
@@ -302,7 +302,7 @@ public:
 			}
 			return S_OK;
 		}
-		STDMETHOD(BindToStorage)(IBindCtx* pBindCtx, IMoniker* pLeftMoniker, REFIID InterfaceIdentifier, VOID** ppvObject) throw()
+		STDMETHOD(BindToStorage)(IBindCtx* pBindCtx, IMoniker* pLeftMoniker, REFIID InterfaceIdentifier, VOID** ppvObject) override
 		{
 			_Z4(atlTraceCOM, 4, _T("pBindCtx 0x%p, pLeftMoniker 0x%p, InterfaceIdentifier %ls\n"), pBindCtx, pLeftMoniker, _PersistHelper::StringFromInterfaceIdentifier(InterfaceIdentifier));
 			_ATLTRY
@@ -326,7 +326,7 @@ public:
 			}
 			return S_OK;
 		}
-		STDMETHOD(Reduce)(IBindCtx* pBindCtx, DWORD nDepth, IMoniker** ppLeftMoniker, IMoniker** ppReducedMoniker) throw()
+		STDMETHOD(Reduce)(IBindCtx* pBindCtx, DWORD nDepth, IMoniker** ppLeftMoniker, IMoniker** ppReducedMoniker) override
 		{
 			_Z4(atlTraceCOM, 4, _T("...\n"));
 			_ATLTRY
@@ -339,7 +339,7 @@ public:
 			}
 			return S_OK;
 		}
-		STDMETHOD(ComposeWith)(IMoniker* pRightMoniker, BOOL bOnlyIfNotGeneric, IMoniker** ppCompositeMoniker) throw()
+		STDMETHOD(ComposeWith)(IMoniker* pRightMoniker, BOOL bOnlyIfNotGeneric, IMoniker** ppCompositeMoniker) override
 		{
 			_Z4(atlTraceCOM, 4, _T("...\n"));
 			_ATLTRY
@@ -352,7 +352,7 @@ public:
 			}
 			return S_OK;
 		}
-		STDMETHOD(Enum)(BOOL bForward, IEnumMoniker** ppEnumMoniker) throw()
+		STDMETHOD(Enum)(BOOL bForward, IEnumMoniker** ppEnumMoniker) override
 		{
 			_Z4(atlTraceCOM, 4, _T("bForward %d\n"), bForward);
 			_ATLTRY
@@ -365,7 +365,7 @@ public:
 			}
 			return S_OK;
 		}
-		STDMETHOD(IsEqual)(IMoniker* pMoniker) throw()
+		STDMETHOD(IsEqual)(IMoniker* pMoniker) override
 		{
 			_Z4(atlTraceCOM, 4, _T("...\n"));
 			_ATLTRY
@@ -378,7 +378,7 @@ public:
 			}
 			return S_OK;
 		}
-		STDMETHOD(Hash)(DWORD* pnHashValue) throw()
+		STDMETHOD(Hash)(DWORD* pnHashValue) override
 		{
 			_Z4(atlTraceCOM, 4, _T("...\n"));
 			_ATLTRY
@@ -391,7 +391,7 @@ public:
 			}
 			return S_OK;
 		}
-		STDMETHOD(IsRunning)(IBindCtx* pBindCtx, IMoniker* pLeftMoniker, IMoniker* pNewlyRunning) throw()
+		STDMETHOD(IsRunning)(IBindCtx* pBindCtx, IMoniker* pLeftMoniker, IMoniker* pNewlyRunning) override
 		{
 			_Z4(atlTraceCOM, 4, _T("...\n"));
 			_ATLTRY
@@ -404,7 +404,7 @@ public:
 			}
 			return S_OK;
 		}
-		STDMETHOD(GetTimeOfLastChange)(IBindCtx* pBindCtx, IMoniker* pLeftMoniker, FILETIME* pFileTime) throw()
+		STDMETHOD(GetTimeOfLastChange)(IBindCtx* pBindCtx, IMoniker* pLeftMoniker, FILETIME* pFileTime) override
 		{
 			_Z4(atlTraceCOM, 4, _T("...\n"));
 			_ATLTRY
@@ -417,7 +417,7 @@ public:
 			}
 			return S_OK;
 		}
-		STDMETHOD(Inverse)(IMoniker** ppMoniker) throw()
+		STDMETHOD(Inverse)(IMoniker** ppMoniker) override
 		{
 			_Z4(atlTraceCOM, 4, _T("...\n"));
 			_ATLTRY
@@ -430,7 +430,7 @@ public:
 			}
 			return S_OK;
 		}
-		STDMETHOD(CommonPrefixWith)(IMoniker* pMoniker, IMoniker** ppPrefixMoniker) throw()
+		STDMETHOD(CommonPrefixWith)(IMoniker* pMoniker, IMoniker** ppPrefixMoniker) override
 		{
 			_Z4(atlTraceCOM, 4, _T("...\n"));
 			_ATLTRY
@@ -443,7 +443,7 @@ public:
 			}
 			return S_OK;
 		}
-		STDMETHOD(RelativePathTo)(IMoniker* pMoniker, IMoniker** ppRelativeMoniker) throw()
+		STDMETHOD(RelativePathTo)(IMoniker* pMoniker, IMoniker** ppRelativeMoniker) override
 		{
 			_Z4(atlTraceCOM, 4, _T("...\n"));
 			_ATLTRY
@@ -456,16 +456,16 @@ public:
 			}
 			return S_OK;
 		}
-		STDMETHOD(GetDisplayName)(IBindCtx* pBindCtx, IMoniker* pLeftMoniker, LPOLESTR* ppszDisplayName) throw()
+		STDMETHOD(GetDisplayName)(IBindCtx* pBindCtx, IMoniker* pLeftMoniker, LPOLESTR* ppszDisplayName) override
 		{
 			_Z4(atlTraceCOM, 4, _T("pBindCtx 0x%p, pLeftMoniker 0x%p\n"), pBindCtx, pLeftMoniker);
 			_ATLTRY
 			{
 				const HRESULT nResult = m_pMoniker->GetDisplayName(pBindCtx, pLeftMoniker, ppszDisplayName);
 				if(SUCCEEDED(nResult))
-					_Z4(atlTraceGeneral, 4, _T("nResult 0x%08x, *ppszDisplayName %s\n"), nResult, CString(*ppszDisplayName));
+					_Z4(atlTraceGeneral, 4, _T("nResult 0x%08X, *ppszDisplayName %s\n"), nResult, CString(*ppszDisplayName));
 				else
-					_Z4(atlTraceGeneral, 4, _T("nResult 0x%08x\n"), nResult);
+					_Z4(atlTraceGeneral, 4, _T("nResult 0x%08X\n"), nResult);
 				return nResult;
 			}
 			_ATLCATCH(Exception)
@@ -474,7 +474,7 @@ public:
 			}
 			return S_OK;
 		}
-		STDMETHOD(ParseDisplayName)(IBindCtx* pBindCtx, IMoniker* pLeftMoniker, LPOLESTR pszDisplayName, ULONG* pnEatenLength, IMoniker** ppOutputMoniker) throw()
+		STDMETHOD(ParseDisplayName)(IBindCtx* pBindCtx, IMoniker* pLeftMoniker, LPOLESTR pszDisplayName, ULONG* pnEatenLength, IMoniker** ppOutputMoniker) override
 		{
 			_Z4(atlTraceCOM, 4, _T("pBindCtx 0x%p, pLeftMoniker 0x%p, pszDisplayName %s\n"), pBindCtx, pLeftMoniker, CString(pszDisplayName));
 			_ATLTRY
@@ -487,7 +487,7 @@ public:
 			}
 			return S_OK;
 		}
-		STDMETHOD(IsSystemMoniker)(DWORD* pnSystemMonikerType) throw()
+		STDMETHOD(IsSystemMoniker)(DWORD* pnSystemMonikerType) override
 		{
 			_Z4(atlTraceCOM, 4, _T("...\n"));
 			_ATLTRY
@@ -538,19 +538,22 @@ public:
 		}
 
 	// IEnumMoniker
-		STDMETHOD(Next)(ULONG nElementCount, IMoniker** ppMoniker, ULONG* pnFetchedElementCount) throw()
+		STDMETHOD(Next)(ULONG nElementCount, IMoniker** ppMoniker, ULONG* pnFetchElementCount) override
 		{
 			_Z4(atlTraceCOM, 4, _T("nElementCount %d\n"), nElementCount);
 			_ATLTRY
 			{
-				const HRESULT nNextResult = m_pEnumMoniker->Next(nElementCount, ppMoniker, pnFetchedElementCount);
-				_Z4(atlTraceGeneral, 4, _T("nNextResult 0x%08x, *pnFetchedElementCount %s\n"), nNextResult, pnFetchedElementCount ? (LPCTSTR) AtlFormatString(_T("%d"), *pnFetchedElementCount) : _T("(null)"));
+				const HRESULT nNextResult = m_pEnumMoniker->Next(nElementCount, ppMoniker, pnFetchElementCount);
+				CRoArrayT<CString> Array;
+				if(pnFetchElementCount)
+					Array.Add(AtlFormatString(_T("*pnFetchElementCount %d"), *pnFetchElementCount));
+				_Z4(atlTraceGeneral, 4, _T("nNextResult 0x%08X, %s\n"), nNextResult, _StringHelper::Join(Array, _T(", ")));
 				if(SUCCEEDED(nNextResult))
 				{
 					ULONG nFetchedElementCount = nElementCount;
-					if(nNextResult != S_OK && pnFetchedElementCount)
-						nFetchedElementCount = *pnFetchedElementCount;
-					for(SIZE_T nIndex = 0; nIndex < nFetchedElementCount; nIndex++)
+					if(nNextResult != S_OK && pnFetchElementCount)
+						nFetchedElementCount = *pnFetchElementCount;
+					for(ULONG nIndex = 0; nIndex < nFetchedElementCount; nIndex++)
 					{
 						CComPtr<IMoniker>& pMoniker = reinterpret_cast<CComPtr<IMoniker>&>(ppMoniker[nIndex]);
 						if(!pMoniker)
@@ -568,7 +571,7 @@ public:
 			}
 			return S_OK;
 		}
-		STDMETHOD(Skip)(ULONG nElementCount) throw()
+		STDMETHOD(Skip)(ULONG nElementCount) override
 		{
 			_Z4(atlTraceCOM, 4, _T("nElementCount %d\n"), nElementCount);
 			_ATLTRY
@@ -581,7 +584,7 @@ public:
 			}
 			return S_OK;
 		}
-		STDMETHOD(Reset)() throw()
+		STDMETHOD(Reset)() override
 		{
 			_Z4(atlTraceCOM, 4, _T("...\n"));
 			_ATLTRY
@@ -594,7 +597,7 @@ public:
 			}
 			return S_OK;
 		}
-		STDMETHOD(Clone)(IEnumMoniker** ppEnumMoniker) throw()
+		STDMETHOD(Clone)(IEnumMoniker** ppEnumMoniker) override
 		{
 			_Z4(atlTraceCOM, 4, _T("...\n"));
 			_ATLTRY
@@ -626,14 +629,14 @@ private:
 		*ppvObject = CComPtr<IUnknown>(m_pSystemDeviceEnum).Detach();
 		return S_OK;
 	}
-	static HRESULT WINAPI QuerySystemDeviceEnumInterface(VOID* pvInstance, REFIID InterfaceIdentifier, VOID** ppvObject, DWORD)
+	static HRESULT WINAPI QuerySystemDeviceEnumInterface(VOID* pvInstance, REFIID InterfaceIdentifier, VOID** ppvObject, DWORD_PTR)
 	{
 		return ((CSystemDeviceEnumeratorSpy*) pvInstance)->QuerySystemDeviceEnumInterface(InterfaceIdentifier, ppvObject);
 	}
 
 public:
 // CSystemDeviceEnumeratorSpyT
-	static LPCTSTR GetOriginalLibraryName() throw()
+	static LPCTSTR GetOriginalLibraryName()
 	{
 		return _T("devenum.dll");
 	}
@@ -641,7 +644,7 @@ public:
 	{
 		return _StringHelper::GetLine(T::IDR, 2);
 	}
-	static HRESULT WINAPI UpdateRegistry(BOOL bRegister) throw()
+	static HRESULT WINAPI UpdateRegistry(BOOL bRegister)
 	{
 		_Z2(atlTraceRegistrar, 2, _T("bRegister %d\n"), bRegister);
 		_ATLTRY
@@ -654,22 +657,22 @@ public:
 		}
 		return S_OK;
 	}
-	CSystemDeviceEnumeratorSpyT() throw() :
+	CSystemDeviceEnumeratorSpyT() :
 		m_hDevEnumModule(NULL)
 	{
 		_Z4_THIS();
 	}
-	~CSystemDeviceEnumeratorSpyT() throw()
+	~CSystemDeviceEnumeratorSpyT()
 	{
 		_Z4_THIS();
 	}
-	HRESULT FinalConstruct() throw()
+	HRESULT FinalConstruct()
 	{
 		_ATLTRY
 		{
 			TCHAR pszPath[MAX_PATH] = { 0 };
 			_W(GetModuleFileName(NULL, pszPath, DIM(pszPath)));
-			_Z4(atlTraceRefcount, 4, _T("pszPath \"%s\", this 0x%08x, m_dwRef %d\n"), pszPath, this, m_dwRef);
+			_Z4(atlTraceRefcount, 4, _T("pszPath \"%s\", this 0x%p, m_dwRef %d\n"), pszPath, this, m_dwRef);
 			const HINSTANCE hModule = CoLoadLibrary(const_cast<LPOLESTR>((LPCOLESTR) CT2COLE(GetOriginalLibraryName())), TRUE);
 			_ATLTRY
 			{
@@ -703,11 +706,11 @@ public:
 		}
 		return S_OK;
 	}
-	VOID FinalRelease() throw()
+	VOID FinalRelease()
 	{
-		_Z5(atlTraceRefcount, 5, _T("m_dwRef 0x%x\n"), m_dwRef);
-		m_pSystemDeviceEnum = NULL;
-		m_pCreateDevEnum = NULL;
+		_Z5(atlTraceRefcount, 5, _T("m_dwRef 0x%X\n"), m_dwRef);
+		m_pSystemDeviceEnum.Release();
+		m_pCreateDevEnum.Release();
 		if(m_hDevEnumModule)
 		{
 			CoFreeLibrary(m_hDevEnumModule);
@@ -716,7 +719,11 @@ public:
 	}
 	static CString FormatDeviceCategory(const GUID& DeviceCategory)
 	{
-		static const struct { const GUID* pIdentifier; LPCSTR pszName; } g_pMap[] = 
+		static const struct 
+		{ 
+			const GUID* pIdentifier; 
+			LPCSTR pszName; 
+		} g_pMap[] = 
 		{
 			#define A(x) { &x, #x },
 			A(CLSID_VideoInputDeviceCategory)
@@ -734,30 +741,35 @@ public:
 			A(CLSID_MediaMultiplexerCategory)
 			#undef A
 		};
-		for(SIZE_T nIndex = 0; nIndex < DIM(g_pMap); nIndex++)
-			if(*g_pMap[nIndex].pIdentifier == DeviceCategory)
-				return CString(g_pMap[nIndex].pszName);
+		for(auto&& Item: g_pMap)
+			if(*Item.pIdentifier == DeviceCategory)
+				return CString(Item.pszName);
 		return CString(_PersistHelper::StringFromIdentifier(DeviceCategory));
 	}
 
 // ISystemDeviceEnumeratorSpy
 
 // ICreateDevEnum
-	STDMETHOD(CreateClassEnumerator)(REFCLSID DeviceCategory, IEnumMoniker** ppEnumMoniker, DWORD nFlags) throw()
+	STDMETHOD(CreateClassEnumerator)(REFCLSID DeviceCategory, IEnumMoniker** ppEnumMoniker, DWORD nFlags) override
 	{
-		_Z4(atlTraceCOM, 4, _T("DeviceCategory %s, nFlags 0x%x\n"), FormatDeviceCategory(DeviceCategory), nFlags);
+		_Z4(atlTraceCOM, 4, _T("DeviceCategory %s, nFlags 0x%X\n"), FormatDeviceCategory(DeviceCategory), nFlags);
 		_ATLTRY
 		{
-			__C(m_pCreateDevEnum->CreateClassEnumerator(DeviceCategory, ppEnumMoniker, nFlags));
+			const HRESULT nCreateClassEnumeratorResult = m_pCreateDevEnum->CreateClassEnumerator(DeviceCategory, ppEnumMoniker, nFlags);
+			__C(nCreateClassEnumeratorResult);
+			_D(nCreateClassEnumeratorResult == S_OK, nCreateClassEnumeratorResult);
 			CComPtr<IEnumMoniker>& pEnumMoniker = reinterpret_cast<CComPtr<IEnumMoniker>&>(*ppEnumMoniker);
 			if(pEnumMoniker)
 			{
-				#pragma region Trace Monikers
+				#pragma region Trace Moniker
 				__C(pEnumMoniker->Reset());
-				CComPtr<IMoniker> pMoniker;
-				while(pEnumMoniker->Next(1, &pMoniker, NULL) == S_OK)
+				for(; ; )
 				{
-					_Z4(atlTraceCOM, 4, _T("pMoniker %ls\n"), _FilterGraphHelper::GetMonikerDisplayName(pMoniker));
+					CComPtr<IMoniker> pMoniker;
+					ULONG nElementCount;
+					if(pEnumMoniker->Next(1, &pMoniker, &nElementCount) != S_OK)
+						break;
+					_Z4(atlTraceGeneral, 4, _T("pMoniker %ls\n"), _FilterGraphHelper::GetMonikerDisplayName(pMoniker));
 					CComPtr<IBindCtx> pBindCtx;
 					__C(CreateBindCtx(0, &pBindCtx));
 					CComPtr<IPropertyBag> pPropertyBag;
@@ -766,7 +778,6 @@ public:
 					const CStringW sDescription = _FilterGraphHelper::ReadPropertyBagString(pPropertyBag, OLESTR("Description"));
 					const CStringW sDevicePath = _FilterGraphHelper::ReadPropertyBagString(pPropertyBag, OLESTR("DevicePath"));
 					_Z4(atlTraceCOM, 4, _T("sFriendlyName \"%ls\", sDescription \"%ls\", sDevicePath \"%ls\"\n"), sFriendlyName, sDescription, sDevicePath);
-					pMoniker.Release();
 				}
 				__C(pEnumMoniker->Reset());
 				#pragma endregion
