@@ -1553,6 +1553,20 @@ public:
 				{
 					_Z_EXCEPTION();
 				}
+			if(nEventCode == EC_COMPLETE)
+				_ATLTRY
+				{
+					IBaseFilter* pBaseFilter = (IBaseFilter*) nParameter2;
+					if(pBaseFilter)
+					{
+						const CStringW sName = _FilterGraphHelper::GetFilterName(pBaseFilter);
+						_Z3(atlTraceCOM, 3, _T("Received EC_COMPLETE from filter 0x%p \"%ls\"\n"), pBaseFilter, sName);
+					}
+				}
+				_ATLCATCHALL()
+				{
+					_Z_EXCEPTION();
+				}
 		//#endif // defined(_M_IX86)
 		if(!m_pInnerMediaEventSink)
 			return S_FALSE;
