@@ -100,6 +100,32 @@ inline BOOL IsMultiThreadedApartment() throw()
 
 #if _TRACE
 
+inline BOOL TryFormatInterfaceName(const IID& Identifier, CString& sName)
+{
+	_A(sName.IsEmpty());
+	static const CEnumerationNameT<IID> g_pMap[] = 
+	{
+		#define A(x) { __uuidof(x), #x },
+		A(IActivationFilter)
+		A(IMarshal)
+		//A(IProxyManager)
+		A(IStdMarshalInfo)
+		A(IExternalConnection)
+		//A(IdentityUnmarshal)
+		A(IMultiQI)
+		A(IInternalUnknown)
+		A(IFastRundown)
+		A(INoMarshal)
+		A(IDataObject)
+		A(IAgileObject)
+		A(IClassFactory)
+		A(IClassFactory2)
+		#undef A
+	};
+	sName = FormatEnumerationT(g_pMap, Identifier, TRUE);
+	return !sName.IsEmpty();
+}
+
 #define DECLARE_QI_TRACE(_Class) \
 	static HRESULT WINAPI InternalQueryInterface(VOID* pThis, const _ATL_INTMAP_ENTRY* pEntries, REFIID InterfaceIdentifier, void** ppvObject) throw()\
 	{\
@@ -107,8 +133,9 @@ inline BOOL IsMultiThreadedApartment() throw()
 		OLECHAR pszInterfaceIdentifier[64] = { 0 }; \
 		_V(StringFromGUID2(InterfaceIdentifier, pszInterfaceIdentifier, DIM(pszInterfaceIdentifier))); \
 		::CString sInterfaceName; \
-		if(!_RegKeyHelper::QueryStringValue(HKEY_CLASSES_ROOT, AtlFormatString(_T("Interface\\%ls"), pszInterfaceIdentifier), NULL, sInterfaceName)) \
-			sInterfaceName = ::CString(pszInterfaceIdentifier); \
+		if(!TryFormatInterfaceName(InterfaceIdentifier, sInterfaceName)) \
+			if(!_RegKeyHelper::QueryStringValue(HKEY_CLASSES_ROOT, AtlFormatString(_T("Interface\\%ls"), pszInterfaceIdentifier), NULL, sInterfaceName)) \
+				sInterfaceName = ::CString(pszInterfaceIdentifier); \
 		ATLTRACE(atlTraceQI, SUCCEEDED(nResult) ? 4 : 3, _T("0x%p, Interface %s, Result 0x%08X\n"), pThis, sInterfaceName, nResult); \
 		return nResult;\
 	}
@@ -560,16 +587,14 @@ class CFakeActiveObjectHandler
 {
 public:
 // CFakeActiveObjectHandler
-	static DWORD RegisterActiveObject(IUnknown* pUnknown, REFCLSID ClassIdentifier, DWORD nFlags) throw()
+	static DWORD RegisterActiveObject(IUnknown* pUnknown, REFCLSID ClassIdentifier, DWORD nFlags)
 	{
-		pUnknown;
-		ClassIdentifier;
-		nFlags;
+		pUnknown; ClassIdentifier; nFlags;
 		return 1;
 	}
-	static VOID RevokeActiveObject(DWORD nCookie) throw()
+	static VOID RevokeActiveObject(DWORD nCookie)
 	{
-		ATLASSERT(nCookie == 1);
+		_A(nCookie == 1);
 	}
 };
 
@@ -580,12 +605,12 @@ public:
 	static DWORD RegisterActiveObject(IUnknown* pUnknown, REFCLSID ClassIdentifier, DWORD nFlags)
 	{
 		DWORD nCookie;
-		ATLCHECK(::RegisterActiveObject(pUnknown, ClassIdentifier, nFlags, &nCookie));
+		__C(::RegisterActiveObject(pUnknown, ClassIdentifier, nFlags, &nCookie));
 		return nCookie;
 	}
 	static VOID RevokeActiveObject(DWORD nCookie)
 	{
-		ATLCHECK(::RevokeActiveObject(nCookie, NULL));
+		__C(::RevokeActiveObject(nCookie, NULL));
 	}
 };
 
@@ -596,44 +621,44 @@ public:
 	static CStringW StringFromIdentifier(const GUID& Identifier)
 	{
 		WCHAR pszIdentifierString[64] = { 0 };
-		ATLVERIFY(StringFromGUID2(Identifier, pszIdentifierString, _countof(pszIdentifierString)));
+		_W(StringFromGUID2(Identifier, pszIdentifierString, _countof(pszIdentifierString)));
 		return pszIdentifierString;
 	}
 	static DWORD RegisterActiveObject(IUnknown* pUnknown, REFCLSID ClassIdentifier, DWORD nFlags)
 	{
 		// NOTE: Direct registration into ROT allows us to specify ROTFLAGS_ALLOWANYCLIENT flag and
 		//       allow interaction between server *service* and client application
-		ATLASSERT(nFlags == ACTIVEOBJECT_STRONG);
+		_A(nFlags == ACTIVEOBJECT_STRONG);
 		CComPtr<IRunningObjectTable> pRunningObjectTable;
-		ATLCHECK(GetRunningObjectTable(0, &pRunningObjectTable));
+		__C(GetRunningObjectTable(0, &pRunningObjectTable));
 		CComPtr<IMoniker> pMoniker;
-		ATLCHECK(CreateItemMoniker(OLESTR("!"), StringFromIdentifier(ClassIdentifier), &pMoniker));
+		__C(CreateItemMoniker(OLESTR("!"), StringFromIdentifier(ClassIdentifier), &pMoniker));
 		DWORD nCookie;
-		ATLCHECK(pRunningObjectTable->Register(ROTFLAGS_REGISTRATIONKEEPSALIVE | ROTFLAGS_ALLOWANYCLIENT, pUnknown, pMoniker, &nCookie));
+		__C(pRunningObjectTable->Register(ROTFLAGS_REGISTRATIONKEEPSALIVE | ROTFLAGS_ALLOWANYCLIENT, pUnknown, pMoniker, &nCookie));
 		return nCookie;
 	}
 	static VOID RevokeActiveObject(DWORD nCookie)
 	{
 		CComPtr<IRunningObjectTable> pRunningObjectTable;
-		ATLCHECK(GetRunningObjectTable(0, &pRunningObjectTable));
-		ATLCHECK(pRunningObjectTable->Revoke(nCookie));
+		__C(GetRunningObjectTable(0, &pRunningObjectTable));
+		__C(pRunningObjectTable->Revoke(nCookie));
 	}
 };
 
-template <typename _Handler = CRunningObjectActiveObjectHandler>
+template <typename CHandler = CRunningObjectActiveObjectHandler>
 class CActiveObjectT :
-	protected _Handler
+	protected CHandler
 {
 private:
-	DWORD m_nCookie;		// Active object identifier
+	DWORD m_nCookie;
 
 public:
 // CActiveObjectT
-	CActiveObjectT() throw() :
+	CActiveObjectT() :
 		m_nCookie(0)
 	{
 	}
-	~CActiveObjectT() throw()
+	~CActiveObjectT()
 	{
 		_ATLTRY
 		{
@@ -644,23 +669,26 @@ public:
 			_Z_EXCEPTION();
 		}
 	}
-	DWORD GetCookie() const throw()
+	DWORD GetCookie() const
 	{
 		return m_nCookie;
 	}
+	BOOL IsRegistered() const
+	{
+		return GetCookie() != 0;
+	}
 	VOID Register(IUnknown* pUnknown, const CLSID& ClassIdentifier, DWORD nFlags = ACTIVEOBJECT_STRONG)
 	{
-		ATLASSERT(m_nCookie == 0);
+		_A(m_nCookie == 0);
 		m_nCookie = RegisterActiveObject(pUnknown, ClassIdentifier, nFlags);
-		ATLASSERT(m_nCookie);
+		_A(m_nCookie);
 	}
 	VOID Unregister()
 	{
-		if(m_nCookie)
-		{
-			RevokeActiveObject(m_nCookie);
-			m_nCookie = 0;
-		}
+		if(!m_nCookie)
+			return;
+		RevokeActiveObject(m_nCookie);
+		m_nCookie = 0;
 	}
 };
 
