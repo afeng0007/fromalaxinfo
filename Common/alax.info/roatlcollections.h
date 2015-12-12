@@ -575,6 +575,7 @@ class CRoArrayT :
 public:
 	typedef CAtlArray<_Element, _ElementTraits> CBaseArray;
 	typedef _Element CCollectionElement;
+	typedef CRoArrayT<_Element, _ElementTraits> CRoArray;
 
 private:
 
@@ -635,6 +636,55 @@ public:
 			nIndex = Add(Element);
 		_A(nIndex >= 0);
 		return nIndex;
+	}
+	template <typename CParameter>
+	VOID Sort(SSIZE_T nFirstIndex, SSIZE_T nLastIndex, INT_PTR (*pCompare)(const typename _ElementTraits::INARGTYPE, const typename _ElementTraits::INARGTYPE, CParameter Parameter), CParameter Parameter)
+	{
+		_A(pCompare);
+		if(nLastIndex - nFirstIndex < 1)
+			return;
+		_Element* pElements = GetData();
+		SSIZE_T nIndex1 = nFirstIndex, nIndex2 = nLastIndex;
+		SSIZE_T nIndex3 = (nIndex1 + nIndex2) / 2;
+		while(nIndex1 <= nIndex2)
+		{
+			while(pCompare(pElements[nIndex1], pElements[nIndex3], Parameter) < 0)
+				nIndex1++;
+			while(pCompare(pElements[nIndex3], pElements[nIndex2], Parameter) < 0)
+				nIndex2--;
+			if(nIndex1 <= nIndex2)
+			{
+				if(nIndex3 == nIndex1)
+					nIndex3 = nIndex2;
+				else if(nIndex3 == nIndex2)
+					nIndex3 = nIndex1;
+				_Element& ElementA = pElements[nIndex1++];
+				_Element& ElementB = pElements[nIndex2--];
+				CTempBufferT<_Element, sizeof (_Element)> pElement(1);
+				_ElementTraits::RelocateElements(pElement, &ElementA, 1);
+				_ElementTraits::RelocateElements(&ElementA, &ElementB, 1);
+				_ElementTraits::RelocateElements(&ElementB, pElement, 1);
+			}
+		}
+		if(nFirstIndex < nIndex2)
+			Sort<CParameter>(nFirstIndex, nIndex2, pCompare, Parameter);
+		if(nIndex1 < nLastIndex)
+			Sort<CParameter>(nIndex1, nLastIndex, pCompare, Parameter);
+	}
+	template <typename CParameter>
+	VOID Sort(INT_PTR (*pCompare)(const typename _ElementTraits::INARGTYPE, const typename _ElementTraits::INARGTYPE, CParameter Parameter), CParameter Parameter)
+	{
+		if(!IsEmpty())
+			Sort<CParameter>(0, GetCount() - 1, pCompare, Parameter);
+	}
+	static INT_PTR DefaultCompare(const typename _ElementTraits::INARGTYPE Element1, const typename _ElementTraits::INARGTYPE Element2, INT)
+	{
+		return (Element1 < Element2) ? -1 : (Element1 <= Element2) ? 0 : +1;
+	}
+	VOID Sort()
+	{
+		if(!IsEmpty())
+			Sort<INT>(0, GetCount() - 1, &CRoArray::DefaultCompare, 0);
 	}
 };
 
@@ -895,6 +945,7 @@ class CRoMapT :
 public:
 	typedef CAtlMap<_KeyElement, _Element, _KeyElementTraits, _ElementTraits> CBaseMap;
 	typedef CRoMapT<_KeyElement, _Element, _KeyElementTraits, _ElementTraits> CMap;
+	typedef _KeyElement CCollectionKeyElement;
 	typedef _Element CCollectionElement;
 
 	////////////////////////////////////////////////////////
@@ -970,6 +1021,81 @@ public:
 		ATL_FORCEINLINE CPositionRangeIterator end() const
 		{
 			return CPositionRangeIterator::end(m_pMap);
+		}
+	};
+
+	////////////////////////////////////////////////////////
+	// CKeyRangeIterator
+
+	class CKeyRangeIterator
+	{
+	public:
+		const CMap& m_Map;
+		POSITION m_Position;
+
+	public:
+	// CKeyRangeIterator
+		ATL_FORCEINLINE CKeyRangeIterator(const CMap* pMap, POSITION Position) :
+			m_Map(*pMap),
+			m_Position(Position)
+		{
+			_A(pMap);
+		}
+		ATL_FORCEINLINE BOOL operator == (const CKeyRangeIterator& Key) const
+		{
+			_A(&m_Map == &Key.m_Map);
+			return m_Position == Key.m_Position;
+		}
+		ATL_FORCEINLINE BOOL operator != (const CKeyRangeIterator& Key) const
+		{
+			return !(*this == Key);
+		}
+		ATL_FORCEINLINE CKeyRangeIterator& operator ++ ()
+		{
+			m_Map.GetNext(m_Position);
+			return *this;
+		}
+		ATL_FORCEINLINE operator const typename CMap::CCollectionKeyElement* () const
+		{
+			_A(m_Position);
+			const typename CMap::CCollectionKeyElement& Element = m_Map.GetKeyAt(m_Position);
+			const CAddressT<const typename CMap::CCollectionKeyElement>& ElementAddress = reinterpret_cast<const CAddressT<const typename CMap::CCollectionKeyElement>&>(Element);
+			return &ElementAddress;
+		}
+		ATL_FORCEINLINE static CKeyRangeIterator begin(const CMap* pMap)
+		{
+			return CKeyRangeIterator(pMap, pMap->GetStartPosition());
+		}
+		ATL_FORCEINLINE static CKeyRangeIterator end(const CMap* pMap)
+		{
+			return CKeyRangeIterator(pMap, NULL);
+		}
+	};
+
+	////////////////////////////////////////////////////////
+	// CKeys
+
+	class CKeys
+	{
+	public:
+		const CMap* m_pMap;
+
+	public:
+	// CKeys
+		ATL_FORCEINLINE CKeys(const CMap* pMap) :
+			m_pMap(pMap)
+		{
+			_A(pMap);
+		}
+
+	// Range Iterator
+		ATL_FORCEINLINE CKeyRangeIterator begin() const
+		{
+			return CKeyRangeIterator::begin(m_pMap);
+		}
+		ATL_FORCEINLINE CKeyRangeIterator end() const
+		{
+			return CKeyRangeIterator::end(m_pMap);
 		}
 	};
 
@@ -1060,6 +1186,10 @@ public:
 	CPositions GetPositions() const
 	{
 		return CPositions(this);
+	}
+	CKeys GetKeys() const
+	{
+		return CKeys(this);
 	}
 	CValues GetValues() const
 	{
