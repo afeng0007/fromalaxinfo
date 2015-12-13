@@ -50,6 +50,11 @@ copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.%C%" .
 copy /b /y "%A%\%B%\_Bin\%B%-Win32.%C%" .
 copy /b /y "%A%\%B%\_Bin\%B%-x64.%C%" .
 
+@set B=CaptureCapabilities
+@set C=exe
+copy /b /y "%A%\Utilities\MediaFoundation\%B%\_Bin\%B%-Win32.%C%" ".\MediaFoundation%B%-Win32.%C%"
+copy /b /y "%A%\Utilities\MediaFoundation\%B%\_Bin\%B%-x64.%C%" ".\MediaFoundation%B%-x64.%C%"
+
 @set B=FilePropertyStore
 @set C=exe
 copy /b /y "%A%\Utilities\%B%\_Bin\%B%-Win32.%C%" .
