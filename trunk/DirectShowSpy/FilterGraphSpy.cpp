@@ -103,3 +103,44 @@ HRESULT STDMETHODCALLTYPE DoMediaSampleTracePropertySheetModal()
 	return S_OK;
 }
 
+#if defined(_WIN64)
+	extern "C" __declspec(dllexport) 
+#else
+	#pragma comment(linker, "/EXPORT:DoMediaSampleTraceTasks=_DoMediaSampleTraceTasks@16,PRIVATE")
+	extern "C" // __declspec(dllexport) 
+#endif // defined(_WIN64)
+
+HRESULT STDMETHODCALLTYPE DoMediaSampleTraceTasks(HWND hParentWindow, HINSTANCE, LPSTR pszCommandLine, INT nShowCommand)
+{
+	_ATLTRY
+	{
+		CSingleThreadedApartment SingleThreadedApartment;
+		hParentWindow; nShowCommand;
+		CCommandLineArguments Arguments((LPCWSTR) CStringW(pszCommandLine), 0);
+		for(; ; )
+		{
+			CCommandLineArguments::CArgument Argument;
+			if(!Arguments.Next(Argument))
+				break;
+			__D(!Argument.m_bSwitch, E_INVALIDARG);
+			if(Argument.m_sValue.CompareNoCase(_T("reset")) == 0)
+			{
+				CMediaSampleTraceBase::ResetData();
+			} else
+			if(Argument.m_sValue.CompareNoCase(_T("write")) == 0)
+			{
+				CCommandLineArguments::CArgument PathArgument;
+				__D(Arguments.Next(PathArgument), E_INVALIDARG);
+				__D(!PathArgument.m_bSwitch, E_INVALIDARG);
+				CMediaSampleTraceBase::SaveToFile(CMediaSampleTraceBase::CreateDataText(), (LPCTSTR) PathArgument.m_sValue);
+			} else
+				__C(E_INVALIDARG);
+		}
+	}
+	_ATLCATCH(Exception)
+	{
+		_C(Exception);
+	}
+	return S_OK;
+}
+

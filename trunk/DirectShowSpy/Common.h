@@ -543,6 +543,94 @@ public:
 	}
 };
 
+
+////////////////////////////////////////////////////////////
+// CCommandLineArguments
+
+class CCommandLineArguments
+{
+public:
+
+	////////////////////////////////////////////////////////
+	// CArgument
+
+	class CArgument
+	{
+	public:
+		BOOL m_bSwitch;
+		CString m_sSwitchName;
+		CString m_sSwitchValue;
+		BOOL m_bIntegerSwitchValueAvailable;
+		INT m_nIntegerSwitchValue;
+		CString m_sValue;
+
+	public:
+	// CArgument
+		CArgument() :
+			m_bSwitch(FALSE),
+			m_bIntegerSwitchValueAvailable(FALSE)
+		{
+		}
+		VOID Initialize()
+		{
+			m_bSwitch = FALSE;
+			m_sSwitchName.Empty();;
+			m_sSwitchValue.Empty();;
+			m_bIntegerSwitchValueAvailable = FALSE;
+			m_sValue.Empty();
+		}
+	};
+
+private:
+	SIZE_T m_argc;
+	TCHAR** m_argv;
+	SIZE_T m_nIndex;
+
+public:
+// CCommandLineArguments
+	CCommandLineArguments(SIZE_T argc, TCHAR* argv[]) :
+		m_argc(argc),
+		m_argv(argv),
+		m_nIndex(1)
+	{
+	}
+	CCommandLineArguments(LPCWSTR pszCommandLine, SIZE_T nIndex = 1) :
+		m_nIndex(nIndex)
+	{
+		INT nArgumentCount = 0;
+		LPWSTR* pszArguments = CommandLineToArgvW(pszCommandLine, &nArgumentCount);
+		m_argc = nArgumentCount;
+		m_argv = pszArguments;
+	}
+	BOOL Next(CArgument& Argument)
+	{
+		if(m_nIndex >= m_argc)
+			return FALSE;
+		CString sArgument = m_argv[m_nIndex++];
+		_A(!sArgument.IsEmpty());
+		Argument.Initialize();
+		if(_tcschr(_T("-/"), sArgument[0]))
+		{
+			Argument.m_bSwitch = TRUE;
+			sArgument.Delete(0);
+			const INT nSeparatorPosition = sArgument.Find(_T(':'));
+			if(nSeparatorPosition > 0)
+			{
+				Argument.m_sSwitchName = sArgument.Left(nSeparatorPosition);
+				Argument.m_sSwitchValue = sArgument.Mid(nSeparatorPosition + 1);
+				if(!Argument.m_sSwitchValue.IsEmpty())
+					Argument.m_bIntegerSwitchValueAvailable =  AtlStringToInteger(Argument.m_sSwitchValue, Argument.m_nIntegerSwitchValue);
+			} else
+				Argument.m_sSwitchName = sArgument;
+			return TRUE;
+		}
+		if(sArgument.GetLength() >= 2 && sArgument[0] == _T('"') && sArgument[sArgument.GetLength() - 1] == _T('"'))
+			sArgument = sArgument.Mid(1, sArgument.GetLength() - 2);
+		Argument.m_sValue = sArgument;
+		return TRUE;
+	}
+};
+
 ////////////////////////////////////////////////////////////
 // DIRECTSHOWSPY_NAMESPACE_PREFIX
 
