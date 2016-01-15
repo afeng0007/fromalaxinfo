@@ -557,6 +557,142 @@ public:
 
 public:
 // CMediaSampleTraceBase
+	static BOOL ResetData()
+	{
+		CPages Pages;
+		if(!Pages.Initialize())
+			return FALSE;
+		Pages.ResetData();
+		return TRUE;
+	}
+	static CString FormatTime(UINT64 nTime)
+	{
+		SYSTEMTIME Time;
+		FileTimeToSystemTime(&reinterpret_cast<const FILETIME&>(nTime), &Time);
+		return AtlFormatString(_T("%02d:%02d:%02d.%03d"), Time.wHour, Time.wMinute, Time.wSecond, Time.wMilliseconds);
+	}
+	static CString CreateDataItemHeaderText()
+	{
+		LPCTSTR g_ppszHeader[] = 
+		{
+			_T("Time"),
+			_T("Process Identifier"),
+			_T("Thread Identifier"),
+			_T("Filter Graph Identifier"),
+			_T("Filter Graph Name"),
+			_T("Filter Identifier"),
+			_T("Filter Name"),
+			_T("Stream"),
+			_T("Type"),
+			_T("Media Sample Flags"),
+			_T("Start Time"),
+			_T("Stop Time"),
+			_T("Length Time"),
+			_T("Data Size"),
+			_T("Comment"),
+			_T("Highlight"),
+		};
+		return _StringHelper::Join(g_ppszHeader, _T("\t")) + _T("\r\n");
+	}
+	static CString CreateDataItemText(const CData::CItem& Item)
+	{
+		CRoArrayT<CString> Array;
+		Array.Add(FormatTime(Item.m_PageItem.nTime));
+		Array.Add(AtlFormatString(_T("%d"), Item.m_Item.nProcessIdentifier));
+		Array.Add(AtlFormatString(_T("%d"), Item.m_PageItem.nThreadIdentifier));
+		Array.Add(AtlFormatString(_T("0x%p"), Item.m_Item.nFilterGraphIdentifier));
+		Array.Add(CString(Item.m_Item.pszFilterGraphName));
+		Array.Add(AtlFormatString(_T("0x%p"), Item.m_PageItem.nFilterIdentifier));
+		Array.Add(CString(Item.m_PageItem.pszFilterName));
+		Array.Add(CString(Item.m_PageItem.pszStreamName));
+		Array.Add(Item.FormatType());
+		switch(Item.m_PageItem.nFlags & PAGEITEMFLAG_TYPE_MASK)
+		{
+		case PAGEITEMFLAG_NEWSEGMENT:
+			Array.Add(_T(""));
+			Array.Add(AtlFormatString(_T("%I64d"), Item.m_PageItem.Data.NewSegment.nStartTime));
+			if(Item.m_PageItem.Data.NewSegment.nStopTime < LLONG_MAX)
+				Array.Add(AtlFormatString(_T("%I64d"), Item.m_PageItem.Data.NewSegment.nStopTime));
+			//Item.m_PageItem.Data.NewSegment.fRate
+			break;
+		case PAGEITEMFLAG_MEDIASAMPLE:
+			Array.Add(_FilterGraphHelper::FormatSampleFlags(Item.m_PageItem.Data.MediaSample.Properties.dwSampleFlags));
+			if(Item.m_PageItem.Data.MediaSample.Properties.dwSampleFlags & AM_SAMPLE_TIMEVALID)
+			{
+				Array.Add(AtlFormatString(_T("%I64d"), Item.m_PageItem.Data.MediaSample.Properties.tStart));
+				if(Item.m_PageItem.Data.MediaSample.Properties.dwSampleFlags & AM_SAMPLE_STOPVALID)
+				{
+					Array.Add(AtlFormatString(_T("%I64d"), Item.m_PageItem.Data.MediaSample.Properties.tStop));
+					Array.Add(AtlFormatString(_T("%I64d"), Item.m_PageItem.Data.MediaSample.Properties.tStop - Item.m_PageItem.Data.MediaSample.Properties.tStart));
+				}
+			}
+			while(Array.GetCount() < 13)
+				Array.Add(_T(""));
+			Array.Add(AtlFormatString(_T("%d"), Item.m_PageItem.Data.MediaSample.Properties.lActual));
+			break;
+		case PAGEITEMFLAG_ENDOFSTREAM:
+		case PAGEITEMFLAG_COMMENT:
+			break;
+		default:
+			_A(FALSE);
+		}
+		if(*Item.m_PageItem.pszComment)
+		{
+			while(Array.GetCount() < 14)
+				Array.Add(_T(""));
+			Array.Add(CString(Item.m_PageItem.pszComment));
+		}
+		if(Item.m_nHighlightIndex)
+		{
+			while(Array.GetCount() < 15)
+				Array.Add(_T(""));
+			Array.Add(AtlFormatString(_T("*%d"), Item.m_nHighlightIndex));
+		}
+		return _StringHelper::Join(Array, _T("\t")) + _T("\r\n");
+	}
+	static CStringA CreateDataText()
+	{
+		CString sText;
+		CPages Pages;
+		if(Pages.Initialize())
+		{
+			CData Data;
+			CHandleMap HandleMap;
+			Pages.GetData(Data, &HandleMap);
+			Data.Sort();
+			sText += CreateDataItemHeaderText();
+			for(auto&& Item: Data.m_ItemArray)
+				sText += CreateDataItemText(Item);
+		}
+		return CStringA(sText);
+	}
+	static VOID SaveToFile(const CStringA sText, const CPath& sPath)
+	{
+		LPCTSTR pszExtension = FindExtension(sPath);
+		CAtlFile File;
+		__C(File.Create(sPath, GENERIC_WRITE, FILE_SHARE_READ, CREATE_ALWAYS));
+		_ATLTRY
+		{
+			if(_tcsicmp(pszExtension, _T(".bz2")) == 0)
+			{
+				CLocalObjectPtr<CBzip2Item> pItem;
+				pItem->SetRawData((const BYTE*) (LPCSTR) sText, sText.GetLength());
+				CHeapPtr<BYTE> pnData;
+				SIZE_T nDataSize;
+				pItem->GetData(pnData, nDataSize);
+				__C(File.Write(pnData, (DWORD) nDataSize));
+			} else
+			{
+				__C(File.Write(sText, sText.GetLength() * sizeof (CHAR)));
+			}
+		}
+		_ATLCATCHALL()
+		{
+			File.Close();
+			DeleteFile(sPath);
+			_ATLRETHROW;
+		}
+	}
 };
 
 ////////////////////////////////////////////////////////////
@@ -1156,12 +1292,6 @@ public:
 			}
 			m_FilterDialog.Reset();
 		}
-		static CString FormatTime(UINT64 nTime)
-		{
-			SYSTEMTIME Time;
-			FileTimeToSystemTime(&reinterpret_cast<const FILETIME&>(nTime), &Time);
-			return AtlFormatString(_T("%02d:%02d:%02d.%03d"), Time.wHour, Time.wMinute, Time.wSecond, Time.wMilliseconds);
-		}
 		static CString GetFilterGraphFriendlyName(const ITEM& Item)
 		{
 			CString sFriendlyName(Item.pszFilterGraphName);
@@ -1183,86 +1313,9 @@ public:
 		CStringA CreateText()
 		{
 			CString sText;
-			#pragma region Header
-			LPCTSTR g_ppszHeader[] = 
-			{
-				_T("Time"),
-				_T("Process Identifier"),
-				_T("Thread Identifier"),
-				_T("Filter Graph Identifier"),
-				_T("Filter Graph Name"),
-				_T("Filter Identifier"),
-				_T("Filter Name"),
-				_T("Stream"),
-				_T("Type"),
-				_T("Media Sample Flags"),
-				_T("Start Time"),
-				_T("Stop Time"),
-				_T("Length Time"),
-				_T("Data Size"),
-				_T("Comment"),
-				_T("Highlight"),
-			};
-			sText += _StringHelper::Join(g_ppszHeader, _T("\t")) + _T("\r\n");
-			#pragma endregion
+			sText += CreateDataItemHeaderText();
 			for(INT nItem = 0; nItem < m_ListView.GetItemCount(); nItem++)
-			{
-				const CData::CItem& Item = m_ListView.GetItemData(nItem);
-				CRoArrayT<CString> Array;
-				Array.Add(FormatTime(Item.m_PageItem.nTime));
-				Array.Add(AtlFormatString(_T("%d"), Item.m_Item.nProcessIdentifier));
-				Array.Add(AtlFormatString(_T("%d"), Item.m_PageItem.nThreadIdentifier));
-				Array.Add(AtlFormatString(_T("0x%p"), Item.m_Item.nFilterGraphIdentifier));
-				Array.Add(CString(Item.m_Item.pszFilterGraphName));
-				Array.Add(AtlFormatString(_T("0x%p"), Item.m_PageItem.nFilterIdentifier));
-				Array.Add(CString(Item.m_PageItem.pszFilterName));
-				Array.Add(CString(Item.m_PageItem.pszStreamName));
-				Array.Add(Item.FormatType());
-				switch(Item.m_PageItem.nFlags & PAGEITEMFLAG_TYPE_MASK)
-				{
-				case PAGEITEMFLAG_NEWSEGMENT:
-					Array.Add(_T(""));
-					Array.Add(AtlFormatString(_T("%I64d"), Item.m_PageItem.Data.NewSegment.nStartTime));
-					if(Item.m_PageItem.Data.NewSegment.nStopTime < LLONG_MAX)
-						Array.Add(AtlFormatString(_T("%I64d"), Item.m_PageItem.Data.NewSegment.nStopTime));
-					//Item.m_PageItem.Data.NewSegment.fRate
-					break;
-				case PAGEITEMFLAG_MEDIASAMPLE:
-					Array.Add(_FilterGraphHelper::FormatSampleFlags(Item.m_PageItem.Data.MediaSample.Properties.dwSampleFlags));
-					if(Item.m_PageItem.Data.MediaSample.Properties.dwSampleFlags & AM_SAMPLE_TIMEVALID)
-					{
-						Array.Add(AtlFormatString(_T("%I64d"), Item.m_PageItem.Data.MediaSample.Properties.tStart));
-						if(Item.m_PageItem.Data.MediaSample.Properties.dwSampleFlags & AM_SAMPLE_STOPVALID)
-						{
-							Array.Add(AtlFormatString(_T("%I64d"), Item.m_PageItem.Data.MediaSample.Properties.tStop));
-							Array.Add(AtlFormatString(_T("%I64d"), Item.m_PageItem.Data.MediaSample.Properties.tStop - Item.m_PageItem.Data.MediaSample.Properties.tStart));
-						}
-					}
-					while(Array.GetCount() < 13)
-						Array.Add(_T(""));
-					Array.Add(AtlFormatString(_T("%d"), Item.m_PageItem.Data.MediaSample.Properties.lActual));
-					break;
-				case PAGEITEMFLAG_ENDOFSTREAM:
-				case PAGEITEMFLAG_COMMENT:
-					break;
-				default:
-					_A(FALSE);
-				}
-				if(*Item.m_PageItem.pszComment)
-				{
-					while(Array.GetCount() < 14)
-						Array.Add(_T(""));
-					Array.Add(CString(Item.m_PageItem.pszComment));
-				}
-				if(Item.m_nHighlightIndex)
-				{
-					while(Array.GetCount() < 15)
-						Array.Add(_T(""));
-					Array.Add(AtlFormatString(_T("*%d"), Item.m_nHighlightIndex));
-				}
-				sText += _StringHelper::Join(Array, _T("\t"));
-				sText += _T("\r\n");
-			}
+				sText += CreateDataItemText(m_ListView.GetItemData(nItem));
 			return CStringA(sText);
 		}
 		VOID HandleFilterUpdate()
@@ -1523,31 +1576,7 @@ public:
 			if(!_tcslen(sPath))
 				return 0;
 			CWaitCursor WaitCursor;
-			const CStringA sText = CreateText();
-			LPCTSTR pszExtension = FindExtension(sPath);
-			CAtlFile File;
-			__C(File.Create(sPath, GENERIC_WRITE, FILE_SHARE_READ, CREATE_ALWAYS));
-			_ATLTRY
-			{
-				if(_tcsicmp(pszExtension, _T(".bz2")) == 0)
-				{
-					CLocalObjectPtr<CBzip2Item> pItem;
-					pItem->SetRawData((const BYTE*) (LPCSTR) sText, sText.GetLength());
-					CHeapPtr<BYTE> pnData;
-					SIZE_T nDataSize;
-					pItem->GetData(pnData, nDataSize);
-					__C(File.Write(pnData, (DWORD) nDataSize));
-				} else
-				{
-					__C(File.Write(sText, sText.GetLength() * sizeof (CHAR)));
-				}
-			}
-			_ATLCATCHALL()
-			{
-				File.Close();
-				DeleteFile(sPath);
-				_ATLRETHROW;
-			}
+			SaveToFile(CreateText(), sPath);
 			return 0;
 		}
 		LRESULT OnResetData(UINT, INT, HWND)
