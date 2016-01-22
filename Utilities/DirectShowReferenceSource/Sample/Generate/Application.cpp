@@ -9,7 +9,7 @@
 #include <dshow.h>
 #include <dshowasf.h>
 #include <wmsysprf.h>
-#import "libid:9E3ABA93-C8D8-41D3-B39E-29508FDE5757" raw_interfaces_only no_namespace // AlaxInfoDirectShowReferenceSource
+#import "libid:9E3ABA93-C8D8-41D3-B39E-29508FDE5757" raw_interfaces_only no_namespace // AlaxInfoReferenceSource
 
 #pragma comment(lib, "strmiids.lib")
 
@@ -36,7 +36,7 @@ CComPtr<IPin> GetFilterPin(IBaseFilter* pBaseFilter, SIZE_T nIndex = 0)
 int _tmain(int argc, _TCHAR* argv[])
 {
 	static const LPCTSTR g_pszPath = _T("D:\\Output.asf");
-	static const REFERENCE_TIME g_nDuration = 15 * 1000 * 10000i64; // 15 seconds
+	static const REFERENCE_TIME g_nDuration = 3 * 60 * 1000 * 10000i64; // 15 seconds
 	_ATLTRY
 	{
 		__C(CoInitializeEx(NULL, COINIT_APARTMENTTHREADED));
@@ -44,7 +44,7 @@ int _tmain(int argc, _TCHAR* argv[])
 		{
 			CComPtr<IFilterGraph2> pFilterGraph;
 			__C(pFilterGraph.CoCreateInstance(CLSID_FilterGraph));
-			// WARN: Make sure DirectShowReferenceSource.dll of matching bitness is registered with the system (or otherwise is COM visible/available)
+			// WARN: Make sure ReferenceSource.dll of matching bitness is registered with the system (or otherwise is COM visible/available)
 			#pragma region Video
 			CComPtr<IBaseFilter> pVideoBaseFilter;
 			__C(pVideoBaseFilter.CoCreateInstance(__uuidof(VideoSourceFilter)));
@@ -58,8 +58,8 @@ int _tmain(int argc, _TCHAR* argv[])
 				VideoInfoHeader.AvgTimePerFrame = 1001 * 10000i64 / 30; // 29.970 fps
 				BITMAPINFOHEADER& BitmapInfoHeader = VideoInfoHeader.bmiHeader;
 				BitmapInfoHeader.biSize = sizeof BitmapInfoHeader;
-				BitmapInfoHeader.biWidth = 1280;
-				BitmapInfoHeader.biHeight = -720; // Important: video source is only capable to geneate top-to-bottom 32-bit RGBs due to Direct2D implementation details
+				BitmapInfoHeader.biWidth = 320; //1280;
+				BitmapInfoHeader.biHeight = -240; //-720; // Important: video source is only capable to geneate top-to-bottom 32-bit RGBs due to Direct2D implementation details
 				BitmapInfoHeader.biPlanes = 1;
 				BitmapInfoHeader.biBitCount = 32;
 				BitmapInfoHeader.biCompression = BI_RGB;
