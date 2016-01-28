@@ -35,12 +35,12 @@ copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.%C%" ".\Hardware Specific"
 copy /b /y "%A%\Utilities\%B%\_Bin\%B%-Win32.%C%" ".\Hardware Specific"
 copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.%C%" ".\Hardware Specific"
 
-@set B=DirectShowCaptureCapabilities
-@set C=exe
-copy /b /y "%A%\Utilities\%B%\_Bin\%B%-Win32.%C%" .
-copy /b /y "%A%\Utilities\%B%\_Bin\%B%-x64.%C%" .
-
 @set B1=DirectShow
+@set B2=CaptureCapabilities
+@set C=exe
+copy /b /y "%A%\Utilities\%B1%\%B2%\_Bin\%B1%%B2%-Win32.%C%" .
+copy /b /y "%A%\Utilities\%B1%\%B2%\_Bin\%B1%%B2%-x64.%C%" .
+
 @set B2=FileMediaSamples
 @set C=exe
 copy /b /y "%A%\Utilities\%B1%\%B2%\_Bin\%B1%%B2%-Win32.%C%" .
