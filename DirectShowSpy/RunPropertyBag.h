@@ -192,23 +192,38 @@ public:
 			CComVariantArray vValue;
 			if(!Map.Lookup(sName, vValue))
 				continue;
-			CString sComment;
+			CRoArrayT<CString> CommentArray;
 			#pragma region Friendly Comment
 			switch(vValue.vt)
 			{
-			#pragma region VT_I4
+			#pragma region VT_I4, VT_UI4
 			case VT_I4:
+			case VT_UI4:
 				if(vValue.lVal < -999 || vValue.lVal > 999)
-					sComment = _StringHelper::FormatNumber(vValue.lVal);
+					CommentArray.Add(_StringHelper::FormatNumber(vValue.lVal));
+				CommentArray.Add(AtlFormatString(_T("0x%08X"), vValue.lVal));
+				break;
+			#pragma endregion 
+			#pragma region VT_I8, VT_UI8
+			case VT_I8:
+			case VT_UI8:
+				{
+					CommentArray.Add(AtlFormatString(_T("0x%016X"), vValue.llVal));
+					if(vValue.ullVal >> 32)
+						CommentArray.Add(AtlFormatString(_T("%d, %d"), vValue.ullVal >> 32, (UINT32) vValue.ullVal));
+					CommentArray.Add(AtlFormatString(_T("0x%016X"), vValue.llVal));
+					if(vValue.lVal < -999 || vValue.lVal > 999)
+						CommentArray.Add(_StringHelper::FormatNumber(vValue.llVal));
+				}
 				break;
 			#pragma endregion 
 			#pragma region VT_R8
 			case VT_R8:
 				if(vValue.dblVal > -0.001 || vValue.dblVal < 0.001)
-					sComment = _StringHelper::FormatNumber(vValue.dblVal, 6);
+					CommentArray.Add(_StringHelper::FormatNumber(vValue.dblVal, 6));
 				else 
 				if(vValue.lVal < -999.0 || vValue.lVal > 999.0)
-					sComment = _StringHelper::FormatNumber(vValue.dblVal, 1);
+					CommentArray.Add(_StringHelper::FormatNumber(vValue.dblVal, 1));
 				break;
 			#pragma endregion 
 			}
@@ -217,9 +232,10 @@ public:
 			_Z45_HRESULT(nChangeTypeResult);
 			if(FAILED(nChangeTypeResult))
 				continue;
-			sText.AppendFormat(_T(" * ") _T("`%s`: `%s`"), sName, CString(vValue.bstrVal));
-			if(!sComment.IsEmpty())
-				sText.AppendFormat(_T(" // %s"), sComment);
+			sText.AppendFormat(_T(" * ") _T("%s: %s"), //_T("`%s`: `%s`"), 
+				sName, CString(vValue.bstrVal));
+			if(!CommentArray.IsEmpty())
+				sText.AppendFormat(_T(" // %s"), _StringHelper::Join(CommentArray, _T("; ")));
 			sText.Append(_T("\r\n"));
 		}
 		return sText;
