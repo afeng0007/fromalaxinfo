@@ -9,6 +9,7 @@
 #include <functiondiscoverykeys.h>
 #include <propkey.h>
 #include <devpkey.h>
+#include <devicetopology.h>
 #include "AboutDialog.h"
 
 ////////////////////////////////////////////////////////////
@@ -1333,6 +1334,51 @@ public:
 								_Z_ATLEXCEPTION(Exception);
 								sText.AppendFormat(_T("\t\t") _T("Error 0x%08X\r\n"), (HRESULT) Exception);
 							}
+						#pragma endregion 
+						#pragma region IDeviceTopology
+						_ATLTRY
+						{
+							// TODO: Make it nice
+							// NOTE: http://stackoverflow.com/questions/34025791/how-to-get-jack-information-of-audio-device-in-ms-windows-7
+							CComPtr<IDeviceTopology> pDeviceTopology;
+							__C(pMmDevice->Activate(__uuidof(IDeviceTopology), CLSCTX_ALL, NULL, (VOID**) &pDeviceTopology));
+							HRESULT hr;
+							CComPtr<IConnector> pConnector;
+							hr = pDeviceTopology->GetConnector(0, &pConnector);
+							if(SUCCEEDED(hr))
+							{
+								CComPtr<IConnector> connectedTo;
+								hr = pConnector->GetConnectedTo(&connectedTo);
+								if(SUCCEEDED(hr))
+								{
+									CComPtr<IPart> part;
+									hr = connectedTo->QueryInterface(&part);
+									if (SUCCEEDED(hr))
+									{
+										CComPtr<IKsJackDescription> jack;
+										hr = part->Activate(CLSCTX_ALL, IID_PPV_ARGS(&jack));
+										if (SUCCEEDED(hr))
+										{
+											UINT jackCount = 0;
+											jack->GetJackCount(&jackCount);
+											for (int j = 0; j < jackCount; j++)
+											{
+												KSJACK_DESCRIPTION desc = { 0 };
+												jack->GetJackDescription(j, &desc);
+												sText.AppendFormat(_T("\t") _T("\t") _T("ChannelMapping\t%i\r\n"), desc.ChannelMapping);
+												sText.AppendFormat(_T("\t") _T("\t") _T("ConnectionType\t%i\r\n"), desc.ConnectionType);
+												sText.AppendFormat(_T("\t") _T("\t") _T("IsConnected\t%i\r\n"), desc.IsConnected);
+												sText.AppendFormat(_T("\t") _T("\t") _T("Color\t0x%08X\r\n"), desc.Color);
+											}
+										}
+									}
+								}
+							}
+						}
+						_ATLCATCHALL()
+						{
+							_Z_EXCEPTION();
+						}
 						#pragma endregion 
 					}
 					_ATLCATCH(Exception)
