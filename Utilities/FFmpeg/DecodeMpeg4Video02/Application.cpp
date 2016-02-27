@@ -243,7 +243,19 @@ public:
 			ProcessMediaSample(pAvCodecContext, pAvFrame, CurrentBlob, nCurrentMediaSampleTime);
 			CurrentBlob.Free();
 		}
-		// SUGG: Drain?
+		_tprintf(_T("Draining...\n"));
+		for(; ; )
+		{
+			CAvPacketT<FALSE> AvPacket(NULL, 0);
+			AvPacket.flags = 0; //AV_PKT_FLAG_KEY;
+			AvPacket.dts = AV_NOPTS_VALUE;
+			AvPacket.pts = AV_NOPTS_VALUE;
+			DWORD nDataSize;
+			const BOOL bFrameAvailable = pAvCodecContext.DecodeVideo(pAvFrame, &AvPacket, nDataSize);
+			_A(!nDataSize);
+			if(bFrameAvailable)
+				ProcessFrame(pAvFrame);
+		}
 	}
 };
 
