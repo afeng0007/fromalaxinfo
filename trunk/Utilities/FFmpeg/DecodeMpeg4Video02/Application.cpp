@@ -45,9 +45,19 @@ public:
 	};
 
 private:
+	BOOL m_bAnnexB;
 
 public:
 // CModule
+	CModule()
+	{
+		m_bAnnexB = FALSE;
+	}
+	HRESULT PreMessageLoop(INT nShowCommand)
+	{
+		_V(__super::PreMessageLoop(nShowCommand));
+		return S_OK;
+	}
 	static BOOL ReadFileData(LPCTSTR pszPath, CHeapPtr<BYTE>& pnData, SIZE_T& nDataSize)
 	{
 		CAtlFile File;
@@ -66,10 +76,44 @@ public:
 		_A(!Blob.m_pnData);
 		return ReadFileData(pszPath, Blob.m_pnData, Blob.m_nDataSize);
 	}
-	HRESULT PreMessageLoop(INT nShowCommand)
+	template <typename LENGTH>
+	static SIZE_T CopyNalUnits(const BYTE* pnSourceData, SIZE_T nSourceDataSize, BYTE* pnDestinationData, SIZE_T nDestinationDataCapacity, BOOL bForceLongStartCode = FALSE)
 	{
-		_V(__super::PreMessageLoop(nShowCommand));
-		return S_OK;
+		_A(sizeof (LENGTH) == 2 || sizeof (LENGTH) == 4);
+		BYTE* pnDestinationDataPointer = pnDestinationData;
+		for(; nSourceDataSize; )
+		{
+			const SIZE_T nUnitDataSize = (typename LENGTH::CBase) *((const LENGTH*) pnSourceData);
+			__D(sizeof (LENGTH) + nUnitDataSize <= nSourceDataSize, HRESULT_FROM_WIN32(ERROR_INVALID_DATA));
+			__D((SIZE_T) (pnDestinationDataPointer + 4 + nUnitDataSize - pnDestinationData) <= nDestinationDataCapacity, HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER));
+			pnSourceData += sizeof (LENGTH);
+			nSourceDataSize -= sizeof (LENGTH);
+			static const BYTE g_pnStartCode[] = { 0x00, 0x00, 0x00, 0x01 };
+			BOOL bLongStartCode = FALSE;
+			if(!bForceLongStartCode)
+			{
+				if(nUnitDataSize)
+				{
+					const UINT nNalUnitType = *pnSourceData & 0x1F;
+					if(nNalUnitType >= 6 && nNalUnitType <= 9) // SEI, SPS, PPS, Access Unit Delimiter
+						bLongStartCode = TRUE; 
+				}
+			} else
+				bLongStartCode = TRUE; 
+			SIZE_T nStartCodeSize = sizeof g_pnStartCode;
+			if(!bLongStartCode)
+			{
+				memcpy(pnDestinationDataPointer, g_pnStartCode + 1, sizeof g_pnStartCode - 1);
+				nStartCodeSize--;
+			} else
+				memcpy(pnDestinationDataPointer, g_pnStartCode, sizeof g_pnStartCode);
+			pnDestinationDataPointer += nStartCodeSize;
+			memcpy(pnDestinationDataPointer, pnSourceData, nUnitDataSize);
+			pnSourceData += nUnitDataSize;
+			nSourceDataSize -= nUnitDataSize;
+			pnDestinationDataPointer += nUnitDataSize;
+		}
+		return pnDestinationDataPointer - pnDestinationData;
 	}
 	static INT CompareMediaSampleFileNames(LPCTSTR pszNameA, LPCTSTR pszNameB, INT)
 	{
@@ -91,12 +135,22 @@ public:
 	VOID ProcessMediaSample(CAvCodecContext& pAvCodecContext, CAvFrame& pAvFrame, CBlob& Blob, LONGLONG nTime)
 	{
 		CAvPacketT<FALSE> AvPacket(Blob.m_pnData, Blob.m_nDataSize);
+		CBlob LocalBlob;
+		if(m_bAnnexB)
+		{
+			SIZE_T nDataCapacity = 1024 + Blob.m_nDataSize + Blob.m_nDataSize / 8;
+			__D(LocalBlob.m_pnData.Allocate(nDataCapacity), E_OUTOFMEMORY);
+			LocalBlob.m_nDataSize = CopyNalUnits<NUINT32>(Blob.m_pnData, Blob.m_nDataSize, LocalBlob.m_pnData, nDataCapacity);
+			_tprintf(_T("%d Annex B bytes from %d bytes\n"), LocalBlob.m_nDataSize, Blob.m_nDataSize);
+			AvPacket.data = LocalBlob.m_pnData;
+			AvPacket.size = (INT) LocalBlob.m_nDataSize;
+		}
 		AvPacket.flags = 0; //AV_PKT_FLAG_KEY;
 		AvPacket.dts = AV_NOPTS_VALUE;
 		AvPacket.pts = nTime;
 		SIZE_T nDecodeDataSize;
 		const BOOL bFrameAvailable = pAvCodecContext.DecodeVideo(pAvFrame, &AvPacket, nDecodeDataSize);
-		_A(nDecodeDataSize == Blob.m_nDataSize);
+		_A(nDecodeDataSize == (SIZE_T) AvPacket.size);
 		if(bFrameAvailable)
 			ProcessFrame(pAvFrame);
 	}
@@ -124,67 +178,72 @@ public:
 		pAvFrame.Allocate();
 		static LPCTSTR g_pszDirectory = 
 			_T("D:\\Projects\\Alax.Info\\Repository-Private\\Utilities\\DirectShow\\H.264\\tiny.mp4 NAL Units");
-		static ULONG g_nFrameTime = 250;
+		m_bAnnexB = TRUE;
+		if(m_bAnnexB)
+			_tprintf(_T("Using H.264 Annex B\n"));
 		#pragma region Extra Data
-		CBlob AvcDecoderConfigurationRecordBlob;
+		if(!m_bAnnexB)
 		{
-			CRoListT<CBlob> BlobList;
-			CRoArrayT<CBlob*> SpsBlobList, PpsBlobList;
-			for(UINT nIndex = 0; ; nIndex++)
+			CBlob AvcDecoderConfigurationRecordBlob;
 			{
-				// NOTE: Naming sample: MediaType_00
-				const CString sName = AtlFormatString(_T("MediaType_%02d"), nIndex);
-				CPath sPath = Combine(g_pszDirectory, sName);
-				if(!sPath.FileExists())
-					break;
-				CBlob& Blob = BlobList.GetAt(BlobList.AddTail());
-				_W(ReadFileData(sPath, Blob));
-				_tprintf(_T("Read %d bytes from %s\n"), Blob.m_nDataSize, sName);
-				if(Blob.m_nDataSize < 1)
-					continue;
-				const UINT nNalUnitType = Blob.m_pnData[0] & 0x1F;
-				if(nNalUnitType == 7)
-					SpsBlobList.Add(&Blob);
-				else
-				if(nNalUnitType == 8)
-					PpsBlobList.Add(&Blob);
-				//else
-				//	continue;
-			}
-			if(!SpsBlobList.IsEmpty() || !PpsBlobList.IsEmpty())
-			{
-				// NOTE: See MPEG-4 Part 15, 5.2.4.1.1 Syntax
-				AvcDecoderConfigurationRecordBlob.m_nDataSize = 64 << 10; // 64 KB
-				__D(AvcDecoderConfigurationRecordBlob.m_pnData.Allocate(AvcDecoderConfigurationRecordBlob.m_nDataSize), E_OUTOFMEMORY);
-				BYTE* A = AvcDecoderConfigurationRecordBlob.m_pnData;
-				A[0] = 1; // configurationVersion
-				A[1] = 100; // MPEG-4 Part 10, profile_idc, A.2.4 High profile
-				A[2] = 0; // profile_compatibility
-				A[3] = 40; // MPEG-4 Part 10, level_idc
-				A[4] = 0xFC | 3; // lengthSizeMinusOne, 4 byte long lengths
-				A += 5;
-				BYTE* pnSequenceParameterSetCount = A++;
-				*pnSequenceParameterSetCount = 0xE0 | SpsBlobList.GetCount();
-				for(auto&& pSpsBlob: SpsBlobList)
+				CRoListT<CBlob> BlobList;
+				CRoArrayT<CBlob*> SpsBlobList, PpsBlobList;
+				for(UINT nIndex = 0; ; nIndex++)
 				{
-					*((NUINT16*) A) = (UINT16) pSpsBlob->m_nDataSize;
-					A += sizeof (NUINT16);
-					memcpy(A, pSpsBlob->m_pnData, pSpsBlob->m_nDataSize);
-					A += pSpsBlob->m_nDataSize;
+					// NOTE: Naming sample: MediaType_00
+					const CString sName = AtlFormatString(_T("MediaType_%02d"), nIndex);
+					CPath sPath = Combine(g_pszDirectory, sName);
+					if(!sPath.FileExists())
+						break;
+					CBlob& Blob = BlobList.GetAt(BlobList.AddTail());
+					_W(ReadFileData(sPath, Blob));
+					_tprintf(_T("Read %d bytes from %s\n"), Blob.m_nDataSize, sName);
+					if(Blob.m_nDataSize < 1)
+						continue;
+					const UINT nNalUnitType = Blob.m_pnData[0] & 0x1F;
+					if(nNalUnitType == 7)
+						SpsBlobList.Add(&Blob);
+					else
+					if(nNalUnitType == 8)
+						PpsBlobList.Add(&Blob);
+					//else
+					//	continue;
 				}
-				BYTE* pnPictureParameterSetCount = A++;
-				*pnPictureParameterSetCount = 0x00 | PpsBlobList.GetCount();
-				for(auto&& pPpsBlob: PpsBlobList)
+				if(!SpsBlobList.IsEmpty() || !PpsBlobList.IsEmpty())
 				{
-					*((NUINT16*) A) = (UINT16) pPpsBlob->m_nDataSize;
-					A += sizeof (NUINT16);
-					memcpy(A, pPpsBlob->m_pnData, pPpsBlob->m_nDataSize);
-					A += pPpsBlob->m_nDataSize;
+					// NOTE: See MPEG-4 Part 15, 5.2.4.1.1 Syntax
+					AvcDecoderConfigurationRecordBlob.m_nDataSize = 64 << 10; // 64 KB
+					__D(AvcDecoderConfigurationRecordBlob.m_pnData.Allocate(AvcDecoderConfigurationRecordBlob.m_nDataSize), E_OUTOFMEMORY);
+					BYTE* A = AvcDecoderConfigurationRecordBlob.m_pnData;
+					A[0] = 1; // configurationVersion
+					A[1] = 100; // MPEG-4 Part 10, profile_idc, A.2.4 High profile
+					A[2] = 0; // profile_compatibility
+					A[3] = 40; // MPEG-4 Part 10, level_idc
+					A[4] = 0xFC | 3; // lengthSizeMinusOne, 4 byte long lengths
+					A += 5;
+					BYTE* pnSequenceParameterSetCount = A++;
+					*pnSequenceParameterSetCount = 0xE0 | SpsBlobList.GetCount();
+					for(auto&& pSpsBlob: SpsBlobList)
+					{
+						*((NUINT16*) A) = (UINT16) pSpsBlob->m_nDataSize;
+						A += sizeof (NUINT16);
+						memcpy(A, pSpsBlob->m_pnData, pSpsBlob->m_nDataSize);
+						A += pSpsBlob->m_nDataSize;
+					}
+					BYTE* pnPictureParameterSetCount = A++;
+					*pnPictureParameterSetCount = 0x00 | PpsBlobList.GetCount();
+					for(auto&& pPpsBlob: PpsBlobList)
+					{
+						*((NUINT16*) A) = (UINT16) pPpsBlob->m_nDataSize;
+						A += sizeof (NUINT16);
+						memcpy(A, pPpsBlob->m_pnData, pPpsBlob->m_nDataSize);
+						A += pPpsBlob->m_nDataSize;
+					}
+					_A((SIZE_T) (A - AvcDecoderConfigurationRecordBlob.m_pnData) <= AvcDecoderConfigurationRecordBlob.m_nDataSize);
+					AvcDecoderConfigurationRecordBlob.m_nDataSize = A - AvcDecoderConfigurationRecordBlob.m_pnData;
+					pAvCodecContext->extradata_size = (int) AvcDecoderConfigurationRecordBlob.m_nDataSize;
+					pAvCodecContext->extradata = (BYTE*) AvcDecoderConfigurationRecordBlob.m_pnData;
 				}
-				_A((SIZE_T) (A - AvcDecoderConfigurationRecordBlob.m_pnData) <= AvcDecoderConfigurationRecordBlob.m_nDataSize);
-				AvcDecoderConfigurationRecordBlob.m_nDataSize = A - AvcDecoderConfigurationRecordBlob.m_pnData;
-				pAvCodecContext->extradata_size = (int) AvcDecoderConfigurationRecordBlob.m_nDataSize;
-				pAvCodecContext->extradata = (BYTE*) AvcDecoderConfigurationRecordBlob.m_pnData;
 			}
 		}
 		#pragma endregion 
