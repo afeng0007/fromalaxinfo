@@ -115,7 +115,7 @@ public:
 		}
 		return pnDestinationDataPointer - pnDestinationData;
 	}
-	static INT CompareMediaSampleFileNames(LPCTSTR pszNameA, LPCTSTR pszNameB, INT)
+	static INT_PTR CompareMediaSampleFileNames(LPCTSTR pszNameA, LPCTSTR pszNameB, INT)
 	{
 		return _tcscmp(pszNameA, pszNameB);
 	}
@@ -222,7 +222,7 @@ public:
 					A[4] = 0xFC | 3; // lengthSizeMinusOne, 4 byte long lengths
 					A += 5;
 					BYTE* pnSequenceParameterSetCount = A++;
-					*pnSequenceParameterSetCount = 0xE0 | SpsBlobList.GetCount();
+					*pnSequenceParameterSetCount = 0xE0 | (BYTE) SpsBlobList.GetCount();
 					for(auto&& pSpsBlob: SpsBlobList)
 					{
 						*((NUINT16*) A) = (UINT16) pSpsBlob->m_nDataSize;
@@ -231,7 +231,7 @@ public:
 						A += pSpsBlob->m_nDataSize;
 					}
 					BYTE* pnPictureParameterSetCount = A++;
-					*pnPictureParameterSetCount = 0x00 | PpsBlobList.GetCount();
+					*pnPictureParameterSetCount = 0x00 | (BYTE) PpsBlobList.GetCount();
 					for(auto&& pPpsBlob: PpsBlobList)
 					{
 						*((NUINT16*) A) = (UINT16) pPpsBlob->m_nDataSize;
@@ -309,11 +309,12 @@ public:
 			AvPacket.flags = 0; //AV_PKT_FLAG_KEY;
 			AvPacket.dts = AV_NOPTS_VALUE;
 			AvPacket.pts = AV_NOPTS_VALUE;
-			DWORD nDataSize;
+			SIZE_T nDataSize;
 			const BOOL bFrameAvailable = pAvCodecContext.DecodeVideo(pAvFrame, &AvPacket, nDataSize);
 			_A(!nDataSize);
-			if(bFrameAvailable)
-				ProcessFrame(pAvFrame);
+			if(!bFrameAvailable)
+				break;
+			ProcessFrame(pAvFrame);
 		}
 	}
 };
