@@ -36,6 +36,8 @@ public:
 
 	CSample()
 	{
+		CTrace::SetLevel(4);
+		//m_bWindowOnly = TRUE;
 	}
 
 DECLARE_OLEMISC_STATUS(OLEMISC_RECOMPOSEONRESIZE |
@@ -112,6 +114,9 @@ END_MSG_MAP()
 public:
 	HRESULT OnDraw(ATL_DRAWINFO& di)
 	{
+		const CComQIPtr<IOleInPlaceSiteWindowless> pOleInPlaceSiteWindowless = m_spClientSite;
+		ATLTRACE(_T("m_spClientSite 0x%p, pOleInPlaceSiteWindowless 0x%p, m_hWnd 0x%08X\n"), m_spClientSite, pOleInPlaceSiteWindowless, m_hWnd);
+
 		RECT& rc = *(RECT*)di.prcBounds;
 		// Set Clip region to the rectangle specified by di.prcBounds
 		HRGN hRgnOld = NULL;
