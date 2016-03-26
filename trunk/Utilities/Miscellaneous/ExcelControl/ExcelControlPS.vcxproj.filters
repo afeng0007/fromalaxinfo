@@ -1,0 +1,26 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{40ff4f8c-64f0-4719-b5b7-9dd4820e0bc2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Generated Files">
+      <UniqueIdentifier>{cc5599db-e3da-46e2-a95c-8184c01aad93}</UniqueIdentifier>
+      <SourceControlFiles>False</SourceControlFiles>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="ExcelControlps.def" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="ExcelControl_i.c">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ExcelControl_p.c">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+    <ClCompile Include="dlldata.c">
+      <Filter>Generated Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>

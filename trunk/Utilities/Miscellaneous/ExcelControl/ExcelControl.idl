@@ -1,0 +1,37 @@
+// ExcelControl.idl : IDL source for ExcelControl
+//
+
+// This file will be processed by the MIDL tool to
+// produce the type library (ExcelControl.tlb) and marshalling code.
+
+#include "olectl.h"
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+	object,
+	uuid(7B577EB9-4727-4535-9EDD-A820F0AEB15D),
+	dual,
+	nonextensible,
+	pointer_default(unique)
+]
+interface ISample : IDispatch{
+};
+
+[
+	uuid(F9F92D1F-6311-4C11-8C2A-2E7B0036A9EB),
+	version(1.0),
+]
+library ExcelControlLib
+{
+	importlib("stdole2.tlb");
+	[
+		uuid(B3FA256B-752B-4339-A0AA-EFE053753DDE),		
+		control
+	]
+	coclass Sample
+	{
+		[default] interface ISample;
+	};
+};
+

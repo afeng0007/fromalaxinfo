@@ -1,0 +1,32 @@
+HKCR
+{
+	ExcelControl.Sample.1 = s 'A Sample Class'
+	{
+		CLSID = s '{B3FA256B-752B-4339-A0AA-EFE053753DDE}'
+	}
+	ExcelControl.Sample = s 'A Sample Class'
+	{		
+		CurVer = s 'ExcelControl.Sample.1'
+	}
+	NoRemove CLSID
+	{
+		ForceRemove {B3FA256B-752B-4339-A0AA-EFE053753DDE} = s 'A Sample Class'
+		{
+			ProgID = s 'ExcelControl.Sample.1'
+			VersionIndependentProgID = s 'ExcelControl.Sample'
+			ForceRemove Programmable
+			InprocServer32 = s '%MODULE%'
+			{
+				val ThreadingModel = s 'Apartment'
+			}
+			ForceRemove Control
+			ForceRemove 'ToolboxBitmap32' = s '%MODULE%, 106'
+			MiscStatus = s '0'
+			{
+			    '1' = s '%OLEMISC%'
+			}
+			TypeLib = s '{F9F92D1F-6311-4C11-8C2A-2E7B0036A9EB}'
+			Version = s '1.0'
+		}
+	}
+}
