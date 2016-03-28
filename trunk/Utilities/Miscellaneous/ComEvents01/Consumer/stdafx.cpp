@@ -1,6 +1,9 @@
-// stdafx.cpp : source file that includes just the standard includes
-// Consumer.pch will be the pre-compiled header
-// stdafx.obj will contain the pre-compiled type information
+////////////////////////////////////////////////////////////
+// Copyright (C) Roman Ryltsov, 2016
+// Created by Roman Ryltsov roman@alax.info
+// 
+// A permission to use the source code is granted as long as reference to 
+// source website http://alax.info is retained.
 
 #include "stdafx.h"
 
