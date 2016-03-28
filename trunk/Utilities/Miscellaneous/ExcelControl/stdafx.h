@@ -1,6 +1,9 @@
-// stdafx.h : include file for standard system include files,
-// or project specific include files that are used frequently,
-// but are changed infrequently
+////////////////////////////////////////////////////////////
+// Copyright (C) Roman Ryltsov, 2016
+// Created by Roman Ryltsov roman@alax.info
+// 
+// A permission to use the source code is granted as long as reference to 
+// source website http://alax.info is retained.
 
 #pragma once
 
