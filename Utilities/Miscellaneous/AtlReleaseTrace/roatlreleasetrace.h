@@ -7,7 +7,10 @@
 
 #pragma once
 
+#include <math.h>
 #include <atlstr.h>
+
+using namespace ATL;
 
 ////////////////////////////////////////////////////////////
 // CDebugTrace, ATLTRACE, ATLTRACE2
@@ -209,13 +212,30 @@ public:
 ////////////////////////////////////////////////////////////
 // ATLASSERT, ATLVERIFY
 
+__forceinline VOID AtlAssert(BOOL bResult, LPCSTR pszFile, INT nLine, LPCSTR pszFunction, LPCSTR pszExpression)
+{ 
+	if(bResult)
+		return;
+	_ATLTRY 
+	{ 
+		_Z1(atlTraceException, 1, _T("Assertion failed: %hs\n") _T("%hs(%d): Assertion failed in function %hs\n"), pszExpression, pszFile, nLine, pszFunction); 
+		AtlThrow(E_FAIL); 
+	}
+	_ATLCATCHALL() 
+	{
+	} 
+}
+
 #undef ATLASSERT
 #undef ATLVERIFY
-#define ATLASSERT(x)	{ const BOOL bAssertValue = (x) != 0; if(!bAssertValue) { _ATLTRY { _Z1(atlTraceException, 1, _T("Assertion failed: %hs\n"), #x); AtlThrow(E_FAIL); } _ATLCATCHALL() { } } }
+#define ATLASSERT(x)	AtlAssert((x) != 0, __FILE__, __LINE__, __FUNCTION__, #x);
 #define ATLVERIFY(x)	ATLASSERT(x)
 
 #define _A		ATLASSERT
 #define _W		ATLVERIFY
+
+#undef _ASSERT
+#define _ASSERT	ATLASSERT
 
 ////////////////////////////////////////////////////////////
 // CDebugTraceContext
@@ -274,5 +294,7 @@ public:
 	}
 };
 
+#undef _Y1
+#undef _Y2
 #define _Y1	CDebugTraceContext DebugTraceContext(__FILE__, __LINE__, __FUNCTION__); DebugTraceContext
 #define _Y2 DebugTraceContext.Terminate
