@@ -17,6 +17,9 @@
       <UniqueIdentifier>{75999933-f159-4300-9aa0-cac6ec403580}</UniqueIdentifier>
       <SourceControlFiles>False</SourceControlFiles>
     </Filter>
+    <Filter Include="Resource Files\Icon">
+      <UniqueIdentifier>{151d21aa-6f51-4261-b26c-2acfdcb7d9f1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Configuration.cpp">
@@ -117,31 +120,31 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="AddFilter.ico">
-      <Filter>Resource Files</Filter>
+      <Filter>Resource Files\Icon</Filter>
     </Image>
     <Image Include="CreatedFilter.ico">
-      <Filter>Resource Files</Filter>
+      <Filter>Resource Files\Icon</Filter>
     </Image>
     <Image Include="Exclamation.ico">
-      <Filter>Resource Files</Filter>
+      <Filter>Resource Files\Icon</Filter>
     </Image>
     <Image Include="Failure.ico">
-      <Filter>Resource Files</Filter>
+      <Filter>Resource Files\Icon</Filter>
     </Image>
     <Image Include="Information.ico">
-      <Filter>Resource Files</Filter>
+      <Filter>Resource Files\Icon</Filter>
     </Image>
     <Image Include="Module.ico">
-      <Filter>Resource Files</Filter>
+      <Filter>Resource Files\Icon</Filter>
     </Image>
     <Image Include="RemoveFilter.ico">
-      <Filter>Resource Files</Filter>
+      <Filter>Resource Files\Icon</Filter>
     </Image>
     <Image Include="SelectedFilter.ico">
-      <Filter>Resource Files</Filter>
+      <Filter>Resource Files\Icon</Filter>
     </Image>
     <Image Include="Success.ico">
-      <Filter>Resource Files</Filter>
+      <Filter>Resource Files\Icon</Filter>
     </Image>
   </ItemGroup>
   <ItemGroup>

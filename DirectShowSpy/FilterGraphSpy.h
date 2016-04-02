@@ -1711,3 +1711,28 @@ public:
 __declspec(selectany) LPCTSTR CNoThreadSpy::g_pszClassName = _T("CNoThreadSpy");
 
 OBJECT_ENTRY_AUTO(__uuidof(NoThreadSpy), CNoThreadSpy)
+
+////////////////////////////////////////////////////////////
+// CPrivateThreadSpy
+
+class ATL_NO_VTABLE CPrivateThreadSpy :
+	public CSpyT<CPrivateThreadSpy, &CLSID_FilterGraphPrivateThread>,
+	public CComCoClass<CPrivateThreadSpy, &CLSID_PrivateThreadSpy>
+{
+public:
+	enum { IDR = IDR_PRIVATETHREADFILTERGRAPHSPY };
+
+private:
+	static LPCTSTR g_pszClassName;
+
+public:
+	//typedef CBlackListAwareComCreatorT<CComObjectCached<CPrivateThreadSpy>, CPrivateThreadSpy, &g_pszClassName> _ClassFactoryCreatorClass; // DECLARE_CLASSFACTORY override
+	typedef CComCreator2<CBlackListAwareComCreatorT<CComObject<CPrivateThreadSpy>, CPrivateThreadSpy, &g_pszClassName>, CBlackListAwareComCreatorT<CComAggObject<CPrivateThreadSpy>, CPrivateThreadSpy, &g_pszClassName> > _CreatorClass; // DECLARE_AGGREGATABLE override
+
+public:
+// CPrivateThreadSpy
+};
+
+__declspec(selectany) LPCTSTR CPrivateThreadSpy::g_pszClassName = _T("CPrivateThreadSpy");
+
+OBJECT_ENTRY_AUTO(__uuidof(PrivateThreadSpy), CPrivateThreadSpy)
