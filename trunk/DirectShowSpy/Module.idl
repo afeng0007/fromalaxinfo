@@ -163,6 +163,17 @@ library AlaxInfoDirectShowSpy
 		interface IFilterGraphMemoryAllocatorData;
 	};
 	[
+		uuid(A4AE1D54-92B3-4F11-B351-AC483155D914),
+		helpstring("PrivateThreadSpy Class")
+	]
+	coclass PrivateThreadSpy
+	{
+		[default] interface ISpy;
+		//interface ISpyEx;
+		interface IModuleVersionInformation;
+		interface IFilterGraphMemoryAllocatorData;
+	};
+	[
 		object,
 		uuid(34B280D7-A144-4a64-BCB9-3616896F6877),
 		dual,
