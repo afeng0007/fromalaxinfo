@@ -26,61 +26,6 @@ HRESULT FilterGraphHelper_OpenGraphStudioNext(LONG nParentWindowHandle, LPCWSTR 
 HRESULT FilterGraphHelper_OpenGraphEdit(LONG nParentWindowHandle, LPCWSTR pszMonikerDisplayName, VARIANT_BOOL* pbResult);
 
 ////////////////////////////////////////////////////////////
-// CModuleVersionInformationT
-
-template <typename T>
-class ATL_NO_VTABLE CModuleVersionInformationT :
-	public IDispatchImpl<IModuleVersionInformation>
-{
-public:
-// CModuleVersionInformationT
-
-// IModuleVersionInformation
-	STDMETHOD(get_Path)(BSTR* psPath)
-	{
-		_Z4(atlTraceCOM, 4, _T("...\n"));
-		_ATLTRY
-		{
-			__D(psPath, E_POINTER);
-			*psPath = CComBSTR(_VersionInfoHelper::GetModulePath()).Detach();
-		}
-		_ATLCATCH(Exception)
-		{
-			_C(Exception);
-		}
-		return S_OK;
-	}
-	STDMETHOD(get_FileVersion)(LONGLONG* pnFileVersion)
-	{
-		_Z4(atlTraceCOM, 4, _T("...\n"));
-		_ATLTRY
-		{
-			__D(pnFileVersion, E_POINTER);
-			*pnFileVersion = (LONGLONG) _VersionInfoHelper::GetFileVersion(_VersionInfoHelper::GetModulePath());
-		}
-		_ATLCATCH(Exception)
-		{
-			_C(Exception);
-		}
-		return S_OK;
-	}
-	STDMETHOD(get_FileVersionString)(BSTR* psFileVersionString)
-	{
-		_Z4(atlTraceCOM, 4, _T("...\n"));
-		_ATLTRY
-		{
-			__D(psFileVersionString, E_POINTER);
-			*psFileVersionString = CComBSTR(_VersionInfoHelper::GetVersionString(_VersionInfoHelper::GetFileVersion(_VersionInfoHelper::GetModulePath()))).Detach();
-		}
-		_ATLCATCH(Exception)
-		{
-			_C(Exception);
-		}
-		return S_OK;
-	}
-};
-
-////////////////////////////////////////////////////////////
 // CFilterGraphMemoryAllocatorData
 
 template <typename T>

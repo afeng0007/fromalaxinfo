@@ -233,6 +233,9 @@ library AlaxInfoDirectShowSpy
 		[id(5)] HRESULT OpenGraphEdit([in] LONG nParentWindowHandle, [in] BSTR sMonikerDisplayName, [out, retval] VARIANT_BOOL* pbResult);
 		[id(6), propget] HRESULT Options([out, retval] VARIANT* pvOptions);
 		[id(6), propput] HRESULT Options([in] VARIANT vOptions);
+		[id(7)] HRESULT ResetMediaSampleTrace([in] VARIANT vProcessIdentifier);
+		[id(8)] HRESULT LockMediaSampleTrace([out, retval] IUnknown** ppLockUnknown);
+		[id(9)] HRESULT GetMediaSampleTrace([in] VARIANT vProcessIdentifier, [out, retval] BSTR* psText);
 	};
 	[
 		uuid(5A9A684C-A891-4032-8D31-FF6EAB5A0C1E),
@@ -241,6 +244,7 @@ library AlaxInfoDirectShowSpy
 	coclass FilterGraphHelper
 	{
 		[default] interface IFilterGraphHelper;
+		interface IModuleVersionInformation;
 	};
 	[
 		object,

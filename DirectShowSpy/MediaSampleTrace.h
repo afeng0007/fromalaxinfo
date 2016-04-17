@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2008-2015
+// Copyright (C) Roman Ryltsov, 2008-2016
 // Created by Roman Ryltsov roman@alax.info, http://alax.info
 //
 // This source code is published to complement DirectShowSpy developer powertoy 
@@ -20,6 +20,10 @@
 #include "Common.h"
 #include "FilterGraphHelper.h"
 #include "FilterGraphList.h"
+
+VOID MediaSampleTrace_Reset(DWORD nProcessIdentifier);
+CString MediaSampleTrace_Get(DWORD nProcessIdentifier);
+CComPtr<IUnknown> MediaSampleTrace_Lock();
 
 ////////////////////////////////////////////////////////////
 // CMediaSampleTraceBase
@@ -555,6 +559,82 @@ public:
 		}
 	};
 
+	////////////////////////////////////////////////////////
+	// CHandleMapLock
+
+	class ATL_NO_VTABLE CHandleMapLock :
+		public CComObjectRootEx<CComMultiThreadModelNoCS>,
+		public IUnknown
+	{
+		typedef CThreadT<CHandleMapLock> CThread;
+
+	public:
+
+	DECLARE_PROTECT_FINAL_CONSTRUCT()
+
+	BEGIN_COM_MAP(CHandleMapLock)
+	END_COM_MAP()
+
+	private:
+		CData m_Data;
+		CObjectPtr<CThread> m_pThread;
+		CHandleMap m_HandleMap;
+
+		DWORD ThreadProc(CThread*, CEvent& InitializationEvent, CEvent& TerminationEvent)
+		{
+			CMultiThreadedApartment Apartment;
+			CEvent RequestEvent, ResponseEvent;
+			_W(RequestEvent.Create(NULL, FALSE, FALSE, CString(CPages::GetFileMappingName()) + _T(".TransferRequest")));
+			_W(ResponseEvent.Create(NULL, FALSE, FALSE, CString(CPages::GetFileMappingName()) + _T(".TransferResponse")));
+			_W(InitializationEvent.Set());
+			if(!RequestEvent || !ResponseEvent)
+				return 0;
+			CStackPointer StackPointer;
+			const HANDLE phObjects[] = { TerminationEvent, RequestEvent };
+			for(; ; )
+			{
+				_A(StackPointer.Check()); StackPointer;
+				const DWORD nWaitResult = WaitForMultipleObjects(DIM(phObjects), phObjects, FALSE, INFINITE);
+				_Z4_WAITRESULT(nWaitResult);
+				_A(nWaitResult - WAIT_OBJECT_0 < DIM(phObjects));
+				if(nWaitResult != WAIT_OBJECT_0 + 1) // RequestEvent
+					break;
+				CPages Pages;
+				if(Pages.Initialize())
+					Pages.GetData(m_Data, &m_HandleMap);
+				_W(ResponseEvent.Set());
+			}
+			return 0;
+		}
+
+	public:
+	// CHandleMapLock
+		CHandleMapLock()
+		{
+			_Z4_THIS();
+		}
+		~CHandleMapLock()
+		{
+			_Z4_THIS();
+		}
+		HRESULT FinalConstruct()
+		{
+			_ATLTRY
+			{
+				m_pThread.Construct()->Initialize(this, &CHandleMapLock::ThreadProc);
+			}
+			_ATLCATCH(Exception)
+			{
+				_C(Exception);
+			}
+			return S_OK;
+		}
+		VOID FinalRelease()
+		{
+			m_pThread.Release();
+		}
+	};
+
 public:
 // CMediaSampleTraceBase
 	static BOOL ResetData()
@@ -878,8 +958,6 @@ public:
 		public CDialogResize<CMediaSamplePropertyPage>,
 		public CCustomDraw<CMediaSamplePropertyPage>
 	{
-		typedef CThreadT<CMediaSamplePropertyPage> CThread;
-
 	public:
 		enum { IDD = IDD_MEDIASAMPLETRACE_MEDIASAMPLE_PROPERTYPAGE };
 
@@ -896,6 +974,7 @@ public:
 		COMMAND_ID_HANDLER_EX(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_REFRESH, OnRefresh)
 		COMMAND_ID_HANDLER_EX(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_COPYTOCLIPBOARD, OnCopyToClipboard)
 		COMMAND_ID_HANDLER_EX(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_SAVETOFILE, OnSaveToFile)
+		COMMAND_ID_HANDLER_EX(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_LOADFROMFILE, OnLoadFromFile)
 		COMMAND_ID_HANDLER_EX(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_RESETDATA, OnResetData)
 		COMMAND_ID_HANDLER_EX(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_OPENFILTERGRAPHLIST, OnOpenFilterGraphList)
 		COMMAND_ID_HANDLER_EX(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_OPENFILTERGRAPHPROPERTIES, OnOpenFilterGraphProperties)
@@ -911,6 +990,7 @@ public:
 		DLGRESIZE_CONTROL(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_REFRESH, DLSZ_MOVE_Y)
 		DLGRESIZE_CONTROL(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_COPYTOCLIPBOARD, DLSZ_MOVE_Y)
 		DLGRESIZE_CONTROL(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_SAVETOFILE, DLSZ_MOVE_Y)
+		DLGRESIZE_CONTROL(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_LOADFROMFILE, DLSZ_MOVE_Y)
 	END_DLGRESIZE_MAP()
 
 	public:
@@ -1233,38 +1313,12 @@ public:
 		CRoHyperStatic m_RefreshStatic;
 		CRoHyperStatic m_CopyToClipboardStatic;
 		CRoHyperStatic m_SaveToFileStatic;
+		CRoHyperStatic m_LoadFromFileStatic;
 		CFilterDialog m_FilterDialog;
 		CRoMapT<INT, BOOL> m_ChangeMap;
 		CData m_Data;
-		CObjectPtr<CThread> m_pThread;
 		CHandleMap m_HandleMap;
-
-		DWORD ThreadProc(CThread*, CEvent& InitializationEvent, CEvent& TerminationEvent)
-		{
-			CMultiThreadedApartment Apartment;
-			CEvent RequestEvent, ResponseEvent;
-			_W(RequestEvent.Create(NULL, FALSE, FALSE, CString(CPages::GetFileMappingName()) + _T(".TransferRequest")));
-			_W(ResponseEvent.Create(NULL, FALSE, FALSE, CString(CPages::GetFileMappingName()) + _T(".TransferResponse")));
-			_W(InitializationEvent.Set());
-			if(!RequestEvent || !ResponseEvent)
-				return 0;
-			CStackPointer StackPointer;
-			const HANDLE phObjects[] = { TerminationEvent, RequestEvent };
-			for(; ; )
-			{
-				_A(StackPointer.Check()); StackPointer;
-				const DWORD nWaitResult = WaitForMultipleObjects(DIM(phObjects), phObjects, FALSE, INFINITE);
-				_Z4_WAITRESULT(nWaitResult);
-				_A(nWaitResult - WAIT_OBJECT_0 < DIM(phObjects));
-				if(nWaitResult != WAIT_OBJECT_0 + 1) // RequestEvent
-					break;
-				CPages Pages;
-				if(Pages.Initialize())
-					Pages.GetData(m_Data, &m_HandleMap);
-				_W(ResponseEvent.Set());
-			}
-			return 0;
-		}
+		CObjectPtr<CHandleMapLock> m_pHandleMapLock;
 
 	public:
 	// CMediaSamplePropertyPage
@@ -1280,15 +1334,18 @@ public:
 		{
 			CWindowRedraw ListViewRedraw(m_ListView);
 			m_ListView.DeleteAllItems();
-			m_Data.Initialize();
-			CPages Pages;
-			if(Pages.Initialize())
+			if(m_pHandleMapLock) // Live vs. File Source
 			{
-				Pages.GetData(m_Data, &m_HandleMap);
-				m_Data.Sort();
-				INT nItem = 0;
-				for(auto&& Item: m_Data.m_ItemArray)
-					m_ListView.InsertItem(nItem++, Item);
+				m_Data.Initialize();
+				CPages Pages;
+				if(Pages.Initialize())
+				{
+					Pages.GetData(m_Data, &m_HandleMap);
+					m_Data.Sort();
+					INT nItem = 0;
+					for(auto&& Item: m_Data.m_ItemArray)
+						m_ListView.InsertItem(nItem++, Item);
+				}
 			}
 			m_FilterDialog.Reset();
 		}
@@ -1316,7 +1373,7 @@ public:
 			sText += CreateDataItemHeaderText();
 			for(INT nItem = 0; nItem < m_ListView.GetItemCount(); nItem++)
 				sText += CreateDataItemText(m_ListView.GetItemData(nItem));
-			return CStringA(sText);
+			return Utf8StringFromString(sText);
 		}
 		VOID HandleFilterUpdate()
 		{
@@ -1327,6 +1384,155 @@ public:
 				if(m_FilterDialog.IsVisible(Item))
 					m_ListView.InsertItem(nItem++, Item);
 			// SUGG: Preserve selection
+		}
+		VOID LoadFrom(CString sText)
+		{
+			sText.Replace(_T("\r\n"), _T("\n"));
+			CRoListT<CData::CItem> ItemList;
+			{
+				CRoArrayT<CString> LineArray;
+				_StringHelper::GetLines(sText, LineArray);
+				__D(LineArray.GetCount() > 1, E_UNNAMED);
+				LineArray.RemoveAt(0); // Header
+				for(auto&& sLine: LineArray)
+				{
+					CData::CItem Item;
+					_ATLTRY
+					{
+						ZeroMemory(&Item.m_Item, sizeof Item.m_Item);
+						ZeroMemory(&Item.m_PageItem, sizeof Item.m_PageItem);
+						CRoArrayT<CString> Array;
+						_StringHelper::Split(sLine, _T('\t'), Array);
+						__D(Array.GetCount() >= 9, E_UNNAMED);
+						Item.m_Item.nFlags = ITEMFLAGS_NONE;
+						_W(StrToIntEx(Array[1], 0, (INT*) &Item.m_Item.nProcessIdentifier));
+						Item.m_Item.nPageIdentifier = 0;
+						_W(StrToInt64Ex(Array[3], STIF_SUPPORT_HEX, (LONGLONG*) &Item.m_Item.nFilterGraphIdentifier));
+						wcsncpy_s(Item.m_Item.pszFilterGraphName, Array[4], _TRUNCATE);
+						Item.m_PageItem.nFlags = PAGEITEMFLAGS_NONE;
+						_W(StrToIntEx(Array[2], 0, (INT*) &Item.m_PageItem.nThreadIdentifier));
+						_W(StrToInt64Ex(Array[5], STIF_SUPPORT_HEX, (LONGLONG*) &Item.m_PageItem.nFilterIdentifier));
+						wcsncpy_s(Item.m_PageItem.pszFilterName, Array[6], _TRUNCATE);
+						wcsncpy_s(Item.m_PageItem.pszStreamName, Array[7], _TRUNCATE);
+						#pragma region Time
+						static CRoStaticRe g_Expression(_T("^{[0-9]+}\\:{[0-9]+}\\:{[0-9]+}\\.{[0-9]+}$"), FALSE);
+						CRoReMatchContext MatchContext;
+						if(g_Expression.Match(Array[0], &MatchContext))
+						{
+							// NOTE: Let's go with today
+							SYSTEMTIME Time;
+							GetSystemTime(&Time);
+							Time.wHour = (WORD) _ttoi(MatchContext.GetMatchString(0));
+							Time.wMinute = (WORD) _ttoi(MatchContext.GetMatchString(1));
+							Time.wSecond = (WORD) _ttoi(MatchContext.GetMatchString(2));
+							Time.wMilliseconds = (WORD) _ttoi(MatchContext.GetMatchString(3));
+							_W(SystemTimeToFileTime(&Time, &reinterpret_cast<FILETIME&>(Item.m_PageItem.nTime)));
+						}
+						#pragma endregion
+						const CString& sType = Array[8];
+						if(sType.Compare(_T("New Segment")) == 0)
+						{
+							Item.m_PageItem.nFlags |= PAGEITEMFLAG_NEWSEGMENT;
+						} else
+						if(sType.Compare(_T("Media Sample")) == 0)
+						{
+							Item.m_PageItem.nFlags |= PAGEITEMFLAG_MEDIASAMPLE;
+							AM_SAMPLE2_PROPERTIES& Properties = Item.m_PageItem.Data.MediaSample.Properties;
+							#pragma region Sample Flags
+							_A(!Properties.dwSampleFlags);
+							CString sSampleFlags = Array[9];
+							sSampleFlags.Replace(_T(" | "), _T("|"));
+							CRoArrayT<CString> FlagArray;
+							_StringHelper::Split(sSampleFlags, _T('|'), FlagArray);
+							for(auto&& sFlag: FlagArray)
+							{
+								static const CFlagNameT<DWORD> g_pMap[] = 
+								{
+									#define A(x) { x, #x },
+									A(AM_SAMPLE_SPLICEPOINT)
+									A(AM_SAMPLE_PREROLL)
+									A(AM_SAMPLE_DATADISCONTINUITY)
+									A(AM_SAMPLE_TYPECHANGED)
+									A(AM_SAMPLE_TIMEVALID)
+									A(AM_SAMPLE_TIMEDISCONTINUITY)
+									A(AM_SAMPLE_FLUSH_ON_PAUSE)
+									A(AM_SAMPLE_STOPVALID)
+									A(AM_SAMPLE_ENDOFSTREAM)
+									//A(AM_STREAM_MEDIA)
+									//A(AM_STREAM_CONTROL)
+									#undef A
+								};
+								BOOL bHandled = FALSE;
+								for(auto&& Item: g_pMap)
+									if(sFlag.Compare(CString(Item.pszName)) == 0)
+									{
+										Properties.dwSampleFlags |= Item.Value;
+										bHandled = TRUE;
+										break;
+									}
+								if(bHandled)
+									continue;
+								INT nFlag;
+								_W(StrToIntEx(sFlag, STIF_SUPPORT_HEX, &nFlag));
+								Properties.dwSampleFlags |= nFlag;
+							}
+							#pragma endregion 
+							if(!Array[10].IsEmpty())
+								_W(StrToInt64Ex(Array[10], 0, (LONGLONG*) &Properties.tStart));
+							if(!Array[11].IsEmpty())
+								_W(StrToInt64Ex(Array[11], 0, (LONGLONG*) &Properties.tStop));
+							if(!Array[13].IsEmpty())
+								_W(StrToIntEx(Array[13], 0, (INT*) &Properties.lActual));
+						} else
+						if(sType.Compare(_T("End of Stream")) == 0)
+						{
+							Item.m_PageItem.nFlags |= PAGEITEMFLAG_ENDOFSTREAM;
+						} else
+						{
+							_A(sType.Compare(_T("Comment")) == 0);
+							Item.m_PageItem.nFlags |= PAGEITEMFLAG_COMMENT;
+						}
+						if(Array.GetCount() > 14)
+							wcsncpy_s(Item.m_PageItem.pszComment, Array[14], _TRUNCATE);
+						if(Array.GetCount() > 15)
+						{
+							CString sHighlight = Array[15];
+							if(!sHighlight.IsEmpty())
+							{
+								_A(sHighlight[0] == _T('*'));
+								sHighlight.Delete(0);
+								_W(StrToIntEx(sHighlight, 0, (INT*) &Item.m_nHighlightIndex));
+								//Item.m_PageItem.nFlags &= ~PAGEITEMFLAG_HIGHLIGHT_MASK;
+								//Item.m_PageItem.nFlags |= (Item.m_nHighlightIndex << PAGEITEMFLAG_HIGHLIGHT_SHIFT) & PAGEITEMFLAG_HIGHLIGHT_MASK;
+							}
+						}
+					}
+					_ATLCATCHALL()
+					{
+						_Z_EXCEPTION();
+						continue;
+					}
+					ItemList.AddTail(Item);
+				}
+			}
+			m_Data.Initialize();
+			for(auto&& Item: ItemList)
+				m_Data.m_ItemArray.Add(Item);
+			m_pHandleMapLock.Release();
+			m_HandleMap.RemoveAll();
+			UpdateListView();
+		}
+		VOID LoadFromFile(LPCTSTR pszPath)
+		{
+			CAtlFile File;
+			__C(File.Create(pszPath, GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING));
+			ULONGLONG nFileSize;
+			__C(File.GetSize(nFileSize));
+			CHeapPtr<BYTE> pnData;
+			__D(pnData.Allocate((SIZE_T) nFileSize + 1), E_OUTOFMEMORY);
+			__C(File.Read(pnData, (DWORD) nFileSize));
+			pnData[(SIZE_T) nFileSize] = 0;
+			LoadFrom(StringFromUtf8String(CStringA((LPCSTR) (const BYTE*) pnData)));
 		}
 
 	// CCustomDraw
@@ -1358,7 +1564,9 @@ public:
 				m_CopyToClipboardStatic.SetExtendedStyle(CRoHyperStatic::CS_ANCHORCLICKCOMMAND);
 				_W(m_SaveToFileStatic.SubclassWindow(GetDlgItem(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_SAVETOFILE)));
 				m_SaveToFileStatic.SetExtendedStyle(CRoHyperStatic::CS_ANCHORCLICKCOMMAND);
-				CRoHyperStatic::ArrangeHorizontally(&m_RefreshStatic, &m_CopyToClipboardStatic, &m_SaveToFileStatic, NULL);
+				_W(m_LoadFromFileStatic.SubclassWindow(GetDlgItem(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_LOADFROMFILE)));
+				m_LoadFromFileStatic.SetExtendedStyle(CRoHyperStatic::CS_ANCHORCLICKCOMMAND);
+				CRoHyperStatic::ArrangeHorizontally(&m_RefreshStatic, &m_CopyToClipboardStatic, &m_SaveToFileStatic, &m_LoadFromFileStatic, NULL);
 				#pragma region Filter
 				__E(m_FilterDialog.Create(m_hWnd, (LPARAM) this));
 				{
@@ -1379,6 +1587,7 @@ public:
 				}
 				#pragma endregion 
 				DlgResize_Init(FALSE, FALSE);
+				m_pHandleMapLock.Construct();
 				UpdateListView();
 				m_ChangeMap.RemoveAll();
 				UpdateControls();
@@ -1396,7 +1605,9 @@ public:
 				_W(m_PropertySheet.MoveWindow(Position));
 				_W(m_PropertySheet.CenterWindow());
 				#pragma endregion
-				m_pThread.Construct()->Initialize(this, &CMediaSamplePropertyPage::ThreadProc);
+				#if _DEVELOPMENT && FALSE
+					LoadFromFile(_T("D:\\MediaSampleTrace.tsv"));
+				#endif // _DEVELOPMENT
 			}
 			_ATLCATCHALL()
 			{
@@ -1409,7 +1620,7 @@ public:
 		LRESULT OnDestroy()
 		{
 			CWaitCursor WaitCursor;
-			m_pThread.Release();
+			m_pHandleMapLock.Release();
 			return 0;
 		}
 		LRESULT OnTranslateAccelerator(MSG* pMessage)
@@ -1579,6 +1790,20 @@ public:
 			SaveToFile(CreateText(), sPath);
 			return 0;
 		}
+		LRESULT OnLoadFromFile(UINT, INT, HWND)
+		{
+			static const COMDLG_FILTERSPEC g_pFilter[] = 
+			{
+				{ _T("TSV Files"), _T("*.tsv") },
+				{ _T("All Files"), _T("*.*") },
+			};
+			CPath sPath = _CommonDialogHelper::QueryOpenPath(m_hWnd, g_pFilter, _T("tsv"), _T("Media Sample Trace.tsv"));
+			if(!_tcslen(sPath))
+				return 0;
+			CWaitCursor WaitCursor;
+			LoadFromFile(sPath);
+			return 0;
+		}
 		LRESULT OnResetData(UINT, INT, HWND)
 		{
 			CWaitCursor WaitCursor;
@@ -1687,3 +1912,36 @@ public:
 		return 0;
 	}
 };
+
+inline VOID MediaSampleTrace_Reset(DWORD nProcessIdentifier)
+{
+	nProcessIdentifier;
+	// TODO: Implement processs-specific operation (support non-zero nProcessIdentifier)
+	CMediaSampleTraceBase::CPages Pages;
+	if(Pages.Initialize())
+		Pages.ResetData();
+}
+inline CString MediaSampleTrace_Get(DWORD nProcessIdentifier)
+{
+	CString sText;
+	CMediaSampleTraceBase::CPages Pages;
+	if(Pages.Initialize())
+	{
+		CMediaSampleTraceBase::CData Data;
+		Data.Initialize();
+		CMediaSampleTraceBase::CHandleMap HandleMap;
+		Pages.GetData(Data, &HandleMap);
+		Data.Sort();
+		sText += CMediaSampleTracePropertySheet::CreateDataItemHeaderText();
+		for(auto&& Item: Data.m_ItemArray)
+			if(!nProcessIdentifier || Item.m_Item.nProcessIdentifier == nProcessIdentifier)
+				sText += CMediaSampleTracePropertySheet::CreateDataItemText(Item);
+	}
+	return sText;
+}
+inline CComPtr<IUnknown> MediaSampleTrace_Lock()
+{
+	CObjectPtr<CMediaSampleTraceBase::CHandleMapLock> pHandleMapLock;
+	pHandleMapLock.Construct();
+	return (CMediaSampleTraceBase::CHandleMapLock*) pHandleMapLock;
+}

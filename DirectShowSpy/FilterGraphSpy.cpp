@@ -27,12 +27,13 @@
 #if defined(_WIN64)
 	extern "C" __declspec(dllexport) 
 #else
-	#pragma comment(linker, "/EXPORT:DoGraphBuilderCallbackPropertySheetModal=_DoGraphBuilderCallbackPropertySheetModal@0,PRIVATE")
+	#pragma comment(linker, "/EXPORT:DoGraphBuilderCallbackPropertySheetModal=_DoGraphBuilderCallbackPropertySheetModal@16,PRIVATE")
 	extern "C" // __declspec(dllexport) 
 #endif // defined(_WIN64)
 
-HRESULT STDMETHODCALLTYPE DoGraphBuilderCallbackPropertySheetModal()
+HRESULT STDMETHODCALLTYPE DoGraphBuilderCallbackPropertySheetModal(HWND hParentWindow, HINSTANCE, LPSTR pszCommandLine, INT nShowCommand)
 {
+	hParentWindow; pszCommandLine; nShowCommand;
 	_ATLTRY
 	{
 		CSingleThreadedApartment SingleThreadedApartment;
@@ -55,12 +56,13 @@ HRESULT STDMETHODCALLTYPE DoGraphBuilderCallbackPropertySheetModal()
 #if defined(_WIN64)
 	extern "C" __declspec(dllexport) 
 #else
-	#pragma comment(linker, "/EXPORT:DoFilterGraphListPropertySheetModal=_DoFilterGraphListPropertySheetModal@0,PRIVATE")
+	#pragma comment(linker, "/EXPORT:DoFilterGraphListPropertySheetModal=_DoFilterGraphListPropertySheetModal@16,PRIVATE")
 	extern "C" // __declspec(dllexport) 
 #endif // defined(_WIN64)
 
-HRESULT STDMETHODCALLTYPE DoFilterGraphListPropertySheetModal()
+HRESULT STDMETHODCALLTYPE DoFilterGraphListPropertySheetModal(HWND hParentWindow, HINSTANCE, LPSTR pszCommandLine, INT nShowCommand)
 {
+	hParentWindow; pszCommandLine; nShowCommand;
 	_ATLTRY
 	{
 		CSingleThreadedApartment SingleThreadedApartment;
@@ -83,12 +85,13 @@ HRESULT STDMETHODCALLTYPE DoFilterGraphListPropertySheetModal()
 #if defined(_WIN64)
 	extern "C" __declspec(dllexport) 
 #else
-	#pragma comment(linker, "/EXPORT:DoMediaSampleTracePropertySheetModal=_DoMediaSampleTracePropertySheetModal@0,PRIVATE")
+	#pragma comment(linker, "/EXPORT:DoMediaSampleTracePropertySheetModal=_DoMediaSampleTracePropertySheetModal@16,PRIVATE")
 	extern "C" // __declspec(dllexport) 
 #endif // defined(_WIN64)
 
-HRESULT STDMETHODCALLTYPE DoMediaSampleTracePropertySheetModal()
+HRESULT STDMETHODCALLTYPE DoMediaSampleTracePropertySheetModal(HWND hParentWindow, HINSTANCE, LPSTR pszCommandLine, INT nShowCommand)
 {
+	hParentWindow; pszCommandLine; nShowCommand;
 	_ATLTRY
 	{
 		CSingleThreadedApartment SingleThreadedApartment;
@@ -112,6 +115,7 @@ HRESULT STDMETHODCALLTYPE DoMediaSampleTracePropertySheetModal()
 
 HRESULT STDMETHODCALLTYPE DoMediaSampleTraceTasks(HWND hParentWindow, HINSTANCE, LPSTR pszCommandLine, INT nShowCommand)
 {
+	hParentWindow; pszCommandLine; nShowCommand;
 	_ATLTRY
 	{
 		CSingleThreadedApartment SingleThreadedApartment;

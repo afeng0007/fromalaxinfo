@@ -29,12 +29,13 @@ COMPILER_MESSAGE("Development: CFilterGraphHelper::DoPropertyFrameModal as Test"
 #if defined(_WIN64)
 	extern "C" __declspec(dllexport) 
 #else
-	#pragma comment(linker, "/EXPORT:Test=_Test@0,PRIVATE")
+	#pragma comment(linker, "/EXPORT:Test=_Test@16,PRIVATE")
 	extern "C" // __declspec(dllexport) 
 #endif // defined(_WIN64)
 
-HRESULT STDMETHODCALLTYPE Test()
+HRESULT STDMETHODCALLTYPE Test(HWND hParentWindow, HINSTANCE, LPSTR pszCommandLine, INT nShowCommand)
 {
+	hParentWindow; pszCommandLine; nShowCommand;
 	_ATLTRY
 	{
 		CSingleThreadedApartment SingleThreadedApartment;
@@ -220,12 +221,13 @@ public:
 #if defined(_WIN64)
 	extern "C" __declspec(dllexport) 
 #else
-	#pragma comment(linker, "/EXPORT:Test=_Test@0,PRIVATE")
+	#pragma comment(linker, "/EXPORT:Test=_Test@16,PRIVATE")
 	extern "C" // __declspec(dllexport) 
 #endif // defined(_WIN64)
 
-HRESULT STDMETHODCALLTYPE Test()
+HRESULT STDMETHODCALLTYPE Test(HWND hParentWindow, HINSTANCE, LPSTR pszCommandLine, INT nShowCommand)
 {
+	hParentWindow; pszCommandLine; nShowCommand;
 	_ATLTRY
 	{
 		CSingleThreadedApartment SingleThreadedApartment;
@@ -274,12 +276,13 @@ COMPILER_MESSAGE("Development: CFilterGraphHelper::DoPropertyFrameModal as Test"
 #if defined(_WIN64)
 	extern "C" __declspec(dllexport) 
 #else
-	#pragma comment(linker, "/EXPORT:Test=_Test@0,PRIVATE")
+	#pragma comment(linker, "/EXPORT:Test=_Test@16,PRIVATE")
 	extern "C" // __declspec(dllexport) 
 #endif // defined(_WIN64)
 
-HRESULT STDMETHODCALLTYPE Test()
+HRESULT STDMETHODCALLTYPE Test(HWND hParentWindow, HINSTANCE, LPSTR pszCommandLine, INT nShowCommand)
 {
+	hParentWindow; pszCommandLine; nShowCommand;
 	_ATLTRY
 	{
 		CSingleThreadedApartment SingleThreadedApartment;
