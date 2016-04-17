@@ -1,5 +1,5 @@
 ////////////////////////////////////////////////////////////
-// Copyright (C) Roman Ryltsov, 2008-2014
+// Copyright (C) Roman Ryltsov, 2008-2016
 // Created by Roman Ryltsov roman@alax.info
 
 #include "stdafx.h"
@@ -18,28 +18,28 @@ public:
 // CEnumerateAudioDevicesModule
 
 // CAtlExeModuleT
-	CEnumerateAudioDevicesModule() throw()
+	CEnumerateAudioDevicesModule()
 	{
 		AtlTraceSetDefaultSettings();
 		_W(CExceptionFilter::Initialize());
 		_Z4_THIS();
 	}
-	~CEnumerateAudioDevicesModule() throw()
+	~CEnumerateAudioDevicesModule()
 	{
 		_Z4_THIS();
 		CExceptionFilter::Terminate();
 	}
-	HRESULT RegisterServer(BOOL bRegisterTypeLibrary = FALSE, const CLSID* pClassIdentifier = NULL) throw()
+	HRESULT RegisterServer(BOOL bRegisterTypeLibrary = FALSE, const CLSID* pClassIdentifier = NULL)
 	{
 		bRegisterTypeLibrary;
 		return __super::RegisterServer(FALSE, pClassIdentifier);
 	}
-	HRESULT UnregisterServer(BOOL bUnregisterTypeLibrary, const CLSID* pClassIdentifier = NULL) throw()
+	HRESULT UnregisterServer(BOOL bUnregisterTypeLibrary, const CLSID* pClassIdentifier = NULL)
 	{
 		bUnregisterTypeLibrary;
 		return __super::UnregisterServer(FALSE, pClassIdentifier);
 	}
-	HRESULT PreMessageLoop(INT nShowCommand) throw()
+	HRESULT PreMessageLoop(INT nShowCommand)
 	{
 		_ATLTRY
 		{
@@ -53,7 +53,7 @@ public:
 		}
 		return S_OK;
 	}
-	VOID RunMessageLoop() throw()
+	VOID RunMessageLoop()
 	{
 		Lock();
 		{
@@ -67,7 +67,7 @@ public:
 		}
 		Unlock();
 	}
-	HRESULT PostMessageLoop() throw()
+	HRESULT PostMessageLoop()
 	{
 		_ATLTRY
 		{

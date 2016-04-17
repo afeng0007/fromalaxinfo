@@ -10,6 +10,7 @@
 #include <SDKDDKVer.h>
 
 #define INLINE_HRESULT_FROM_WIN32
+#define _INC_WINDOWSX
 
 ////////////////////////////////////////////////////////////
 // ATL definitions
