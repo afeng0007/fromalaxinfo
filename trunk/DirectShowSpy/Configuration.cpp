@@ -25,12 +25,13 @@
 #if defined(_WIN64)
 	extern "C" __declspec(dllexport) 
 #else
-	#pragma comment(linker, "/EXPORT:UnregisterTreatAsClasses=_UnregisterTreatAsClasses@0,PRIVATE")
+	#pragma comment(linker, "/EXPORT:UnregisterTreatAsClasses=_UnregisterTreatAsClasses@16,PRIVATE")
 	extern "C" // __declspec(dllexport) 
 #endif // defined(_WIN64)
 
-HRESULT STDMETHODCALLTYPE UnregisterTreatAsClasses() throw()
+HRESULT STDMETHODCALLTYPE UnregisterTreatAsClasses(HWND hParentWindow, HINSTANCE, LPSTR pszCommandLine, INT nShowCommand)
 {
+	hParentWindow; pszCommandLine; nShowCommand;
 	_ATLTRY
 	{
 		static const CLSID* g_ppClassIdentifiers[] = 
@@ -96,12 +97,13 @@ HRESULT STDMETHODCALLTYPE UnregisterTreatAsClasses() throw()
 #if defined(_WIN64)
 	extern "C" __declspec(dllexport) 
 #else
-	#pragma comment(linker, "/EXPORT:DoRegistrationPropertySheetModal=_DoRegistrationPropertySheetModal@0,PRIVATE")
+	#pragma comment(linker, "/EXPORT:DoRegistrationPropertySheetModal=_DoRegistrationPropertySheetModal@16,PRIVATE")
 	extern "C" // __declspec(dllexport) 
 #endif // defined(_WIN64)
 
-HRESULT STDMETHODCALLTYPE DoRegistrationPropertySheetModal() throw()
+HRESULT STDMETHODCALLTYPE DoRegistrationPropertySheetModal(HWND hParentWindow, HINSTANCE, LPSTR pszCommandLine, INT nShowCommand)
 {
+	hParentWindow; pszCommandLine; nShowCommand;
 	_ATLTRY
 	{
 		CSingleThreadedApartment SingleThreadedApartment;

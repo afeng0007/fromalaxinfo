@@ -29,6 +29,10 @@ HRESULT FilterGraphHelper_DoFilterGraphListModal(LONG nParentWindowHandle);
 HRESULT FilterGraphHelper_OpenGraphStudioNext(LONG nParentWindowHandle, LPCWSTR pszMonikerDisplayName, VARIANT_BOOL* pbResult);
 HRESULT FilterGraphHelper_OpenGraphEdit(LONG nParentWindowHandle, LPCWSTR pszMonikerDisplayName, VARIANT_BOOL* pbResult);
 
+VOID MediaSampleTrace_Reset(DWORD nProcessIdentifier);
+CString MediaSampleTrace_Get(DWORD nProcessIdentifier);
+CComPtr<IUnknown> MediaSampleTrace_Lock();
+
 ////////////////////////////////////////////////////////////
 // CRunPropertyBagPropertyPage
 
@@ -463,7 +467,8 @@ class ATL_NO_VTABLE CFilterGraphHelper :
 	public CComObjectRootEx<CComMultiThreadModelNoCS>,
 	public CComCoClass<CFilterGraphHelper, &__uuidof(FilterGraphHelper)>,
 	public IProvideClassInfo2Impl<&__uuidof(FilterGraphHelper), &IID_NULL>,
-	public IDispatchImpl<IFilterGraphHelper>
+	public IDispatchImpl<IFilterGraphHelper>,
+	public CModuleVersionInformationT<CFilterGraphHelper>
 {
 public:
 	enum { IDR = IDR_FILTERGRAPHHELPER };
@@ -471,10 +476,11 @@ public:
 //DECLARE_REGISTRY_RESOURCEID(IDR)
 
 BEGIN_COM_MAP(CFilterGraphHelper)
-	COM_INTERFACE_ENTRY(IFilterGraphHelper)
-	COM_INTERFACE_ENTRY(IDispatch)
 	COM_INTERFACE_ENTRY(IProvideClassInfo2)
 	COM_INTERFACE_ENTRY(IProvideClassInfo)
+	COM_INTERFACE_ENTRY(IFilterGraphHelper)
+	COM_INTERFACE_ENTRY_IID(__uuidof(IDispatch), IFilterGraphHelper)
+	COM_INTERFACE_ENTRY(IModuleVersionInformation)
 END_COM_MAP()
 
 public:
@@ -3751,7 +3757,7 @@ public:
 	}
 
 // IFilterGraphHelper
-	STDMETHOD(get_FilterGraph)(IUnknown** ppFilterGraphUnknown)
+	STDMETHOD(get_FilterGraph)(IUnknown** ppFilterGraphUnknown) override
 	{
 		_Z4(atlTraceCOM, 4, _T("...\n"));
 		_ATLTRY
@@ -3765,7 +3771,7 @@ public:
 		}
 		return S_OK;
 	}
-	STDMETHOD(put_FilterGraph)(IUnknown* pFilterGraphUnknown)
+	STDMETHOD(put_FilterGraph)(IUnknown* pFilterGraphUnknown) override
 	{
 		_Z4(atlTraceCOM, 4, _T("pFilterGraphUnknown 0x%p\n"), pFilterGraphUnknown);
 		_ATLTRY
@@ -3779,7 +3785,7 @@ public:
 		}
 		return S_OK;
 	}
-	STDMETHOD(get_Text)(BSTR* psText)
+	STDMETHOD(get_Text)(BSTR* psText) override
 	{
 		_Z4(atlTraceCOM, 4, _T("...\n"));
 		_ATLTRY
@@ -3794,7 +3800,7 @@ public:
 		}
 		return S_OK;
 	}
-	STDMETHOD(DoPropertyFrameModal)(LONG nParentWindowHandle)
+	STDMETHOD(DoPropertyFrameModal)(LONG nParentWindowHandle) override
 	{
 		_Z4(atlTraceCOM, 4, _T("nParentWindowHandle 0x%08X\n"), nParentWindowHandle);
 		_ATLTRY
@@ -3814,7 +3820,7 @@ public:
 		}
 		return S_OK;
 	}
-	STDMETHOD(DoFilterGraphListModal)(LONG nParentWindowHandle)
+	STDMETHOD(DoFilterGraphListModal)(LONG nParentWindowHandle) override
 	{
 		_Z4(atlTraceCOM, 4, _T("nParentWindowHandle 0x%08X\n"), nParentWindowHandle);
 		_ATLTRY
@@ -3831,7 +3837,7 @@ public:
 		}
 		return S_OK;
 	}
-	STDMETHOD(OpenGraphStudioNext)(LONG nParentWindowHandle, BSTR sMonikerDisplayName, VARIANT_BOOL* pbResult)
+	STDMETHOD(OpenGraphStudioNext)(LONG nParentWindowHandle, BSTR sMonikerDisplayName, VARIANT_BOOL* pbResult) override
 	{
 		_Z4(atlTraceCOM, 4, _T("nParentWindowHandle 0x%08X, sMonikerDisplayName \"%s\"\n"), nParentWindowHandle, CString(sMonikerDisplayName));
 		_ATLTRY
@@ -3851,7 +3857,7 @@ public:
 		}
 		return S_OK;
 	}
-	STDMETHOD(OpenGraphEdit)(LONG nParentWindowHandle, BSTR sMonikerDisplayName, VARIANT_BOOL* pbResult)
+	STDMETHOD(OpenGraphEdit)(LONG nParentWindowHandle, BSTR sMonikerDisplayName, VARIANT_BOOL* pbResult) override
 	{
 		_Z4(atlTraceCOM, 4, _T("nParentWindowHandle 0x%08X, sMonikerDisplayName \"%s\"\n"), nParentWindowHandle, CString(sMonikerDisplayName));
 		_ATLTRY
@@ -3871,9 +3877,9 @@ public:
 		}
 		return S_OK;
 	}
-	STDMETHOD(get_Options)(VARIANT* pvOptions)
+	STDMETHOD(get_Options)(VARIANT* pvOptions) override
 	{
-		_Z4(atlTraceCOM, 4, _T("...\n"));
+		_Z4(atlTraceCOM, 4, _T("this 0x%p\n"), this);
 		_ATLTRY
 		{
 			__D(pvOptions, E_POINTER);
@@ -3886,12 +3892,59 @@ public:
 		}
 		return S_OK;
 	}
-	STDMETHOD(put_Options)(VARIANT vOptions)
+	STDMETHOD(put_Options)(VARIANT vOptions) override
 	{
-		_Z4(atlTraceCOM, 4, _T("vOptions.vt 0x%X\n"), vOptions.vt);
+		_Z4(atlTraceCOM, 4, _T("this 0x%p, vOptions.vt %s\n"), this, reinterpret_cast<CComVariantArray&>(vOptions).FormatType());
 		_ATLTRY
 		{
 			m_Options.SetVariant(vOptions);
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return S_OK;
+	}
+	STDMETHOD(ResetMediaSampleTrace)(VARIANT vProcessIdentifier) override
+	{
+		_Z4(atlTraceCOM, 4, _T("this 0x%p, vProcessIdentifier %s\n"), this, reinterpret_cast<CComVariantArray&>(vProcessIdentifier).Format(TRUE));
+		_ATLTRY
+		{
+			DWORD nProcessIdentifier = 0;
+			if(vProcessIdentifier.vt > VT_NULL)
+				nProcessIdentifier = (DWORD) reinterpret_cast<CComVariantArray&>(vProcessIdentifier).GetAsType(VT_I4).lVal;
+			MediaSampleTrace_Reset(nProcessIdentifier);
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return S_OK;
+	}
+	STDMETHOD(LockMediaSampleTrace)(IUnknown** ppLockUnknown) override
+	{
+		_Z4(atlTraceCOM, 4, _T("this 0x%p\n"), this);
+		_ATLTRY
+		{
+			__D(ppLockUnknown, E_POINTER);
+			*ppLockUnknown = MediaSampleTrace_Lock().Detach();
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return S_OK;
+	}
+	STDMETHOD(GetMediaSampleTrace)(VARIANT vProcessIdentifier, BSTR* psText) override
+	{
+		_Z4(atlTraceCOM, 4, _T("this 0x%p, vProcessIdentifier %s\n"), this, reinterpret_cast<CComVariantArray&>(vProcessIdentifier).Format(TRUE));
+		_ATLTRY
+		{
+			__D(psText, E_POINTER);
+			DWORD nProcessIdentifier = 0;
+			if(vProcessIdentifier.vt > VT_NULL)
+				nProcessIdentifier = (DWORD) reinterpret_cast<CComVariantArray&>(vProcessIdentifier).GetAsType(VT_I4).lVal;
+			*psText = CComBSTR(MediaSampleTrace_Get(nProcessIdentifier)).Detach();
 		}
 		_ATLCATCH(Exception)
 		{

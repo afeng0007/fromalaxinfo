@@ -631,6 +631,65 @@ public:
 	}
 };
 
+#if defined(DIRECTSHOWSPY) 
+
+	////////////////////////////////////////////////////////////
+	// CModuleVersionInformationT
+
+	template <typename T>
+	class ATL_NO_VTABLE CModuleVersionInformationT :
+		public IDispatchImpl<IModuleVersionInformation>
+	{
+	public:
+	// CModuleVersionInformationT
+
+	// IModuleVersionInformation
+		STDMETHOD(get_Path)(BSTR* psPath) override
+		{
+			_Z4(atlTraceCOM, 4, _T("this 0x%p\n"), static_cast<T*>(this));
+			_ATLTRY
+			{
+				__D(psPath, E_POINTER);
+				*psPath = CComBSTR(_VersionInfoHelper::GetModulePath()).Detach();
+			}
+			_ATLCATCH(Exception)
+			{
+				_C(Exception);
+			}
+			return S_OK;
+		}
+		STDMETHOD(get_FileVersion)(LONGLONG* pnFileVersion) override
+		{
+			_Z4(atlTraceCOM, 4, _T("this 0x%p\n"), static_cast<T*>(this));
+			_ATLTRY
+			{
+				__D(pnFileVersion, E_POINTER);
+				*pnFileVersion = (LONGLONG) _VersionInfoHelper::GetFileVersion(_VersionInfoHelper::GetModulePath());
+			}
+			_ATLCATCH(Exception)
+			{
+				_C(Exception);
+			}
+			return S_OK;
+		}
+		STDMETHOD(get_FileVersionString)(BSTR* psFileVersionString) override
+		{
+			_Z4(atlTraceCOM, 4, _T("this 0x%p\n"), static_cast<T*>(this));
+			_ATLTRY
+			{
+				__D(psFileVersionString, E_POINTER);
+				*psFileVersionString = CComBSTR(_VersionInfoHelper::GetVersionString(_VersionInfoHelper::GetFileVersion(_VersionInfoHelper::GetModulePath()))).Detach();
+			}
+			_ATLCATCH(Exception)
+			{
+				_C(Exception);
+			}
+			return S_OK;
+		}
+	};
+
+#endif // defined(DIRECTSHOWSPY) 
+
 ////////////////////////////////////////////////////////////
 // DIRECTSHOWSPY_NAMESPACE_PREFIX
 
