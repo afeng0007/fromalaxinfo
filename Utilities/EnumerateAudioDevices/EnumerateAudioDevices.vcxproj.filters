@@ -15,10 +15,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="EnumerateAudioDevices.cpp">
+    <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="stdafx.cpp">
+    <ClCompile Include="Application.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -34,15 +34,12 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="EnumerateAudioDevices.ico">
-      <Filter>Resource Files</Filter>
-    </None>
     <None Include="Module.ico">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="EnumerateAudioDevices.rc">
+    <ResourceCompile Include="Module.rc">
       <Filter>Resource Files</Filter>
     </ResourceCompile>
   </ItemGroup>

@@ -4,12 +4,17 @@
 
 #pragma once
 
+#include "rodshow.h"
 #include <mmdeviceapi.h>
 #include <mmreg.h>
 #include <functiondiscoverykeys.h>
 #include <propkey.h>
 #include <devpkey.h>
 #include <devicetopology.h>
+#include <audioclient.h>
+#include <endpointvolume.h>
+#include <audiopolicy.h>
+//#include <dsound.h>
 #include "AboutDialog.h"
 
 ////////////////////////////////////////////////////////////
@@ -59,8 +64,8 @@ public:
 		return FALSE;
 	}
 
-// Window message handelrs
-	LRESULT OnInitDialog(HWND, LPARAM) throw()
+// Window Message Handler
+	LRESULT OnInitDialog(HWND, LPARAM)
 	{
 		SetIcon(AtlLoadIcon(IDI_MODULE), TRUE);
 		SetIcon(AtlLoadIconImage(IDI_MODULE, LR_DEFAULTCOLOR, GetSystemMetrics(SM_CXSMICON), GetSystemMetrics(SM_CYSMICON)), FALSE);
@@ -68,6 +73,7 @@ public:
 		_W(Menu.AppendMenu(MF_SEPARATOR));
 		_W(Menu.AppendMenu(MF_STRING, ID_APP_ABOUT, _T("&About...")));
 		DlgResize_Init();
+		CAboutDialog::UpdateCaption(*this);
 		_W(CenterWindow());
 		_ATLTRY
 		{
@@ -104,7 +110,7 @@ public:
 							#undef A
 						};
 						sText.AppendFormat(_T("\t") _T("State\t%s\t0x%02X\r\n"), FormatFlagsT(g_pDeviceStateMap, nState), nState);
-						#pragma endregion State
+						#pragma endregion 
 						#pragma region Property Store
 						sText.AppendFormat(_T("\t") _T("Properties:\r\n"));
 						CComPtr<IPropertyStore> pPropertyStore;
@@ -1357,11 +1363,12 @@ public:
 									{
 										CComPtr<IKsJackDescription> jack;
 										hr = part->Activate(CLSCTX_ALL, IID_PPV_ARGS(&jack));
-										if (SUCCEEDED(hr))
+										if(SUCCEEDED(hr))
 										{
+											sText.AppendFormat(_T("\t") _T("Device Topology\r\n"));
 											UINT jackCount = 0;
 											jack->GetJackCount(&jackCount);
-											for (int j = 0; j < jackCount; j++)
+											for(UINT j = 0; j < jackCount; j++)
 											{
 												KSJACK_DESCRIPTION desc = { 0 };
 												jack->GetJackDescription(j, &desc);
@@ -1378,6 +1385,32 @@ public:
 						_ATLCATCHALL()
 						{
 							_Z_EXCEPTION();
+						}
+						#pragma endregion
+						#pragma region Activation
+						sText.AppendFormat(_T("\t") _T("Activation") _T("\r\n"));
+						static const CEnumerationNameT<IID> g_pMap[] = 
+						{
+							#define A(x) { __uuidof(x), #x },
+							A(IAudioClient)
+							A(IAudioEndpointVolume)
+							A(IAudioMeterInformation)
+							A(IAudioSessionManager)
+							A(IAudioSessionManager2)
+							A(IBaseFilter)
+							A(IDeviceTopology)
+							//A(IDirectSound)
+							//A(IDirectSound8) 
+							//A(IDirectSoundCapture)
+							//A(IDirectSoundCapture8)
+							A(IMFTrustedOutput)
+							#undef A
+						};
+						for(auto&& Item: g_pMap)
+						{
+							CComPtr<IUnknown> pUnknown;
+							const HRESULT nActivateResult = pMmDevice->Activate(Item.Value, CLSCTX_ALL, NULL, (VOID**) &pUnknown);
+							sText.AppendFormat(_T("\t") _T("\t") _T("%hs") _T("\t") _T("0x%08X") _T("\r\n"), Item.pszName, nActivateResult);
 						}
 						#pragma endregion 
 					}
