@@ -15,7 +15,9 @@
 
 #pragma once
 
+#include <mmdeviceapi.h>
 #include "rodshow.h"
+#include "romf.h"
 #include "Module_i.h"
 #include "Common.h"
 
@@ -30,7 +32,8 @@ class ATL_NO_VTABLE CSystemDeviceEnumeratorSpyT :
 	//public CComCoClass<CSystemDeviceEnumeratorSpyT, &CLSID_SystemDeviceEnumeratorSpy>,
 	public CTransparentCoClassT<T, t_pSystemDeviceEnumeratorClassIdentifier>,
 	public IDispatchImpl<ISystemDeviceEnumeratorSpy>,
-	public ICreateDevEnum
+	public ICreateDevEnum,
+	public IMMDeviceActivator
 {
 	typedef CSystemDeviceEnumeratorSpyT<T, t_pSystemDeviceEnumeratorClassIdentifier> CSystemDeviceEnumeratorSpy;
 
@@ -48,7 +51,9 @@ DECLARE_QI_TRACE(CSystemDeviceEnumeratorSpyT)
 BEGIN_COM_MAP(CSystemDeviceEnumeratorSpyT)
 	COM_INTERFACE_ENTRY(ISystemDeviceEnumeratorSpy)
 	COM_INTERFACE_ENTRY(ICreateDevEnum)
+	COM_INTERFACE_ENTRY(IMMDeviceActivator)
 	COM_INTERFACE_ENTRY_FUNC(CLSID_SystemDeviceEnum, 0, QuerySystemDeviceEnumInterface)
+	COM_INTERFACE_ENTRY_AGGREGATE_BLIND(m_pSystemDeviceEnum.p)
 	//COM_INTERFACE_ENTRY(IDispatch)
 END_COM_MAP()
 
@@ -621,6 +626,7 @@ private:
 	HINSTANCE m_hDevEnumModule;
 	CComPtr<IUnknown> m_pSystemDeviceEnum;
 	CComPtr<ICreateDevEnum> m_pCreateDevEnum;
+	CComPtr<IMMDeviceActivator> m_pMmDeviceActivator;
 
 	HRESULT QuerySystemDeviceEnumInterface(REFIID InterfaceIdentifier, VOID** ppvObject)
 	{
@@ -688,9 +694,11 @@ public:
 				CComPtr<IUnknown> pSystemDeviceEnum;
 				__C(pUnknown->QueryInterface(CLSID_SystemDeviceEnum, (VOID**) &pSystemDeviceEnum));
 				const CComQIPtr<ICreateDevEnum> pCreateDevEnum = pUnknown;
+				const CComQIPtr<IMMDeviceActivator> pMmDeviceActivator = pUnknown;
 				__D(pCreateDevEnum, E_NOINTERFACE);
 				m_pSystemDeviceEnum = pSystemDeviceEnum;
 				m_pCreateDevEnum = pCreateDevEnum;
+				m_pMmDeviceActivator = pMmDeviceActivator;
 			}
 			_ATLCATCHALL()
 			{
@@ -711,6 +719,7 @@ public:
 		_Z5(atlTraceRefcount, 5, _T("m_dwRef 0x%X\n"), m_dwRef);
 		m_pSystemDeviceEnum.Release();
 		m_pCreateDevEnum.Release();
+		m_pMmDeviceActivator.Release();
 		if(m_hDevEnumModule)
 		{
 			CoFreeLibrary(m_hDevEnumModule);
@@ -752,7 +761,7 @@ public:
 // ICreateDevEnum
 	STDMETHOD(CreateClassEnumerator)(REFCLSID DeviceCategory, IEnumMoniker** ppEnumMoniker, DWORD nFlags) override
 	{
-		_Z4(atlTraceCOM, 4, _T("DeviceCategory %s, nFlags 0x%X\n"), FormatDeviceCategory(DeviceCategory), nFlags);
+		_Z4(atlTraceCOM, 4, _T("this 0x%p, DeviceCategory %s, nFlags 0x%X\n"), this, FormatDeviceCategory(DeviceCategory), nFlags);
 		_ATLTRY
 		{
 			const HRESULT nCreateClassEnumeratorResult = m_pCreateDevEnum->CreateClassEnumerator(DeviceCategory, ppEnumMoniker, nFlags);
@@ -785,6 +794,26 @@ public:
 				pEnumMonikerWrapper.Construct()->Initialize(pEnumMoniker);
 				pEnumMoniker = pEnumMonikerWrapper;
 			}
+		}
+		_ATLCATCH(Exception)
+		{
+			_C(Exception);
+		}
+		return S_OK;
+	}
+
+// IMMDeviceActivator
+    STDMETHOD(Activate)(REFIID InterfaceIdentifier, IMMDevice* pMmDevice, PROPVARIANT* pvActivationParameters, VOID** ppObject) override
+	{
+		_Z4(atlTraceCOM, 4, _T("this 0x%p, InterfaceIdentifier %s, pMmDevice 0x%p\n"), this, _FilterGraphHelper::StringFromIdentifier(InterfaceIdentifier), pMmDevice);
+		_ATLTRY
+		{
+			if(pvActivationParameters)
+				_Z4(atlTraceCOM, 4, _T("*pvActivationParameters %s\n"), reinterpret_cast<MF::CPropVariant&>(*pvActivationParameters).Format());
+			__D(m_pMmDeviceActivator, E_NOINTERFACE);
+			const HRESULT nActivateResult = m_pMmDeviceActivator->Activate(InterfaceIdentifier, pMmDevice, pvActivationParameters, ppObject);
+			_Z4_DSHRESULT(nActivateResult);
+			return nActivateResult;
 		}
 		_ATLCATCH(Exception)
 		{

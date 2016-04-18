@@ -975,6 +975,7 @@ public:
 		COMMAND_ID_HANDLER_EX(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_COPYTOCLIPBOARD, OnCopyToClipboard)
 		COMMAND_ID_HANDLER_EX(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_SAVETOFILE, OnSaveToFile)
 		COMMAND_ID_HANDLER_EX(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_LOADFROMFILE, OnLoadFromFile)
+		COMMAND_ID_HANDLER_EX(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_LOADLIVE, OnLoadLive)
 		COMMAND_ID_HANDLER_EX(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_RESETDATA, OnResetData)
 		COMMAND_ID_HANDLER_EX(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_OPENFILTERGRAPHLIST, OnOpenFilterGraphList)
 		COMMAND_ID_HANDLER_EX(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_OPENFILTERGRAPHPROPERTIES, OnOpenFilterGraphProperties)
@@ -1520,6 +1521,7 @@ public:
 				m_Data.m_ItemArray.Add(Item);
 			m_pHandleMapLock.Release();
 			m_HandleMap.RemoveAll();
+			m_RefreshStatic.EnableWindow(FALSE);
 			UpdateListView();
 		}
 		VOID LoadFromFile(LPCTSTR pszPath)
@@ -1754,11 +1756,13 @@ public:
 			CMenuHandle Menu = ContainerMenu.GetSubMenu(0);
 			const INT nItemCount = m_ListView.GetItemCount();
 			const INT nSelectItemCount = m_ListView.GetSelectedCount();
+			Menu.EnableMenuItem(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_REFRESH, m_RefreshStatic.IsWindowEnabled() ? MF_ENABLED : MF_GRAYED | MF_DISABLED);
 			for(INT nIdentifier = IDC_MEDIASAMPLETRACE_MEDIASAMPLE_HIGHLIGHT_REMOVE; nIdentifier <= IDC_MEDIASAMPLETRACE_MEDIASAMPLE_HIGHLIGHT_8; nIdentifier++)
 				Menu.EnableMenuItem(nIdentifier, nSelectItemCount ? MF_ENABLED : MF_GRAYED | MF_DISABLED);
 			Menu.EnableMenuItem(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_HIGHLIGHT_REMOVEALL, nItemCount ? MF_ENABLED : MF_GRAYED | MF_DISABLED);
 			Menu.EnableMenuItem(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_COPYTOCLIPBOARD, nItemCount ? MF_ENABLED : MF_GRAYED | MF_DISABLED);
 			Menu.EnableMenuItem(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_SAVETOFILE, nItemCount ? MF_ENABLED : MF_GRAYED | MF_DISABLED);
+			Menu.EnableMenuItem(IDC_MEDIASAMPLETRACE_MEDIASAMPLE_LOADLIVE, !m_pHandleMapLock ? MF_ENABLED : MF_GRAYED | MF_DISABLED);
 			Menu.TrackPopupMenu(TPM_RIGHTBUTTON | TPM_LEFTALIGN | TPM_TOPALIGN, Position.x, Position.y, m_hWnd); 
 			return 0;
 		}
@@ -1802,6 +1806,14 @@ public:
 				return 0;
 			CWaitCursor WaitCursor;
 			LoadFromFile(sPath);
+			return 0;
+		}
+		LRESULT OnLoadLive(UINT, INT, HWND)
+		{
+			m_pHandleMapLock.Release();
+			m_pHandleMapLock.Construct();
+			m_RefreshStatic.EnableWindow(TRUE);
+			UpdateListView();
 			return 0;
 		}
 		LRESULT OnResetData(UINT, INT, HWND)
