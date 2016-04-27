@@ -2419,7 +2419,7 @@ public:
 				#pragma region Service Property Page 
 				if(Data.m_pPropertyPage)
 				{
-					m_TextEdit.ShowWindow(SW_HIDE);
+					ShowText(FALSE);
 					if(Data.m_pSite != m_pCurrentSite)
 						HideCurrentSite();
 					if(!Data.m_bSiteActivated)

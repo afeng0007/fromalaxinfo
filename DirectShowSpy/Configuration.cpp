@@ -40,6 +40,7 @@ HRESULT STDMETHODCALLTYPE UnregisterTreatAsClasses(HWND hParentWindow, HINSTANCE
 			&CLSID_SystemDeviceEnum, // CLSID_SystemDeviceEnumeratorSpy
 			&CLSID_FilterGraph, // CLSID_Spy
 			&CLSID_FilterGraphNoThread, // CLSID_NoThreadSpy
+			&CLSID_FilterGraphPrivateThread, // CLSID_PrivateThreadSpy
 		};
 		CProcessTokenPrivileges ProcessTokenPrivileges;
 		BOOL bProcessTokenPrivilegesAdjustNeeded = TRUE;
