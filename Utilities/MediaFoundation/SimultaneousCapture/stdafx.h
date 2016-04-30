@@ -70,7 +70,7 @@ using namespace WTL;
 #include "roatlcom.h"
 #include "roatlpersist.h"
 #include "roatlmisc.h"
-#include "roatlexceptionfilter.h"
+//#include "roatlexceptionfilter.h"
 #include "rowtlapp.h"
 #include "rofiles.h"
 //#include "rowtlcrack.h"

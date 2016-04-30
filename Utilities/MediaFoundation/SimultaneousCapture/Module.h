@@ -690,14 +690,14 @@ public:
 	{
 		AtlTraceSetDefaultSettings();
 		_Z4_THIS();
-		_W(CExceptionFilter::Initialize());
+		//_W(CExceptionFilter::Initialize());
 		m_nBitrate = 0;
 		m_nDuration = 10;
 	}
 	~CModule()
 	{
 		_Z4_THIS();
-		CExceptionFilter::Terminate();
+		//CExceptionFilter::Terminate();
 	}
 	bool ParseCommandLine(LPCTSTR pszCommandLine, HRESULT* pnResult)
 	{
@@ -855,10 +855,10 @@ public:
 		Session.Initialize(m_sVideoIdentifier, m_nBitrate, m_sAudioIdentifier);
 		_tprintf(_T("Path: %s\n"), Session.m_sPath);
 		CSessionT<CSecondaryVideoMediaType, CSecondaryAudioMediaType> SecondarySession;
-		SecondarySession.Initialize(
-			_T("\\\\?\\usb#vid_1908&pid_2311&mi_00#6&3694d24c&1&0000#{e5323777-f976-4f5b-9b55-b94699c46e44}\\global"), 0, // USB2.0 PC CAMERA
-			_T("{0.0.1.00000000}.{d7e99b5b-4d9b-437f-9f72-7adb7cdb2e1f}"), // Microphone (Realtek High Definition Audio)
-			AtlFormatString(_T("%s - Secondary.mp4"), Session.m_sPath));
+//		SecondarySession.Initialize(
+//			_T("\\\\?\\usb#vid_1908&pid_2311&mi_00#6&3694d24c&1&0000#{e5323777-f976-4f5b-9b55-b94699c46e44}\\global"), 0, // USB2.0 PC CAMERA
+//			_T("{0.0.1.00000000}.{d7e99b5b-4d9b-437f-9f72-7adb7cdb2e1f}"), // Microphone (Realtek High Definition Audio)
+//			AtlFormatString(_T("%s - Secondary.mp4"), Session.m_sPath));
 		if(SecondarySession.m_pSinkWriter)
 			_tprintf(_T("Secondary Path: %s\n"), SecondarySession.m_sPath);
 		__C(Session.m_pSinkWriter->BeginWriting());
