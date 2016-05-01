@@ -245,6 +245,7 @@ public:
 	END_COM_MAP()
 
 	private:
+		CObjectPtr<T> m_pT;
 		CComPtr<IMoniker> m_pMoniker;
 
 	public:
@@ -257,10 +258,11 @@ public:
 		{
 			_Z4_THIS();
 		}
-		VOID Initialize(IMoniker* pMoniker)
+		VOID Initialize(T* pT, IMoniker* pMoniker)
 		{
-			_A(pMoniker);
-			_A(!m_pMoniker);
+			_A(pT && pMoniker);
+			_A(!m_pT && !m_pMoniker);
+			m_pT = pT;
 			m_pMoniker = pMoniker;
 		}
 
@@ -523,6 +525,7 @@ public:
 	END_COM_MAP()
 
 	private:
+		CObjectPtr<T> m_pT;
 		CComPtr<IEnumMoniker> m_pEnumMoniker;
 
 	public:
@@ -535,17 +538,20 @@ public:
 		{
 			_Z4_THIS();
 		}
-		VOID Initialize(IEnumMoniker* pEnumMoniker)
+		VOID Initialize(T* pT, IEnumMoniker* pEnumMoniker)
 		{
-			_A(pEnumMoniker);
-			_A(!m_pEnumMoniker);
+			_A(pT && pEnumMoniker);
+			_A(!m_pT && !m_pEnumMoniker);
+			// NOTE: T is references to make sure that m_hDevEnumModule is not unloaded too early (esp. after ~CSystemDeviceEnumeratorSpyT 
+			//       but before ~CEnumMoniker)
+			m_pT = pT;
 			m_pEnumMoniker = pEnumMoniker;
 		}
 
 	// IEnumMoniker
 		STDMETHOD(Next)(ULONG nElementCount, IMoniker** ppMoniker, ULONG* pnFetchElementCount) override
 		{
-			_Z4(atlTraceCOM, 4, _T("nElementCount %d\n"), nElementCount);
+			_Z4(atlTraceCOM, 4, _T("this 0x%p, nElementCount %d\n"), this, nElementCount);
 			_ATLTRY
 			{
 				const HRESULT nNextResult = m_pEnumMoniker->Next(nElementCount, ppMoniker, pnFetchElementCount);
@@ -564,7 +570,7 @@ public:
 						if(!pMoniker)
 							break;
 						CObjectPtr<CMoniker> pMonikerWrapper;
-						pMonikerWrapper.Construct()->Initialize(pMoniker);
+						pMonikerWrapper.Construct()->Initialize(m_pT, pMoniker);
 						pMoniker = pMonikerWrapper;
 					}
 				}
@@ -578,7 +584,7 @@ public:
 		}
 		STDMETHOD(Skip)(ULONG nElementCount) override
 		{
-			_Z4(atlTraceCOM, 4, _T("nElementCount %d\n"), nElementCount);
+			_Z4(atlTraceCOM, 4, _T("this 0x%p, nElementCount %d\n"), this, nElementCount);
 			_ATLTRY
 			{
 				return m_pEnumMoniker->Skip(nElementCount);
@@ -591,7 +597,7 @@ public:
 		}
 		STDMETHOD(Reset)() override
 		{
-			_Z4(atlTraceCOM, 4, _T("...\n"));
+			_Z4(atlTraceCOM, 4, _T("this 0x%p\n"), this);
 			_ATLTRY
 			{
 				return m_pEnumMoniker->Reset();
@@ -604,14 +610,14 @@ public:
 		}
 		STDMETHOD(Clone)(IEnumMoniker** ppEnumMoniker) override
 		{
-			_Z4(atlTraceCOM, 4, _T("...\n"));
+			_Z4(atlTraceCOM, 4, _T("this 0x%p\n"), this);
 			_ATLTRY
 			{
 				__C(m_pEnumMoniker->Clone(ppEnumMoniker));
 				CComPtr<IEnumMoniker>& pEnumMoniker = reinterpret_cast<CComPtr<IEnumMoniker>&>(*ppEnumMoniker);
 				_A(pEnumMoniker);
 				CObjectPtr<CEnumMoniker> pEnumMonikerWrapper;
-				pEnumMonikerWrapper.Construct()->Initialize(pEnumMoniker);
+				pEnumMonikerWrapper.Construct()->Initialize(m_pT, pEnumMoniker);
 				pEnumMoniker = pEnumMonikerWrapper;
 			}
 			_ATLCATCH(Exception)
@@ -791,7 +797,7 @@ public:
 				__C(pEnumMoniker->Reset());
 				#pragma endregion
 				CObjectPtr<CEnumMoniker> pEnumMonikerWrapper;
-				pEnumMonikerWrapper.Construct()->Initialize(pEnumMoniker);
+				pEnumMonikerWrapper.Construct()->Initialize(static_cast<T*>(this), pEnumMoniker);
 				pEnumMoniker = pEnumMonikerWrapper;
 			}
 		}
