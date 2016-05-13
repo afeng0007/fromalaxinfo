@@ -362,6 +362,13 @@ public:
 			_ATLTRY
 			{
 				{
+					if(FAILED(nStatus))
+					{
+						_Z4(atlTraceGeneral, 4, _T("nStatus %s\n"), MF::FormatResult(nStatus));
+						_A(nStreamFlags & MF_SOURCE_READERF_ERROR);
+						_tprintf(_T("OnReadSample Error: %s, stream %d\n"), MF::FormatResult(nStatus), nStreamIndex);
+						return S_OK;
+					}
 					CRoCriticalSectionLock DataLock(m_DataCriticalSection);
 					__D(nStreamIndex < m_StreamDataArray.GetCount(), E_INVALIDARG);
 					CStreamData& StreamData = m_StreamDataArray[nStreamIndex];
@@ -374,8 +381,8 @@ public:
 					} else
 					{
 						MF::CSample& pSampleEx = reinterpret_cast<MF::CSample&>(pSample);
-						//if(nStreamIndex == 1)
-						//	pSampleEx.Trace();
+					//	if(nStreamIndex == 1)
+					//		pSampleEx.Trace();
 						// SUGG: Here is the right place to review samples and implement skipping in case certain data is lost in the middle of capture
 						//       of compressed data
 				//		BOOL bSkip = FALSE;
