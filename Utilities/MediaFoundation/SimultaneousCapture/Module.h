@@ -434,6 +434,369 @@ public:
 		}
 	};
 
+	////////////////////////////////////////////////////////
+	// CFileByteStream
+
+	class ATL_NO_VTABLE CFileByteStream :
+		public CComObjectRootEx<CComMultiThreadModelNoCS>,
+		public IMFByteStream,
+		public IMFSampleOutputStream
+	{
+	public:
+
+	DECLARE_QI_TRACE(CFileByteStream)
+
+	BEGIN_COM_MAP(CFileByteStream)
+		COM_INTERFACE_ENTRY(IMFByteStream)
+		//COM_INTERFACE_ENTRY(IMFSampleOutputStream)
+	END_COM_MAP()
+
+	public:
+
+		////////////////////////////////////////////////////////
+		// CWriteObject
+
+		class ATL_NO_VTABLE __declspec(uuid("{C0368834-0679-4720-A8C4-E0A68E4F2750}")) CWriteObject :
+			public CComObjectRootEx<CComMultiThreadModelNoCS>,
+			public IUnknown
+		{
+		public:
+
+		//DECLARE_QI_TRACE(CWriteObject)
+
+		BEGIN_COM_MAP(CWriteObject)
+			COM_INTERFACE_ENTRY_IID(__uuidof(CWriteObject), CWriteObject)
+		END_COM_MAP()
+
+		public:
+			ULONG m_nDataSize;
+
+		public:
+		// CWriteObject
+			CWriteObject() :
+				m_nDataSize(0)
+			{
+				_Z5_THIS();
+			}
+			~CWriteObject()
+			{
+				_Z5_THIS();
+			}
+		};
+
+	private:
+		mutable CRoCriticalSection m_DataCriticalSection;
+		CAtlFile m_File;
+		CHeapPtr<BYTE> m_pnData;
+		ULONGLONG m_nDataCapacity;
+		ULONGLONG m_nDataSize;
+		ULONGLONG m_nDataPosition;
+
+		VOID SetDataCapacity(ULONGLONG nDataCapacity)
+		{
+			if(nDataCapacity <= m_nDataCapacity)
+				return;
+			static const SIZE_T g_nDataGranularity = 1 << 20; // 1 MB
+			_A(!(g_nDataGranularity & (g_nDataGranularity - 1)));
+			nDataCapacity += (g_nDataGranularity - 1);
+			nDataCapacity &= (ULONGLONG) ~(g_nDataGranularity - 1);
+			__D(m_pnData.Reallocate((SIZE_T) nDataCapacity), E_OUTOFMEMORY);
+			m_nDataCapacity = nDataCapacity;
+		}
+
+	public:
+	// CFileByteStream
+		CFileByteStream() :
+			m_nDataCapacity(0),
+			m_nDataSize(0),
+			m_nDataPosition(0)
+		{
+			_Z4_THIS();
+		}
+		~CFileByteStream()
+		{
+			_Z4_THIS();
+		}
+		VOID Initialize(LPCTSTR pszPath)
+		{
+			//CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+			__C(m_File.Create(pszPath, GENERIC_READ | GENERIC_WRITE, FILE_SHARE_READ, CREATE_ALWAYS));
+		}
+
+	// IMFByteStream
+		STDMETHOD(GetCapabilities)(DWORD* pnCapabilities) override
+		{
+			_Z4(atlTraceCOM, 4, _T("this 0x%p\n"), this);
+			_ATLTRY
+			{
+				__D(pnCapabilities, E_POINTER);
+				//CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+				*pnCapabilities = MFBYTESTREAM_IS_READABLE | MFBYTESTREAM_IS_WRITABLE | MFBYTESTREAM_IS_SEEKABLE | MFBYTESTREAM_DOES_NOT_USE_NETWORK;
+			}
+			_ATLCATCH(Exception)
+			{
+				_C(Exception);
+			}
+			return S_OK;
+		}
+		STDMETHOD(GetLength)(QWORD* pnLength) override
+		{
+			_Z4(atlTraceCOM, 4, _T("this 0x%p\n"), this);
+			_ATLTRY
+			{
+				__D(pnLength, E_POINTER);
+				CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+				*pnLength = m_nDataSize;
+			}
+			_ATLCATCH(Exception)
+			{
+				_C(Exception);
+			}
+			return S_OK;
+		}
+		STDMETHOD(SetLength)(QWORD nLength) override
+		{
+			_Z4(atlTraceCOM, 4, _T("this 0x%p, nLength %I64d\n"), this, nLength);
+			_ATLTRY
+			{
+				CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+				SetDataCapacity(nLength);
+				m_nDataSize = nLength;
+				if(m_nDataPosition > m_nDataSize)
+					m_nDataPosition = m_nDataSize;
+			}
+			_ATLCATCH(Exception)
+			{
+				_C(Exception);
+			}
+			return S_OK;
+		}
+		STDMETHOD(GetCurrentPosition)(QWORD* pnPosition) override
+		{
+			_Z4(atlTraceCOM, 4, _T("this 0x%p\n"), this);
+			_ATLTRY
+			{
+				__D(pnPosition, E_POINTER);
+				CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+				*pnPosition = m_nDataPosition;
+			}
+			_ATLCATCH(Exception)
+			{
+				_C(Exception);
+			}
+			return S_OK;
+		}
+		STDMETHOD(SetCurrentPosition)(QWORD nPosition) override
+		{
+			_Z4(atlTraceCOM, 4, _T("this 0x%p, nPosition %I64d\n"), this, nPosition);
+			_ATLTRY
+			{
+				CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+				__D(nPosition <= m_nDataSize, E_INVALIDARG);
+				m_nDataPosition = nPosition;
+			}
+			_ATLCATCH(Exception)
+			{
+				_C(Exception);
+			}
+			return S_OK;
+		}
+		STDMETHOD(IsEndOfStream)(BOOL* pbEndOfStream) override
+		{
+			_Z4(atlTraceCOM, 4, _T("this 0x%p\n"), this);
+			_ATLTRY
+			{
+				__D(pbEndOfStream, E_POINTER);
+				CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+				*pbEndOfStream = m_nDataPosition >= m_nDataSize;
+			}
+			_ATLCATCH(Exception)
+			{
+				_C(Exception);
+			}
+			return S_OK;
+		}
+		STDMETHOD(Read)(BYTE* pnData, ULONG nDataCapacity, ULONG* pnDataSize) override
+		{
+			_Z4(atlTraceCOM, 4, _T("this 0x%p, nDataCapacity %d\n"), this, nDataCapacity);
+			_ATLTRY
+			{
+				// TODO: ...
+				_C(E_NOTIMPL);
+			}
+			_ATLCATCH(Exception)
+			{
+				_C(Exception);
+			}
+			return S_OK;
+		}
+		STDMETHOD(BeginRead)(BYTE* pnData, ULONG nDataCapacity, IMFAsyncCallback* pCallback, IUnknown* pState) override
+		{
+			_Z4(atlTraceCOM, 4, _T("this 0x%p, nDataCapacity %d\n"), this, nDataCapacity);
+			_ATLTRY
+			{
+				// TODO: ...
+				_C(E_NOTIMPL);
+			}
+			_ATLCATCH(Exception)
+			{
+				_C(Exception);
+			}
+			return S_OK;
+		}
+		STDMETHOD(EndRead)(IMFAsyncResult* pResult, ULONG* pnDataSize) override
+		{
+			_Z4(atlTraceCOM, 4, _T("this 0x%p\n"), this);
+			_ATLTRY
+			{
+				// TODO: ...
+				_C(E_NOTIMPL);
+			}
+			_ATLCATCH(Exception)
+			{
+				_C(Exception);
+			}
+			return S_OK;
+		}
+		STDMETHOD(Write)(const BYTE* pnData, ULONG nDataSize, ULONG* pnWriteDataSize) override
+		{
+			_Z4(atlTraceCOM, 4, _T("this 0x%p, nDataSize %d\n"), this, nDataSize);
+			_ATLTRY
+			{
+				__D(pnData || !nDataSize, E_INVALIDARG);
+				__D(pnWriteDataSize, E_POINTER);
+				CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+				if(nDataSize)
+				{
+					SetDataCapacity(m_nDataPosition + nDataSize);
+					memcpy(m_pnData + (SIZE_T) m_nDataPosition, pnData, nDataSize);
+					m_nDataPosition += nDataSize;
+					if(m_nDataPosition > m_nDataSize)
+						m_nDataSize = m_nDataPosition;
+				}
+				*pnWriteDataSize = nDataSize;
+			}
+			_ATLCATCH(Exception)
+			{
+				_C(Exception);
+			}
+			return S_OK;
+		}
+		STDMETHOD(BeginWrite)(const BYTE* pnData, ULONG nDataSize, IMFAsyncCallback* pCallback, IUnknown* pState) override
+		{
+			_Z5(atlTraceCOM, 5, _T("this 0x%p, nDataSize %d, pCallback 0x%p, pState 0x%p\n"), this, nDataSize, pCallback, pState);
+			_ATLTRY
+			{
+				CLocalObjectPtr<CWriteObject> pWriteObject;
+				__C(Write(pnData, nDataSize, &pWriteObject->m_nDataSize));
+				CComPtr<IMFAsyncResult> pAsyncResult;
+				__C(MFCreateAsyncResult(pWriteObject, pCallback, pState, &pAsyncResult));
+				__C(pCallback->Invoke(pAsyncResult));
+			}
+			_ATLCATCH(Exception)
+			{
+				_C(Exception);
+			}
+			return S_OK;
+		}
+		STDMETHOD(EndWrite)(IMFAsyncResult* pResult, ULONG* pnDataSize) override
+		{
+			_Z5(atlTraceCOM, 5, _T("this 0x%p, pResult 0x%p\n"), this, pResult);
+			_ATLTRY
+			{
+				__D(pResult, E_INVALIDARG);
+				__D(pnDataSize, E_POINTER);
+				CComPtr<IUnknown> pObjectUnknown;
+				__C(pResult->GetObject(&pObjectUnknown));
+				CWriteObject* pWriteObject = static_cast<CWriteObject*>((IUnknown*) pObjectUnknown);
+				_A(pWriteObject == (CWriteObject*) CComQIPtr<CWriteObject>(pObjectUnknown));
+				*pnDataSize = pWriteObject->m_nDataSize;
+			}
+			_ATLCATCH(Exception)
+			{
+				_C(Exception);
+			}
+			return S_OK;
+		}
+		STDMETHOD(Seek)(MFBYTESTREAM_SEEK_ORIGIN Origin, LONGLONG nOffset, DWORD nFlags, QWORD* pnPosition) override
+		{
+			_Z4(atlTraceCOM, 4, _T("this 0x%p, Origin %d, nOffset %I64d, nFlags 0x%X\n"), this, Origin, nOffset, nFlags);
+			_ATLTRY
+			{
+				// TODO: ...
+				_C(E_NOTIMPL);
+			}
+			_ATLCATCH(Exception)
+			{
+				_C(Exception);
+			}
+			return S_OK;
+		}
+		STDMETHOD(Flush)() override
+		{
+			_Z4(atlTraceCOM, 4, _T("this 0x%p\n"), this);
+			_ATLTRY
+			{
+				// TODO: ...
+			}
+			_ATLCATCH(Exception)
+			{
+				_C(Exception);
+			}
+			return S_OK;
+		}
+		STDMETHOD(Close)() override
+		{
+			_Z4(atlTraceCOM, 4, _T("this 0x%p\n"), this);
+			_ATLTRY
+			{
+				CRoCriticalSectionLock DataLock(m_DataCriticalSection);
+				__D(m_File, E_UNNAMED);
+				__C(m_File.Write(m_pnData, (DWORD) m_nDataSize));
+				m_File.Close();
+			}
+			_ATLCATCH(Exception)
+			{
+				_C(Exception);
+			}
+			return S_OK;
+		}
+
+	// IMFSampleOutputStream
+		STDMETHOD(BeginWriteSample)(IMFSample* pSample, IMFAsyncCallback* pCallback, IUnknown* pState) override
+		{
+			_Z4(atlTraceCOM, 4, _T("this 0x%p, pSample 0x%p, pCallback 0x%p, pState 0x%p\n"), this, pSample, pCallback, pState);
+			_ATLTRY
+			{
+				// TODO: ...
+				_C(E_NOTIMPL);
+			}
+			_ATLCATCH(Exception)
+			{
+				_C(Exception);
+			}
+			return S_OK;
+		}
+		STDMETHOD(EndWriteSample)(IMFAsyncResult* pResult) override
+		{   
+			_Z4(atlTraceCOM, 4, _T("this 0x%p, pResult 0x%p\n"), this, pResult);
+			_ATLTRY
+			{
+				// TODO: ...
+				_C(E_NOTIMPL);
+			}
+			_ATLCATCH(Exception)
+			{
+				_C(Exception);
+			}
+			return S_OK;
+		}
+		//STDMETHOD(Close)() override
+	};
+
+	////////////////////////////////////////////////////////
+	// CSessionT
+
 	template <typename CVideoMediaType, typename CAudioMediaType>
 	class CSessionT
 	{
@@ -535,7 +898,27 @@ public:
 			if(!_tcslen(m_sPath))
 				m_sPath = CreateOutputPath();
 			// NOTE: MFCreateSinkWriterFromURL https://msdn.microsoft.com/en-us/library/windows/desktop/dd388105
-			__C(MFCreateSinkWriterFromURL(CT2CW(m_sPath), NULL, NULL, &m_pSinkWriter));
+			CComPtr<IMFByteStream> pByteStream;
+			MF::CAttributes pSinkAttributes;
+			#if FALSE
+				CObjectPtr<CFileByteStream> pFileByteStream;
+				pFileByteStream.Construct()->Initialize(m_sPath);
+				pByteStream = pFileByteStream;
+				// WARN: It looks like this cannot have effect when used like this; the attribute is apparently NOT working the supposed way that
+				//       media sink somehow sees it and update the media file. I suppose instead it is rather Transcode API attribute (despite the
+				//       naming) and is handled through API patch that internally applies additional re-muxing behind the scenes...
+				pSinkAttributes.Create(1);
+				pSinkAttributes[MF_MPEG4SINK_MOOV_BEFORE_MDAT] = (UINT32) 1;
+				#if TRUE
+					CObjectPtr<MF::Private::CAttributes> pPrivateAttributes;
+					pPrivateAttributes.Construct()->Initialize(pSinkAttributes);
+					pSinkAttributes.m_p = (IMFAttributes*) pPrivateAttributes;
+				#endif
+				// NOTE: This is a development code path, see if(m_pSinkWriter) workaround below
+				//__C(MFCreateSinkWriterFromURL(CT2CW(m_sPath), pByteStream, pSinkAttributes, &m_pSinkWriter));
+			#else
+				__C(MFCreateSinkWriterFromURL(CT2CW(m_sPath), pByteStream, pSinkAttributes, &m_pSinkWriter));
+			#endif
 			DWORD nVideoWriterStreamIndex, nAudioWriterStreamIndex;
 			#pragma region H.264 Video
 			MF::CMediaType pVideoMediaType = m_VideoMediaType.m_pMediaType;
@@ -553,8 +936,11 @@ public:
 				pVideoMediaType[MF_MT_INTERLACE_MODE] = m_VideoMediaType.m_pMediaType.GetUINT32(MF_MT_INTERLACE_MODE);
 				pVideoMediaType[MF_MT_PIXEL_ASPECT_RATIO] = m_VideoMediaType.m_pMediaType.GetUINT64(MF_MT_PIXEL_ASPECT_RATIO);
 			}
-			__C(m_pSinkWriter->AddStream(pVideoMediaType, &nVideoWriterStreamIndex));
-			__C(m_pSinkWriter->SetInputMediaType(nVideoWriterStreamIndex, m_VideoMediaType.m_pMediaType, NULL));
+			if(m_pSinkWriter)
+			{
+				__C(m_pSinkWriter->AddStream(pVideoMediaType, &nVideoWriterStreamIndex));
+				__C(m_pSinkWriter->SetInputMediaType(nVideoWriterStreamIndex, m_VideoMediaType.m_pMediaType, NULL));
+			}
 			#pragma endregion 
 			#pragma region AAC Audio 
 			_A(m_AudioMediaType.m_pMediaType.GetUINT32(MF_MT_AUDIO_SAMPLES_PER_SECOND) == 48000);
@@ -568,12 +954,33 @@ public:
 			pAudioMediaType[MF_MT_AUDIO_SAMPLES_PER_SECOND] = (UINT32) m_AudioMediaType.m_pMediaType.GetUINT32(MF_MT_AUDIO_SAMPLES_PER_SECOND);
 			pAudioMediaType[MF_MT_AUDIO_NUM_CHANNELS] = (UINT32) m_AudioMediaType.m_pMediaType.GetUINT32(MF_MT_AUDIO_NUM_CHANNELS);
 			pAudioMediaType[MF_MT_AUDIO_AVG_BYTES_PER_SECOND] = (UINT32) 20000;
-			__C(m_pSinkWriter->AddStream(pAudioMediaType, &nAudioWriterStreamIndex));
-			__C(m_pSinkWriter->SetInputMediaType(nAudioWriterStreamIndex, m_AudioMediaType.m_pMediaType, NULL));
+			if(m_pSinkWriter)
+			{
+				__C(m_pSinkWriter->AddStream(pAudioMediaType, &nAudioWriterStreamIndex));
+				__C(m_pSinkWriter->SetInputMediaType(nAudioWriterStreamIndex, m_AudioMediaType.m_pMediaType, NULL));
+			}
 			#pragma endregion 
+			// NOTE: See IMFSinkWriterEx::GetTransformForStream https://msdn.microsoft.com/en-us/library/windows/desktop/hh448061
+			//       which might possibly indicate internal MFTs such as, for example, format conversion and audio encoder for AAC audio
 			_A(m_StreamIndexMap.IsEmpty());
-			m_StreamIndexMap[m_VideoMediaType.m_nStreamIndex] = nVideoWriterStreamIndex;
-			m_StreamIndexMap[m_AudioMediaType.m_nStreamIndex] = nAudioWriterStreamIndex;
+			if(m_pSinkWriter)
+			{
+				m_StreamIndexMap[m_VideoMediaType.m_nStreamIndex] = nVideoWriterStreamIndex;
+				m_StreamIndexMap[m_AudioMediaType.m_nStreamIndex] = nAudioWriterStreamIndex;
+			} else
+			{
+				// TODO: Add audio support
+				pAudioMediaType.Release();
+				CComPtr<IMFMediaSink> pMediaSink;
+				__C(MFCreateMPEG4MediaSink(pByteStream, pVideoMediaType, pAudioMediaType, &pMediaSink));
+				__C(MFCreateSinkWriterFromMediaSink(pMediaSink, pSinkAttributes, &m_pSinkWriter));
+				nVideoWriterStreamIndex = 0;
+			//	__C(m_pSinkWriter->AddStream(pVideoMediaType, &nVideoWriterStreamIndex)); // MF_E_STREAMSINKS_FIXED
+				__C(m_pSinkWriter->SetInputMediaType(nVideoWriterStreamIndex, m_VideoMediaType.m_pMediaType, NULL));
+			//	//__C(m_pSinkWriter->AddStream(pAudioMediaType, &nAudioWriterStreamIndex));
+			//	//__C(m_pSinkWriter->SetInputMediaType(nAudioWriterStreamIndex, m_AudioMediaType.m_pMediaType, NULL));
+				m_StreamIndexMap[m_VideoMediaType.m_nStreamIndex] = nVideoWriterStreamIndex;
+			}
 		}
 		HANDLE GetSampleAvailabilityEvent() const
 		{
