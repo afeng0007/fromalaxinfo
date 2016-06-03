@@ -51,10 +51,10 @@ public:
 			using namespace AlaxInfoDirectShowReferenceSource;
 			CComPtr<IVideoMediaSource> pVideoMediaSource;
 			__C(pVideoMediaSource.CoCreateInstance(__uuidof(VideoMediaSource)));
-			__C(pVideoMediaSource->SetMediaType(1280, 720, CComVariant(_PersistHelper::StringFromIdentifier(MEDIASUBTYPE_RGB32))));
+			__C(pVideoMediaSource->SetMediaType(4096, 2304, CComVariant(_PersistHelper::StringFromIdentifier(MEDIASUBTYPE_RGB32))));
 			//__C(pVideoMediaSource->SetMediaTypeAspectRatio(...));
 			__C(pVideoMediaSource->SetMediaTypeRate(50, 1));
-			__C(pVideoMediaSource->put_Duration(2.0));
+			__C(pVideoMediaSource->put_Duration(5.0));
 			pMediaSource = pVideoMediaSource;
 		}
 		#pragma endregion 
@@ -73,14 +73,20 @@ public:
 		// NOTE: H.264 Video Encoder https://msdn.microsoft.com/en-us/library/windows/desktop/dd797816
 		pWriterMediaType[MF_MT_MAJOR_TYPE] = MFMediaType_Video;
 		pWriterMediaType[MF_MT_SUBTYPE] = MFVideoFormat_H264;
-		pWriterMediaType[MF_MT_AVG_BITRATE] = (UINT32) (10 << 10) * 1000; // 10 MBps
+		pWriterMediaType[MF_MT_AVG_BITRATE] = (UINT32) (12 << 10) * 1000; // 12 MBps
 		pWriterMediaType[MF_MT_FRAME_RATE] = pMediaType.GetUINT64(MF_MT_FRAME_RATE);
 		pWriterMediaType[MF_MT_FRAME_SIZE] = pMediaType.GetUINT64(MF_MT_FRAME_SIZE);
 		pWriterMediaType[MF_MT_INTERLACE_MODE] = pMediaType.GetUINT32(MF_MT_INTERLACE_MODE);
 		pWriterMediaType[MF_MT_PIXEL_ASPECT_RATIO] = pMediaType.GetUINT64(MF_MT_PIXEL_ASPECT_RATIO);
 		DWORD nWriterStreamIndex;
 		__C(pSinkWriter->AddStream(pWriterMediaType, &nWriterStreamIndex));
-		__C(pSinkWriter->SetInputMediaType(nWriterStreamIndex, pMediaType, NULL));
+		// NOTE: Sink Writer Attributes https://msdn.microsoft.com/en-us/library/windows/desktop/dd389284
+		{
+			MF::CAttributes pAttributes;
+			pAttributes.Create(10);
+			pAttributes[MF_READWRITE_ENABLE_HARDWARE_TRANSFORMS] = (UINT32) 1;
+			__C(pSinkWriter->SetInputMediaType(nWriterStreamIndex, pMediaType, pAttributes));
+		}
 		__C(pSinkWriter->BeginWriting());
 		for(; ; )
 		{
