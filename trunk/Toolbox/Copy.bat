@@ -52,6 +52,12 @@ copy /b /y "%A%\%B%\_Bin\%B%-Win32.%C%" .
 copy /b /y "%A%\%B%\_Bin\%B%-x64.%C%" .
 
 @set B1=MediaFoundation
+@set B2=DxgiCapabilities
+@set C=exe
+copy /b /y "%A%\Utilities\%B1%\%B2%\_Bin\%B1%%B2%-Win32.%C%" .
+copy /b /y "%A%\Utilities\%B1%\%B2%\_Bin\%B1%%B2%-x64.%C%" .
+
+@set B1=MediaFoundation
 @set B2=CaptureCapabilities
 @set C=exe
 copy /b /y "%A%\Utilities\%B1%\%B2%\_Bin\%B1%%B2%-Win32.%C%" .
