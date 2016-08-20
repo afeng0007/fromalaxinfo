@@ -82,6 +82,9 @@ public:
 			A(MFT_CATEGORY_AUDIO_EFFECT)
 			A(MFT_CATEGORY_VIDEO_PROCESSOR)
 			A(MFT_CATEGORY_OTHER)
+			#if (WINVER >= _WIN32_WINNT_WIN10_RS1)
+				A(MFT_CATEGORY_ENCRYPTOR)
+			#endif
 			A(CLSID_VideoInputDeviceCategory) // Kernel streaming (KS) minidriver backed hardware transforms https://msdn.microsoft.com/en-us/library/windows/desktop/ms700134#live_sources
 			A(KSCATEGORY_BRIDGE)
 			A(KSCATEGORY_CAPTURE) // Video and Audio capture stuff
@@ -103,7 +106,7 @@ public:
 		};
 		for(auto&& CategoryItem: g_pCategoryMap)
 		{
-			_tprintf(_T("Category: %hs %ls\n"), CategoryItem.pszName, _PersistHelper::StringFromIdentifier(CategoryItem.Value));
+			_tprintf(_T("Category: %hs %ls\n"), (LPCSTR) CategoryItem.pszName, (LPCWSTR) _PersistHelper::StringFromIdentifier(CategoryItem.Value));
 			_tprintf(_T("\n"));
 			_ATLTRY
 			{
@@ -116,7 +119,7 @@ public:
 					CString sFriendlyName;
 					if(pActivate.TryGetString(MFT_FRIENDLY_NAME_Attribute, sFriendlyName))
 						sItem.Insert(0, AtlFormatString(_T("%s "), sFriendlyName));
-					_tprintf(_T("\t") _T("%s\n"), sItem);
+					_tprintf(_T("\t") _T("%s\n"), (LPCTSTR) sItem);
 					_ATLTRY
 					{
 						UINT32 nItemCount = 0;
@@ -168,10 +171,26 @@ public:
 							}
 							#pragma endregion 
 							if(bStringValueAvailable)
-								_tprintf(_T("\t") _T("\t") _T("%s: %s\n"), MF::FormatKey(Key), sStringValue);
+								_tprintf(_T("\t") _T("\t") _T("%s: %s\n"), (LPCTSTR) MF::FormatKey(Key), (LPCTSTR) sStringValue);
 							else
-								_tprintf(_T("\t") _T("\t") _T("%s: ??? (0x%X)\n"), MF::FormatKey(Key), MF::CPropVariant::FormatType(vValue.vt));
+								_tprintf(_T("\t") _T("\t") _T("%s: ??? (%s)\n"), (LPCTSTR) MF::FormatKey(Key), (LPCTSTR) MF::CPropVariant::FormatType(vValue.vt));
 						}
+						//_ATLTRY
+						//{
+						//	CComPtr<IMFTransform> pTransform;
+						//	__C(pActivate->ActivateObject(__uuidof(IMFTransform), (VOID**) &pTransform));
+						//	const CComQIPtr<ISpecifyPropertyPages> pSpecifyPropertyPages = pTransform;
+						//	if(pSpecifyPropertyPages)
+						//	{
+						//		CAUUID Pages;
+						//		ZeroMemory(&Pages, sizeof Pages);
+						//		__C(pSpecifyPropertyPages->GetPages(&Pages));
+						//	}
+						//}
+						//_ATLCATCHALL()
+						//{
+						//	_Z_EXCEPTION();
+						//}
 					}
 					_ATLCATCHALL()
 					{
@@ -257,12 +276,12 @@ int _tmain(int argc, _TCHAR* argv[])
 	}
 	catch(CArgumentException Exception)
 	{
-		_tprintf(_T("Fatal Error: %s\n"), Exception.m_sMessage);
+		_tprintf(_T("Fatal Error: %s\n"), (LPCTSTR) Exception.m_sMessage);
 		return 1;
 	}
 	_ATLCATCH(Exception)
 	{
-		_tprintf(_T("Fatal Error: 0x%08x %s\n"), (HRESULT) Exception, AtlFormatSystemMessage(Exception).TrimRight(_T("\t\n\r .")));
+		_tprintf(_T("Fatal Error: 0x%08X %s\n"), (HRESULT) Exception, (LPCTSTR) AtlFormatSystemMessage(Exception).TrimRight(_T("\t\n\r .")));
 		return 1;
 	}
 	_ATLCATCHALL()
