@@ -1369,5 +1369,6 @@ __declspec(selectany) CEvent CModule::g_TerminationEvent;
 /*
 
 video "\\?\usb#vid_046d&pid_0843&mi_00#6&2314864d&0&0000#{e5323777-f976-4f5b-9b55-b94699c46e44}\global" bitrate 1024000 audio "{0.0.1.00000000}.{d7e99b5b-4d9b-437f-9f72-7adb7cdb2e1f}"
+video "\\?\usb#vid_046d&pid_0843&mi_00#6&2314864d&0&0000#{e5323777-f976-4f5b-9b55-b94699c46e44}\global" bitrate 2048000 audio "{0.0.1.00000000}.{a8bbaa1c-713d-4d6f-bf71-ae173bcc6dfc}" duration 15
 
 */
